@@ -1,0 +1,14 @@
+    .dropzone {
+      border: 2px dashed #6c757d;
+      border-radius: .5rem;
+      padding: 2rem;
+      text-align: center;
+      transition: background-color .15s ease, border-color .15s ease;
+    }
+    .dropzone.dragover {
+      background-color: rgba(108,117,125,0.05);
+      border-color: #495057;
+    }
+    .hidden { display:none; }
+    .file-list { margin-top: .75rem; }
+

@@ -1,0 +1,11 @@
+version: "3.9"
+services:
+  web:
+    build: .
+    container_name: php-apache
+    ports:
+      - "8080:80"
+    volumes:
+      - ./www:/var/www/html
+      - /mnt/datos/sblanco/Documents/Trabajo/ReposGit/datospatchwork/uploads/:/var/www/html/uploads/
+      - /mnt/datos/sblanco/Documents/Trabajo/ReposGit/datospatchwork/data/:/var/www/html/data/
