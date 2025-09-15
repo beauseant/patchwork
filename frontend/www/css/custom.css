@@ -12,3 +12,4 @@
     .hidden { display:none; }
     .file-list { margin-top: .75rem; }
 
+#pdf-viewer { width: 100%; height: 75vh; border: 1px solid #dee2e6; }

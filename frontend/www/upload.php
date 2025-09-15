@@ -6,6 +6,9 @@ $dbFile = $uploadDir. 'database.sqlite';
 // Preparamos la respuesta JSON por defecto
 $response = ['status' => 'error', 'message' => 'Petición no válida.'];
 
+
+
+
 // --- LÓGICA PRINCIPAL ---
 if ($_SERVER["REQUEST_METHOD"] == "POST") {
 
@@ -104,11 +107,18 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                             );
 
                             foreach ($datosAExtraer as $key) {
-                                if (isset($metadataMap[$key])) {
+                                $value = 'SOLICITADO';
+                                if (isset($metadataMap[$key])) {     
+                                    #Si hemos pedido el objeto del contrato lanzamos un script que espera en segundo plano
+                                    #a que se haya creado el fichero con el texto del documento, o un timeout a los x minutos:
+                                    if ($key == 'objeto_contrato' ){  
+                                        exec( getcwd() . '/scripts/extractObjective.sh ' . getcwd() . '/'. $destPath  . '> /dev/null &'); // no $output
+                                    }
+
                                     $stmtMeta->execute([
                                         ':doc_id' => $lastDocId,
                                         ':meta_key' => $metadataMap[$key], // Usamos el texto legible
-                                        ':meta_value' => 'SOLICITADO' // Como pediste
+                                        ':meta_value' =>  $value
                                     ]);
                                 }
                             }
@@ -117,12 +127,19 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                         // **CAMBIO 5: Confirmar la transacción si todo ha ido bien**
                         $pdo->commit();
 
+                        #shell_exec (getcwd() . '/scripts/extractText.sh ' . getcwd() . '/'. $destPath  . ' &');
+                        exec( getcwd() . '/scripts/extractText.sh ' . getcwd() . '/'. $destPath  . '> /dev/null &'); // no $output
+
                         $response['status'] = 'success';
                         $response['message'] = '¡Archivo y metadatos registrados con éxito!';
+                        #$response['message'] = (getcwd() . '/scripts/extractText.sh ' . $destPath  . ' &');
                         $response['data'] = [
                             'originalName' => htmlspecialchars($originalFileName),
                             'storedName' => htmlspecialchars($newFileName)
                         ];
+
+                        
+
 
                     } else {
                         $pdo->rollBack(); // Revertir si falla el movimiento del archivo
