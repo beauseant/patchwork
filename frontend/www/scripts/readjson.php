@@ -12,9 +12,12 @@ function readJson ( $file ){
     if ($json_data === null) {
         die('Error decoding the JSON file');
     }
-    return $json_data;
+    $myArray = json_encode($json_data['response'], JSON_UNESCAPED_UNICODE);
+    file_put_contents($file . '_text.json', $myArray);
+    return $myArray;
 }
 
-print (json_encode (readJson ($argv[1])['response']));
+readJson ($argv[1]);
 #print 	'{ "text": "string"}';
 ?>
+

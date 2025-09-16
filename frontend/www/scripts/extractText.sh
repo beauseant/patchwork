@@ -59,8 +59,11 @@ curl -X 'POST' \
 -F "file=@${PDF_FILE};type=application/pdf" \
 -o "${OUTPUT_TEXT_FILE}"\
 
+
+
 # Verificamos si la conversión fue exitosa
 if [ $? -eq 0 ]; then
+  php scripts/readjson.php "$OUTPUT_TEXT_FILE" 
   #echo "La conversión fue exitosa. El archivo de texto está en $file_name/$file_name.txt"
   touch "$DIR_NAME/finalizado"
 else

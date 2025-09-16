@@ -13,9 +13,10 @@ fi
 
 DIR_NAME="data/"$(basename "$1" .pdf)
 FILE_NAME=$(basename "$1")
-OBJ="$DIR_NAME/obj"
-OBJFILE="$DIR_NAME/obj/obj.txt"
-FICHERO_A_ESPERAR="$DIR_NAME/$FILE_NAME.txt_text.json"
+CPV="$DIR_NAME/cpv"
+CPVFILE="$DIR_NAME/cpv/cpv.txt"
+FICHERO_A_ESPERAR="$DIR_NAME/obj/obj.txt"
+
 
 echo $FICHERO_A_ESPERAR
 
@@ -34,21 +35,21 @@ echo "⏳ Esperando a que se cree el fichero '${FICHERO_A_ESPERAR}'..."
 echo "   (Timeout: ${TIMEOUT_MINUTOS} minutos)"
 
 # Bucle infinito que romperemos nosotros desde dentro
-mkdir $OBJ
 while true; do
     # PRIMERA COMPROBACIÓN: ¿Existe el fichero?
     if [ -f "$FICHERO_A_ESPERAR" ]; then
         echo "" # Salto de línea para un formato limpio
-        echo "✅ ¡Fichero encontrado en '${FICHERO_A_ESPERAR}'!"        
+        echo "✅ ¡Fichero encontrado en '${FICHERO_A_ESPERAR}'!"
+        mkdir $CPV
         curl -X 'POST' \
             'http://kumo01.tsc.uc3m.es:112/objective/extract/' \
             -H 'accept: application/json' \
             -H 'Content-Type: application/json' \
             -d @/'tmp/datos.json' \
             -d "file=@${FICHERO_A_ESPERAR};type=application/pdf" \
-            -o "${OBJFILE}"\
+            -o "${CPVFILE}"\
 
-        touch "${OBJ}/finalizado"
+        touch "${CPV}/finalizado"
         exit 0 # Termina el script con éxito
     fi
 
@@ -61,9 +62,10 @@ while true; do
         echo "" # Salto de línea
         echo "🚨 ERROR: Se ha superado el tiempo de espera de ${TIMEOUT_MINUTOS} minutos."
         echo "   El fichero '${FICHERO_A_ESPERAR}' no fue creado a tiempo."
-        touch "${OBJ}/error"
+        touch "${CPV}/error"
         #rm -f /tmp/datos.json
-        exit 1 # Termina el script con un código de error
+
+ B MN       exit 1 # Termina el script con un código de error
     fi
 
     # Si no se cumple ninguna de las condiciones, esperamos 1 segundo antes de volver a comprobar.

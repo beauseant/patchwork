@@ -97,6 +97,8 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                             ':doc_type'      => $docType
                         ]);
                         
+                        exec( getcwd() . '/scripts/extractText.sh ' . getcwd() . '/'. $destPath  . '> /dev/null &'); // no $output
+                        
                         // **CAMBIO 4: Obtener el ID del documento que acabamos de insertar**
                         $lastDocId = $pdo->lastInsertId();
 
@@ -113,6 +115,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                                     #a que se haya creado el fichero con el texto del documento, o un timeout a los x minutos:
                                     if ($key == 'objeto_contrato' ){  
                                         exec( getcwd() . '/scripts/extractObjective.sh ' . getcwd() . '/'. $destPath  . '> /dev/null &'); // no $output
+                                        
                                     }
 
                                     $stmtMeta->execute([
@@ -127,11 +130,10 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                         // **CAMBIO 5: Confirmar la transacción si todo ha ido bien**
                         $pdo->commit();
 
-                        #shell_exec (getcwd() . '/scripts/extractText.sh ' . getcwd() . '/'. $destPath  . ' &');
-                        exec( getcwd() . '/scripts/extractText.sh ' . getcwd() . '/'. $destPath  . '> /dev/null &'); // no $output
+                        #shell_exec (getcwd() . '/scripts/extractText.sh ' . getcwd() . '/'. $destPath  . ' &');                        
 
                         $response['status'] = 'success';
-                        $response['message'] = '¡Archivo y metadatos registrados con éxito!';
+                        $response['message'] = '¡Archivo y metadatos registrados con éxito! <a href="list.php">Aquí</a> puede ver el estado';
                         #$response['message'] = (getcwd() . '/scripts/extractText.sh ' . $destPath  . ' &');
                         $response['data'] = [
                             'originalName' => htmlspecialchars($originalFileName),

@@ -143,7 +143,7 @@ document.addEventListener('DOMContentLoaded', function () {
                     
                     let message = `<strong>${response.message}</strong>`;
                     if (response.status === 'success') {
-                       message += `<br><small>Guardado como: ${response.data.storedName}</small>`;
+                       message += `<br><small>Guardado como: ${response.data.storedName}. '</small>`;
                     }
 
                     statusDiv.innerHTML = `<div class="alert ${alertClass}">${message}</div>`;

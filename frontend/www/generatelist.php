@@ -1,100 +1,7 @@
 <?php
 // api_datos.php
 header('Content-Type: application/json');
-
-function checkErrorText ($doc){
-    $cadena_a_buscar = '<title>404';
-
-    if (file_exists($doc)) {
-        // 3. Lee todo el contenido del archivo en una sola cadena.
-        // Se usa @ para suprimir warnings si el archivo no es legible, lo manejamos a continuación.
-        $contenido = @file_get_contents($doc);
-        // 4. Comprueba si la lectura fue exitosa (si no, devuelve false).
-        if ($contenido !== false) {
-            // 5. Busca la posición de la cadena. strpos() es más rápido que otras funciones para solo verificar existencia.
-            if (strpos($contenido, $cadena_a_buscar) !== false) {
-                $salida = 'ERROR REST';
-            } else {
-                $salida = '<a href="' . $doc . '" target="_blank" />VER</a>';
-            }
-
-        } else {
-            $salida = 'ERROR PERMISOS';
-        }
-    } else {
-        $salida = 'ERROR NO ENCONTRADO';
-    }
-    return $salida;
-}
-
-
-function checkErrorObj ($doc){
-    $cadena_a_buscar = '400 Bad Request:'; 
-
-    if (file_exists($doc)) {
-        // 3. Lee todo el contenido del archivo en una sola cadena.
-        // Se usa @ para suprimir warnings si el archivo no es legible, lo manejamos a continuación.
-        $contenido = @file_get_contents($doc);
-        // 4. Comprueba si la lectura fue exitosa (si no, devuelve false).
-        if ($contenido !== false) {
-            // 5. Busca la posición de la cadena. strpos() es más rápido que otras funciones para solo verificar existencia.
-            if (strpos($contenido, $cadena_a_buscar) !== false) {
-                $salida = 'ERROR REST';
-            } else {
-                
-                $salida = $contenido;
-            }
-
-        } else {
-            $salida = 'ERROR PERMISOS';
-        }
-    } else {
-        $salida = 'ERROR NO ENCONTRADO';
-    }
-    return $salida;
-}
-
-function checkExtractText ( $doc  ){
-    $uploadDir = 'data/';
-    $salida = 'PENDIENTE';
-    $dir = str_replace ('.pdf', '', $doc);
-
-
-    if (is_dir($uploadDir . '/' .  $dir)){
-        $salida = 'PROCESANDO';
-    }
-    if (is_file($uploadDir . '/' .  $dir . '/' . 'error')){
-        $salida = 'ERROR';
-    }
-
-    if (is_file($uploadDir . '/' .  $dir . '/' . $doc . '.txt')){
-        $salida =  checkErrorText($uploadDir . '/' .  $dir . '/' . $doc . '.txt');
-    }
-
-    #$salida =  ($uploadDir . '/' .  $dir . '/' . $doc . '.txt');
-    return $salida;
-}
-
-
-function checkObjeto ( $doc  ){
-    $uploadDir = 'data/';
-    $salida = 'PENDIENTE';
-    $dir = str_replace ('.pdf', '', $doc);
-
-    if (is_dir($uploadDir . '/' .  $dir . '/obj')){
-        $salida = 'PROCESANDO';
-    }
-    if (is_file($uploadDir . '/' .  $dir . '/obj/' . 'error')){
-        $salida = 'ERROR';
-    }
-    
-    if (is_file($uploadDir . '/' .  $dir . '/obj/obj.txt')){
-        $salida =  checkErrorObj($uploadDir . '/' .  $dir . '/obj/obj.txt');
-    }
-
-    #$salida =  ($uploadDir . '/' .  $dir . '/' . $doc . '.txt');*/
-    return $salida;
-}
+include ('includes/extractMetada.php'); 
 
 
 
@@ -108,7 +15,7 @@ try {
     $query = "
         SELECT 
             d.id, d.original_name, d.stored_name, d.upload_date, d.doc_type,
-            m.metadata_key, m.metadata_value
+            m.metadata_key, m.metadata_value, m.document_id
         FROM documents d
         LEFT JOIN metadatos m ON d.id = m.document_id
         ORDER BY d.upload_date DESC
@@ -126,6 +33,7 @@ try {
                 'stored_name'   => $row['stored_name'],
                 'upload_date'   => $row['upload_date'],
                 'doc_type'      => $row['doc_type'],
+                'document_id'   => $row['document_id'],
                 'metadata'      => []
             ];
         }
@@ -148,8 +56,13 @@ try {
         if (!empty($doc['metadata'])) {
             $metadata_html .= '<ul class="list-unstyled mb-0">';
             foreach ($doc['metadata'] as $meta) {
-                if ( $meta['key'] == 'Objeto del contrato'){
-                    $meta['value'] = checkObjeto ($doc['stored_name']);
+
+                #Actualizamos el objeto del contrato si es la primera vez que se solicita.
+                #para las siguientes ya s ha grabado en la base de datos:
+                if (( $meta['key'] == 'Objeto del contrato') && ($meta['value']=='SOLICITADO' || $meta['value']=='PENDIENTE' || $meta['value']=='PROCESANDO')){
+                    $objetoC = checkObjeto ($doc['stored_name']);
+                    $meta['value'] = $objetoC;
+                    $rst = $pdo->query('UPDATE metadatos SET metadata_value="' . $objetoC . '" WHERE document_id='. $doc['document_id'] .' AND metadata_key="Objeto del contrato"');
                 }
 
                 $metadata_html .= '<li><strong>' . htmlspecialchars($meta['key'], ENT_QUOTES, 'UTF-8') . ':</strong> ' . htmlspecialchars($meta['value'], ENT_QUOTES, 'UTF-8') . '</li>';
