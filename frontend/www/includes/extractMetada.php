@@ -32,7 +32,7 @@ function checkErrorText ($doc, $cadena_a_buscar){
             if (strpos($contenido, $cadena_a_buscar) !== false) {
                 $salida = 'ERROR REST';
             } else {
-                $salida = '<a href="' . $doc . '" target="_blank" />VER</a>';
+                $salida = '<button type="button"  class="btn-viewjson btn btn-link" data-doc="' . $doc . '">Ver</button>';
             }
 
         } else {

@@ -19,7 +19,7 @@
                     <th>Fecha de Subida</th>
                     <th>Metadatos</th>
                     <th>Texto</th>
-                    <th style="width: 120px;">Acciones</th>
+                    <th style="width: 120px;">Licitación</th>
                 </tr>
             </thead>
             <tbody>
@@ -37,7 +37,7 @@
                     <th>Fecha de Subida</th>
                     <th>Metadatos</th>
                     <th>Texto</th>                    
-                    <th style="width: 120px;">Acciones</th>
+                    <th style="width: 120px;">Licitación</th>
                 </tr>
             </thead>
             <tbody>
@@ -91,6 +91,38 @@
         </div>
       </div>
     </div>
+
+
+    <div class="modal fade" id="viewjsonmodal" tabindex="-1" aria-labelledby="viewModalLabel" aria-hidden="true">
+      <div class="modal-dialog modal-xl">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title" id="viewModalLabel">Texto extraído</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+          </div>
+          <div class="modal-body">      
+
+                 <div class="border p-3">
+            <pre class="text-break" style="white-space: pre-wrap;"><code id="show-file-name"></code></pre>
+        </div>
+            
+            
+            
+          
+        <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Salir</button>
+        </div>
+        
+        </div>
+
+        </div>
+      </div>
+    </div>
+
+
+
+
+
 </main>
 
 </div>     <!--<div class="wrapper d-flex"> -->
@@ -102,6 +134,7 @@
         // Guardamos las instancias de los modales de Bootstrap para poder controlarlos.
         const viewModal = new bootstrap.Modal(document.getElementById('viewModal'));
         const deleteModal = new bootstrap.Modal(document.getElementById('deleteModal'));
+        const viewJsonModal = new bootstrap.Modal(document.getElementById('viewjsonmodal'));
 
         // Configuración común para ambas tablas DataTables.
         const dataTableConfig = {
@@ -180,10 +213,36 @@
         // Delegación de eventos para el botón BORRAR.
         $('table.dataTable tbody').on('click', '.btn-delete', function () {
             const data = $(this).data();
-            $('#delete-file-name').text(data.originalName);
-            $('#confirmDeleteBtn').data('storedName', data.storedName);
+            $('#delete-file-name').text(data.storedName);
+            //$('#confirmDeleteBtn').data('storedName', data.storedName);
             deleteModal.show();
         });
+
+        $('table.dataTable tbody').on('click', '.btn-viewjson', function () {
+            const doc = $(this).data('doc');
+
+
+            $.post('view_json.php', { doc: doc }, function(response) {
+                if (response.status === 'success') {
+                    var jsonString = response.message;
+                    //var jsonPretty = JSON.stringify(JSON.parse(jsonString),null,2);  
+                    var jsonPretty = JSON.stringify(JSON.parse(jsonString), false, "\t");  
+                    
+                    $('#show-file-name').text(jsonPretty);
+
+                    viewJsonModal.show();
+                } else {
+                    alert('Error al borrar: ' + response.message);
+                }
+            }, 'json').fail(function() {
+                alert('Error de comunicación con el servidor.');
+            });            
+            //$('#show-file-name').text(doc);
+            //$('#show-file-name').text('hola');
+            //$('#confirmDeleteBtn').data('storedName', data.storedName);
+            //viewJsonModal.show();
+        });
+
 
         // Evento para el botón de CONFIRMAR BORRADO.
         $('#confirmDeleteBtn').on('click', function() {
