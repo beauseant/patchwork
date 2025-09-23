@@ -1,14 +1,17 @@
 <?php
 // borrar_documento.php
-
 header('Content-Type: application/json');
 $response = ['status' => 'error', 'message' => 'Petición no válida.'];
+
+include ('includes/extractMetada.php'); 
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['stored_name'])) {
     $stored_name = $_POST['stored_name'];
     $dbFile = 'uploads/database.sqlite';
     $uploadDir = 'uploads/';
+    $dataDir = 'data/';
     $filePath = $uploadDir . $stored_name;
+    $filePathData = $dataDir . str_replace ('.pdf', '',$stored_name);
 
     // Validar que el nombre del archivo no contenga caracteres maliciosos (ej. '..')
     if (strpos($stored_name, '/') !== false || strpos($stored_name, '\\') !== false) {
@@ -49,6 +52,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['stored_name'])) {
         if (file_exists($filePath)) {
             unlink($filePath);
         }
+        
+        
+        if (is_dir($filePathData)) {
+            rrmdir($filePathData);
+        }
+        
 
         $response['status'] = 'success';
         $response['message'] = 'Archivo y registros eliminados correctamente.';

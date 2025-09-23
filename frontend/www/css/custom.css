@@ -1,4 +1,7 @@
-    .dropzone {
+
+/*arrastrar archivos y visualizar PDF*/
+
+.dropzone {
       border: 2px dashed #6c757d;
       border-radius: .5rem;
       padding: 2rem;
@@ -13,3 +16,69 @@
     .file-list { margin-top: .75rem; }
 
 #pdf-viewer { width: 100%; height: 75vh; border: 1px solid #dee2e6; }
+
+
+/************
+Cabecera página principal:
+*****************/
+/* Estilo para la sección de la imagen principal (Hero) */
+
+  .hero-section-inner {
+    background-image: url('../img/PB090012-1.jpg');
+    background-size: cover;
+    background-position: center;
+    /* Reducimos la altura para que encaje mejor en el área de contenido */
+    height: 45vh; 
+    min-height: 350px; /* Una altura mínima para pantallas más pequeñas */
+    color: white;
+    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.6);
+  }
+
+
+  
+
+  /*SIDEBAR colapsable**/
+
+  /* Estilos para la transición suave */
+.sidebar, .main-content {
+    transition: all 0.3s ease-in-out;
+}
+
+/* ----- ESTADO NORMAL DEL SIDEBAR ----- */
+.sidebar {
+    width: 250px; /* Ancho inicial del sidebar */
+    min-height: 100vh;
+}
+.main-content {
+    width: calc(100% - 250px); /* El contenido principal ocupa el resto */
+}
+.sidebar .nav-link .icon {
+    margin-right: 10px; /* Espacio entre el icono y el texto */
+}
+.sidebar .nav-link .text {
+    display: inline-block; /* Asegura que el texto sea visible */
+}
+
+/* ----- ESTADO ENCOGIDO (CUANDO TIENE LA CLASE 'collapsed') ----- */
+.wrapper.collapsed .sidebar {
+    width: 80px; /* Ancho del sidebar encogido (solo para iconos) */
+}
+.wrapper.collapsed .main-content {
+    width: calc(100% - 80px); /* El contenido se expande */
+}
+.wrapper.collapsed .sidebar .nav-link .text,
+.wrapper.collapsed .sidebar .toggle-button .text {
+    display: none; /* Ocultamos el texto de los enlaces Y del botón */
+}
+.wrapper.collapsed .sidebar .nav-link,
+.wrapper.collapsed .sidebar .toggle-button {
+    justify-content: center; /* Centramos los iconos */
+}
+
+/* Estilos del botón para encoger/expandir */
+.sidebar .toggle-button {
+    cursor: pointer;
+    /* AHORA EL BORDE ESTÁ ABAJO */
+    border-bottom: 1px solid #ddd;
+}
+

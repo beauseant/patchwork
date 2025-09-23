@@ -2,7 +2,7 @@
     </div> <!-- container -->
 
     <footer class="bg-dark text-white text-center py-3 mt-auto">
-        <p class="mb-0">&copy; <?php echo date("Y"); ?> - Mi Proyecto PHP</p>
+        <p class="mb-0">&copy; <?php echo date("Y"); ?> - pAtChWoRK</p>
     </footer>
 
     <!-- Bootstrap JS -->

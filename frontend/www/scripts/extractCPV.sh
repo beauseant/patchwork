@@ -16,6 +16,8 @@ FILE_NAME=$(basename "$1")
 CPV="$DIR_NAME/cpv"
 CPVFILE="$DIR_NAME/cpv/cpv.txt"
 FICHERO_A_ESPERAR="$DIR_NAME/obj/obj.txt"
+SERVIDOR=$(<servidor.cnf)
+
 
 
 echo $FICHERO_A_ESPERAR
@@ -35,24 +37,41 @@ echo "⏳ Esperando a que se cree el fichero '${FICHERO_A_ESPERAR}'..."
 echo "   (Timeout: ${TIMEOUT_MINUTOS} minutos)"
 
 # Bucle infinito que romperemos nosotros desde dentro
+mkdir $CPV
 while true; do
     # PRIMERA COMPROBACIÓN: ¿Existe el fichero?
     if [ -f "$FICHERO_A_ESPERAR" ]; then
         echo "" # Salto de línea para un formato limpio
-        echo "✅ ¡Fichero encontrado en '${FICHERO_A_ESPERAR}'!"
-        mkdir $CPV
+        echo "✅ ¡Fichero encontrado en '${FICHERO_A_ESPERAR}'!"     
+        TEXTO=$(<$FICHERO_A_ESPERAR)     
         curl -X 'POST' \
-            'http://kumo01.tsc.uc3m.es:112/objective/extract/' \
+            "${SERVIDOR}/cpv/predict"  \
             -H 'accept: application/json' \
             -H 'Content-Type: application/json' \
-            -d @/'tmp/datos.json' \
-            -d "file=@${FICHERO_A_ESPERAR};type=application/pdf" \
+            -d "${TEXTO}" \
             -o "${CPVFILE}"\
 
-        touch "${CPV}/finalizado"
+
+        if [ $? -eq 0 ]; then
+            #el curl puede terminar bien, pero contener un mensaje tipo     "error": "Failed to process the text",
+            #si es así se borra el fichero:        
+            if grep -qF "errors" "$CPVFILE"; then
+                echo "Error encontrado en '$CPVFILE'. Borrando el archivo..."
+                rm "$CPVFILE"
+                echo "Archivo borrado."
+                touch "${CPV}/error"
+                touch "${CPV}/error_rest"
+            else
+                echo "No se encontró el error en '$CPVFILE'. El archivo no ha sido modificado."
+                touch "${CPV}/finalizado"
+            fi
+        else
+            touch "${CPV}/error"
+            touch "${CPV}/error_curl"
+
+        fi
         exit 0 # Termina el script con éxito
     fi
-
 
     # SEGUNDA COMPROBACIÓN: ¿Ha pasado el tiempo de timeout?
     TIEMPO_ACTUAL=$(date +%s)
@@ -63,9 +82,9 @@ while true; do
         echo "🚨 ERROR: Se ha superado el tiempo de espera de ${TIMEOUT_MINUTOS} minutos."
         echo "   El fichero '${FICHERO_A_ESPERAR}' no fue creado a tiempo."
         touch "${CPV}/error"
+        touch "${CPV}/error_timeout"        
         #rm -f /tmp/datos.json
-
- B MN       exit 1 # Termina el script con un código de error
+        exit 1 # Termina el script con un código de error
     fi
 
     # Si no se cumple ninguna de las condiciones, esperamos 1 segundo antes de volver a comprobar.

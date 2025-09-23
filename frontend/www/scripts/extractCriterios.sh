@@ -13,12 +13,11 @@ fi
 
 DIR_NAME="data/"$(basename "$1" .pdf)
 FILE_NAME=$(basename "$1")
-OBJ="$DIR_NAME/obj"
-OBJFILE="$DIR_NAME/obj/obj.txt"
-FICHERO_A_ESPERAR="$DIR_NAME/$FILE_NAME.txt_text.json"
+CPV="$DIR_NAME/cpv"
+CPVFILE="$DIR_NAME/cpv/cpv.txt"
+FICHERO_A_ESPERAR="$DIR_NAME/obj/obj.txt"
 SERVIDOR=$(<servidor.cnf)
 
-TEXTO=$(<servidor.cnf)
 
 
 echo $FICHERO_A_ESPERAR
@@ -38,43 +37,41 @@ echo "⏳ Esperando a que se cree el fichero '${FICHERO_A_ESPERAR}'..."
 echo "   (Timeout: ${TIMEOUT_MINUTOS} minutos)"
 
 # Bucle infinito que romperemos nosotros desde dentro
-mkdir $OBJ
+mkdir $CPV
 while true; do
     # PRIMERA COMPROBACIÓN: ¿Existe el fichero?
     if [ -f "$FICHERO_A_ESPERAR" ]; then
         echo "" # Salto de línea para un formato limpio
-        echo "✅ ¡Fichero encontrado en '${FICHERO_A_ESPERAR}'!"     
-        TEXTO=$(<$FICHERO_A_ESPERAR)   
-        echo $TEXTO
+        echo "✅ ¡Fichero encontrado en '${FICHERO_A_ESPERAR}'!"        
         curl -X 'POST' \
-            "${SERVIDOR}/objective/extract/" \
+            "${SERVIDOR}/pdf/extract_text/"  \
             -H 'accept: application/json' \
             -H 'Content-Type: application/json' \
-            -d "${TEXTO}" \
-            -o "${OBJFILE}"\
+            -d @/'tmp/datos.json' \
+            -d "file=@${FICHERO_A_ESPERAR};type=application/pdf" \
+            -o "${CPVFILE}"\
 
 
         if [ $? -eq 0 ]; then
             #el curl puede terminar bien, pero contener un mensaje tipo     "error": "Failed to process the text",
             #si es así se borra el fichero:        
-            if grep -qF "Failed to process the text" "$OBJFILE"; then
-                echo "Error encontrado en '$OBJFILE'. Borrando el archivo..."
-                rm "$OBJFILE"
+            if grep -qF "Failed to process the text" "$CPVFILE"; then
+                echo "Error encontrado en '$CPVFILE'. Borrando el archivo..."
+                rm "$CPVFILE"
                 echo "Archivo borrado."
-                touch "${OBJ}/error"
-                touch "${OBJ}/error_rest"                
+                touch "${CPV}/error"
+                touch "${CPV}/error_rest"
             else
-                echo "No se encontró el error en '$OBJFILE'. El archivo no ha sido modificado."
-                touch "${OBJ}/finalizado"
+                echo "No se encontró el error en '$CPVFILE'. El archivo no ha sido modificado."
+                touch "${CPV}/finalizado"
             fi
         else
-            touch "${OBJ}/error"
-            touch "${OBJ}/error_curl"
+            touch "${CPV}/error"
+            touch "${CPV}/error_curl"
 
         fi
         exit 0 # Termina el script con éxito
     fi
-
 
     # SEGUNDA COMPROBACIÓN: ¿Ha pasado el tiempo de timeout?
     TIEMPO_ACTUAL=$(date +%s)
@@ -84,8 +81,8 @@ while true; do
         echo "" # Salto de línea
         echo "🚨 ERROR: Se ha superado el tiempo de espera de ${TIMEOUT_MINUTOS} minutos."
         echo "   El fichero '${FICHERO_A_ESPERAR}' no fue creado a tiempo."
-        touch "${OBJ}/error"
-        touch "${OBJ}/error_timeout"
+        touch "${CPV}/error"
+        touch "${CPV}/error_timeout"        
         #rm -f /tmp/datos.json
         exit 1 # Termina el script con un código de error
     fi

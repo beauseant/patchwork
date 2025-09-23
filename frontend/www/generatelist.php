@@ -46,6 +46,9 @@ try {
     $data_administrativos = [];
     $data_tecnicos = [];
 
+
+    $estado = array ('SOLICITADO','PENDIENTE','PROCESANDO' );
+
     foreach ($documents as $doc) {
         // Formatear la fecha
         $date = new DateTime($doc['upload_date']);
@@ -56,22 +59,29 @@ try {
         if (!empty($doc['metadata'])) {
             $metadata_html .= '<ul class="list-unstyled mb-0">';
             foreach ($doc['metadata'] as $meta) {
-
                 #Actualizamos el objeto del contrato si es la primera vez que se solicita.
-                #para las siguientes ya s ha grabado en la base de datos:
-                if (( $meta['key'] == 'Objeto del contrato') && ($meta['value']=='SOLICITADO' || $meta['value']=='PENDIENTE' || $meta['value']=='PROCESANDO')){
-                    $objetoC = checkObjeto ($doc['stored_name']);
+                #para las siguientes ya s ha grabado en la base de datos:           
+                #error_log ( in_array ('color' , $estado), 3, '/tmp/log');     
+                if (  ( $meta['key'] == 'Objeto del contrato') && ( in_array ($meta['value'] , $estado) ))    {
+                    #error_log ($meta['key'], 3, '/tmp/log');
+                    #error_log ($meta['value'], 3, '/tmp/log');
+                    $objetoC = checkMetadato ($doc['stored_name'], 'OBJ');
                     $meta['value'] = $objetoC;
                     $rst = $pdo->query('UPDATE metadatos SET metadata_value="' . $objetoC . '" WHERE document_id='. $doc['document_id'] .' AND metadata_key="Objeto del contrato"');
                 }
 
+                if (( $meta['key'] == 'CPV') && ( in_array ($meta['value'] , $estado))){                    
+                    $objetoC = checkMetadato ($doc['stored_name'], 'CPV');
+                    $meta['value'] = $objetoC;
+                    $rst = $pdo->query('UPDATE metadatos SET metadata_value="' . $objetoC . '" WHERE document_id='. $doc['document_id'] .' AND metadata_key="CPV"');
+                }               
                 $metadata_html .= '<li><strong>' . htmlspecialchars($meta['key'], ENT_QUOTES, 'UTF-8') . ':</strong> ' . htmlspecialchars($meta['value'], ENT_QUOTES, 'UTF-8') . '</li>';
             }
             $metadata_html .= '</ul>';
         } else {
             $metadata_html = '<small class="text-muted">Sin metadatos</small>';
         }
-
+        
         // Formatear los botones de acciones con todos los atributos data-* necesarios
         $actions_html = '<button class="btn btn-sm btn-info me-2 btn-view" 
                             data-original-name="' . htmlspecialchars($doc['original_name'], ENT_QUOTES, 'UTF-8') . '"
@@ -104,7 +114,7 @@ try {
             $data_tecnicos[] = $rowData;
         }
     }
-
+    #error_log ( 'y', 3, '/tmp/log'); 
     // 4. Devolver la estructura JSON final que DataTables espera
     echo json_encode([
         'administrativos' => $data_administrativos,

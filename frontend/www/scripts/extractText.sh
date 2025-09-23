@@ -9,6 +9,8 @@ if [ "$#" -ne 1 ]; then
     exit 1
 fi
 
+SERVIDOR=$(<servidor.cnf)
+
 # Asignar el primer argumento a la variable PDF_FILE para mayor claridad.
 PDF_FILE="$1"
 
@@ -53,7 +55,7 @@ echo "Convirtiendo '$PDF_FILE' a texto en '$OUTPUT_TEXT_FILE'..."
 #pdftotext "$PDF_FILE" "$OUTPUT_TEXT_FILE"
 
 curl -X 'POST' \
-'http://kumo01.tsc.uc3m.es:112/pdf/extract_text/' \
+"${SERVIDOR}/pdf/extract_text/" \
 -H 'accept: application/json' \
 -H 'Content-Type: multipart/form-data' \
 -F "file=@${PDF_FILE};type=application/pdf" \

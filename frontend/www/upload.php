@@ -114,9 +114,11 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                                     #Si hemos pedido el objeto del contrato lanzamos un script que espera en segundo plano
                                     #a que se haya creado el fichero con el texto del documento, o un timeout a los x minutos:
                                     if ($key == 'objeto_contrato' ){  
-                                        exec( getcwd() . '/scripts/extractObjective.sh ' . getcwd() . '/'. $destPath  . '> /dev/null &'); // no $output
-                                        
+                                        exec( getcwd() . '/scripts/extractObjective.sh ' . getcwd() . '/'. $destPath  . '> /dev/null &'); // no $output                                        
                                     }
+                                    if ($key == 'cpv' ){  
+                                        exec( getcwd() . '/scripts/extractCPV.sh ' . getcwd() . '/'. $destPath  . '> /dev/null &'); // no $output                                        
+                                    }                                    
 
                                     $stmtMeta->execute([
                                         ':doc_id' => $lastDocId,

@@ -11,8 +11,11 @@
 <?php include 'includes/header.php'; ?>
 <?php include 'includes/sidebar.php'; ?>
 
-<main class="col-md-9 col-lg-10 p-4">
-            <div class="container mt-5">
+        <main class="main-content p-4">
+            <div class="container-fluid mt-5">
+                <div class="alert alert-primary" role="alert">
+                        <?php echo 'Servidor funcionando correctamente y aceptando peticiones'; ?>
+                </div>
                 <div class="card">
                     <div class="card-header">
                         <h2>Subir Documento para Extracción de Datos</h2>
@@ -63,7 +66,8 @@
                     </div>
                 </div>
             </div>
-</main>
+    </main>
+</div>     <!--<div class="wrapper d-flex"> -->
 <script>
 document.addEventListener('DOMContentLoaded', function () {
     // Referencias a elementos del DOM

@@ -2,16 +2,16 @@
 <?php include 'includes/sidebar.php'; ?>
 
 
-<main class="col-md-9 col-lg-10 p-4">
-
-    <div class="container mt-5">
+<main class="main-content p-4">
+    <div class="container-fluid mt-5">
         <div class="d-flex justify-content-between align-items-center mb-4">
+        
             <h1 class="mb-0">Listado de Documentos</h1>
             <a href="index.php" class="btn btn-success">Ir a Subir Archivo</a>
         </div>
 
         <h2 class="mt-5">📑 Documentos Administrativos</h2>
-        <table id="tabla-administrativos" class="table table-striped table-bordered" style="width:100%">
+        <table id="tabla-administrativos" class="table table-striped table-bordered" style="width:90%">
             <thead>
                 <tr>
                     <th>Nombre Original</th>
@@ -29,7 +29,7 @@
         <hr class="my-5">
 
         <h2>🛠️ Documentos Técnicos</h2>
-        <table id="tabla-tecnicos" class="table table-striped table-bordered" style="width:100%">
+        <table id="tabla-tecnicos" class="table table-striped table-bordered" style="width:90%">
             <thead>
                 <tr>
                     <th>Nombre Original</th>
@@ -93,6 +93,7 @@
     </div>
 </main>
 
+</div>     <!--<div class="wrapper d-flex"> -->
 
 
     <script>
