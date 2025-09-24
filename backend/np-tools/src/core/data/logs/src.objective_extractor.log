@@ -1,0 +1,17 @@
+2025-03-17 22:17:18,165 - src.objective_extractor - INFO - -- -- Training ObjetiveExtractorModule from /export/usuarios_ml4ds/lbartolome/NextProcurement/NP-Text_Object/data/admin_eval_task/curated
+2025-03-17 22:17:20,446 - src.objective_extractor - INFO - -- -- Dataset loaded from /export/usuarios_ml4ds/lbartolome/NextProcurement/NP-Text_Object/data/admin_eval_task/curated
+2025-03-17 22:17:20,446 - src.objective_extractor - INFO - -- -- Dataset split into train, dev, and test. Training module...
+2025-03-17 22:18:14,662 - src.objective_extractor - INFO - -- -- Module compiled. Evaluating on test set...
+2025-03-17 22:18:55,808 - src.objective_extractor - INFO - -- -- BERT score on test set: P     0.813734
+R     0.759417
+F1    0.781849
+dtype: float32
+2025-03-17 22:18:55,810 - src.objective_extractor - INFO - -- -- Mean score on test set: 0.7214062184924784
+2025-03-17 22:18:55,921 - src.objective_extractor - INFO - -- -- ObjetiveExtractorModule trained and saved to /export/usuarios_ml4ds/lbartolome/NextProcurement/NP-Text_Object/data/prompts/ObjetiveExtractor-saved.json
+2025-03-17 22:31:56,349 - src.objective_extractor - INFO - -- -- Training ObjetiveExtractorModule from /export/usuarios_ml4ds/lbartolome/NextProcurement/NP-Text_Object/data/admin_eval_task/curated
+2025-03-17 22:31:57,289 - src.objective_extractor - INFO - -- -- Dataset loaded from /export/usuarios_ml4ds/lbartolome/NextProcurement/NP-Text_Object/data/admin_eval_task/curated
+2025-03-17 22:31:57,289 - src.objective_extractor - INFO - -- -- Dataset split into train, dev, and test. Training module...
+2025-03-17 22:36:00,441 - src.objective_extractor - ERROR - -- -- Trained prompt not found. Exiting.
+2025-03-17 22:37:02,897 - src.objective_extractor - ERROR - -- -- Trained prompt not found. Exiting.
+2025-03-17 22:39:16,882 - src.objective_extractor - ERROR - -- -- Trained prompt not found. Exiting.
+2025-03-17 22:42:16,282 - src.objective_extractor - ERROR - -- -- Trained prompt not found. Exiting.

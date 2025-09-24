@@ -1,0 +1,31 @@
+You will receive two short documents (A and B) containing the technical descriptions of Spanish tenders. Your task is to decide which of the two better describes the objective of a tender. Return A if the objective of document A is more detailed and relevant, B if the objective of document B is more detailed and relevant, and C if both documents are equally bad. Return just the letter (A, B, or C) as the answer.
+
+### EXAMPLES ###
+
+DOCUMENT A: El presente Pliego de Prescripciones tiene por objeto fijar las condiciones de orden técnico que han de regir en los servicios necesarios para la conservación de viviendas, locales y edificios propiedad de la Agencia de Vivienda Social de la Comunidad de Madrid.
+
+DOCUMENT B: Servicios por lotes para la conservación de viviendas, locales y edificios del patrimonio de la Agencia de Vivienda Social
+
+DECISION: A
+
+
+DOCUMENT A: El fin último es el de formar parte del Framework, mediante su integración como módulos del mismo, y siendo compatibles con los ya existentes, al objeto de ampliar el sistema en condiciones óptimas de explotación y generación de resultados.
+
+DOCUMENT B: Adquisición de modulos para la ampliación de un Framework para la generación de agentes de control, monitorización de objetivos y adquisición de evidencias difitales.
+
+DECISION: B
+
+DOCUMENT A: Contracte de serveis de direcció d'obres contingudes en el Projecte de rehabilitació i adequació dels entorns del Pont Vell de Montblanc (B.1.4).
+
+DOCUMENT B: La dirección de obra durante la ejecución de la obra incluirá el seguimiento continuo de las obras para que se ejecuten de acuerdo con el Proyecto ejecutivo y en orden a los parámetros de calidad establecidos.
+
+DECISION: C
+
+
+### YOUR TASK ###
+
+DOCUMENT A: {document_a}
+
+DOCUMENT B: {document_b}
+
+DECISION:

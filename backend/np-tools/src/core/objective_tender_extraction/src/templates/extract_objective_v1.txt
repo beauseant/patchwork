@@ -1,0 +1,36 @@
+You will receive a DOCUMENT containing the technical descriptions of a Spanish tender. Your task is to extract the OBJECTIVE of the tender from the document.
+
+- The extracted OBJECTIVE must be text that is in the document and must be an exact match. Do not paraphrase or summarize.
+- Only return the exact text as it appears in the document.
+- If the objective is not present in the document, return '/'.
+
+You can identify the OBJECTIVE by looking for sections that contain words such as (but not limited to):
+
+OBJETO DEL PLIEGO
+OBJETO DE LA CONTRATACIÓN
+OBJETO DEL CONTRATO
+TIENE POR OBJETO
+OBJETIVOS DEL CONTRATO
+OBJETO DEL PROCEDIMIENTO DE CONTRATACIÓN
+INFORMACIÓN SOBRE EL PROCEDIMIENTO DE CONTRATACIÓN
+OBJETO
+
+Your response should be:
+- The extracted text exactly as it appears in the document.
+- No modifications, no explanations, and no interpretations.
+- If there are multiple mentions of the objective, return all relevant sections.
+
+EXAMPLE:
+
+DOCUMENT:
+Obra Objeto del contrato: Obras para reforma de instalación térmica en Centro Deportivo Municipal Alberto Maestro. Descripción servicio/obra/suministro: La obra consiste en la sustitución de las actuales enfriadoras agua–agua que dan servicio tanto de calefacción como de refrigeración por una nueva enfriadora agua–agua, consiguiendo una mayor eficiencia energética sustituyendo también la instalación hidráulica del primario correspondiente a este generador térmico. Así mismo se sustituirán las unidades terminales del gimnasio, pista deportiva y cafetería. Precio del contrato: 688.995,19 EUROS + 144.688,99 EUROS (I.V.A.) = 833.684,18 EUROS (I.V.A. INCLUIDO) Criterios de adjudicación: Se utilizará el criterio de baja lineal ofertada. Otras condiciones de adjudicación: No aplica. 8. NORMATIVA DE APLICACIÓN A las instalaciones proyectadas le son de aplicación las reglamentaciones siguientes: • Real Decreto 27/20, de 20 de julio, por el que se aprueba el Reglamento de instalaciones Térmicas en los Edificios (RITO). • Real Decreto 314/20, de 17 de marzo, por el que se aprueba el Código Técnico de la Edificación. • Real Decreto 865/2003 de 4 de julio, por el que se establecen los criterios higiénicos– sanitarios para la prevención y control de la Legionelosis. Este documento no contiene datos personales ni otras limitaciones al acceso 1. ELSA DEL CACHO GALLEGO – LA INCORPORADA 03 de julio de 2024 la existente de problemas de confort térmico en determinadas estancias del edificio como son el gimnasio en el nivel +4.00 y la pista deportiva en el nivel +8.00. En la cafetería existe un generador térmico que consiste en un equipo autónomo partido, cuya unidad exterior se encuentra en la cubierta de la cafetería y la unidad interior en el falso techo de los baños existentes en la misma. El servicio de mantenimiento del edificio indica que este equipo está generando muchos problemas de funcionamiento. 2. ENCARGO DEL PROYECTO El presente Proyecto, se redacta siguiendo las instrucci
+
+OBJECTIVE:
+Obras para reforma de instalación térmica en Centro Deportivo Municipal Alberto Maestro. Descripción servicio/obra/suministro: La obra consiste en la sustitución de las actuales enfriadoras agua–agua que dan servicio tanto de calefacción como de refrigeración por una nueva enfriadora agua–agua, consiguiendo una mayor eficiencia energética sustituyendo también la instalación hidráulica del primario correspondiente a este generador térmico. Así mismo se sustituirán las unidades terminales del gimnasio, pista deportiva y cafetería.
+
+
+### YOUR TASK ###
+DOCUMENT: 
+{document}
+
+OBJECTIVE:
