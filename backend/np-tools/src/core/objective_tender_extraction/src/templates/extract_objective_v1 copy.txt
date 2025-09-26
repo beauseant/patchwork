@@ -1,0 +1,35 @@
+You will receive a DOCUMENT containing the technical descriptions of a Spanish tender. Your task is to extract the OBJECTIVE of the tender from the document.
+
+- The extracted OBJECTIVE must be text that is in the document and must be an exact match. Do not paraphrase or summarize.
+- Only return the exact text as it appears in the document.
+- If the objective is not present in the document, return '/'.
+
+You can identify the OBJECTIVE by looking for sections that contain words such as (but not limited to):
+
+OBJETO DEL PLIEGO
+OBJETO DE LA CONTRATACIÓN
+OBJETO DEL CONTRATO
+TIENE POR OBJETO
+OBJETIVOS DEL CONTRATO
+OBJETO DEL PROCEDIMIENTO DE CONTRATACIÓN
+INFORMACIÓN SOBRE EL PROCEDIMIENTO DE CONTRATACIÓN
+OBJETO
+
+Your response should be:
+- The extracted text exactly as it appears in the document.
+- No modifications, no explanations, and no interpretations.
+- If there are multiple mentions of the objective, return all relevant sections.
+
+EXAMPLE:
+
+DOCUMENT:
+PLIEGO DE PRESCRIPCIONES TÉCNICAS PARTICULARES DEL CONTRATO DE “Servicio de video interpretación mediante lengua de signos” 1.– OBJETO. 1.1.– La traducción instantánea mediante video interpretación para personas con deficiencias auditivas y/o del habla, mediante lengua de signos, en su relación con el Ayuntamiento de Zaragoza, con el Servicio de Atención Telefónica 010. 2.– DESCRIPCIÓN DEL SERVICIO A REALIZAR 2.1– Recepción de las llamadas de videoconferencia o webcam que realicen las personas con deficiencias auditivas y/o del habla. 2.2.– Realización de llamada al Ayuntamiento de Zaragoza. 2.3.– Traducción mediante vídeo–intérprete de lengua de signos española. Mediante comunicación simultánea de audio y vídeo entre emisor y receptor en tiempo real. 2.4.– Facilitar la resolución de los problemas planteados. 2.5.– Se realizará la traducción que mejor se adapte a las siguientes necesidades: lengua de signos española, voz, lectura labial, texto, etc. 2.6.– Alta web del servicio, diseño y personalización del portal de acceso. Se podrá realizar el acceso al servicio desde la web del Ayuntamiento de Zaragoza. 2.7.– En los importes de las cuotas están incluidas todas las llamadas que se realicen y los costes telefónicos asociados a las líneas. 2.8.– El servicio estará preparado para que los usuarios puedan acceder mediante: • Un ordenador con webcam. • Videocámara con IP. • Videoteléfono. • Móvil 3G/4G mediante videollamada. • Smartphone o tableta Android o iOS 2.9.– Elaboración de informes mensuales: • Número de mediaciones realizadas. • Tiempo medio de las llamadas. • Número de usuarios que emplean el servicio. 3.– FORMACIÓN DEL PERSONAL 3.1.– Los intérpretes tendrán una experiencia mínima de 1 año en interpretación de lengua de signos española, tendrán formación práctica en video interpretación y estarán entrenados en las técnicas específicas y conocimientos que la interpretación por video requiere. 3.2.– Toda la formación inicial, continua y para el reciclaje será con cargo a la empresa adjudicataria. 4.– CONDICIONES DE PRESTACIÓN DEL SERVICIO 4.1.– Horario de prestación del servicio: disponibilidad del servicio de lunes a viernes en horario de 10 a 15 horas. 4.2.– Inicio del servicio: desde 5 días naturales desde la firma del contrato. tempfile_29026.odt Página 1 de 2 Este documento contiene datos no especialmente protegidos 1. JOSE PASCUAL VENADO BERNAL – JEFE UNIDAD DE PROYECTOS DE MEJORA DISEÑO Y CONTROL DE LA GESTIÓN 29 de abril de 2024 4.3.– En los precios ofertados se entienden contemplados todos los conceptos: impuestos, gastos aplicables, desplazamientos, formación, beneficio empresarial, etc. 5 –. PROTECCIÓN DE DATOS DE CARÁCTER PERSONAL La empresa adjudicataria y todo el personal que intervenga en la ejecución del contrato quedan sujetos a la obligación de guardar la debida confidencialidad y secreto sobre los hechos, informaciones, conocimientos, documentos, datos y otros elementos a los que tengan acceso con motivo de la prestación del servicio, con sometimiento a la L.O. 15/1999. En la I.C. de Zaragoza, a la fecha de la firma electrónica tempfile_29026.odt Página 2 de 2 Este documento contiene datos no especialmente protegidos 1. JOSE PASCUAL VENADO BERNAL – JEFE UNIDAD DE PROYECTOS DE MEJORA DISEÑO Y CONTROL DE LA GESTIÓN 29 de abril de 2024
+
+OBJECTIVE:
+La traducción instantánea mediante video interpretación para personas con deficiencias auditivas y/o del habla, mediante lengua de signos, en su relación con el Ayuntamiento de Zaragoza, con el Servicio de Atención Telefónica 010.
+
+### YOUR TASK ###
+DOCUMENT: 
+{document}
+
+OBJECTIVE:

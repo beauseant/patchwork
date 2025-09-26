@@ -1,0 +1,139 @@
+version: "3.8"
+
+#networks:
+#  np-net:
+#    name: ml4ds2_net
+#    external: true
+
+services:
+  np-solr-api:
+    build: ./np-solr-api
+    container_name: np-solr-api
+    ports:
+      - 9083:82
+    environment:
+      SOLR_URL: http://solr:9085
+      NP_TOOLS_URL: http://np-tools:9084
+    depends_on:
+      - solr
+      - np-tools
+    #networks:
+    #  - np-net
+    volumes:
+      - ./data/source:/data/source
+      - ./np-config:/config
+    deploy:
+      resources:
+        limits:
+          memory: 100GB
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]
+
+  np-tools:
+    build: ./np-tools
+    container_name: np-tools
+    ports:
+      - 9084:102
+    env_file:
+      - ./np-tools/.env
+    #networks:
+    #  - np-net
+    volumes:
+      - ./data/source:/data/source
+      - ./np-config:/config
+    deploy:
+      resources:
+        limits:
+          memory: 100GB
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]
+
+  solr-initializer:
+    image: alpine
+    container_name: np-solr-initializer
+    restart: "no"
+    entrypoint: |
+      /bin/sh -c "chown 8983:8983 /solr"
+    #networks:
+    #  - np-net
+    volumes:
+      - ./db/data/solr:/solr
+
+  solr:
+    image: solr:9.1.1
+    container_name: np-solr
+    restart: always
+    volumes:
+      - ./db/data/solr:/var/solr
+      - ./solr-plugins/NP-solr-dist-plugin/NP-solr-dist-plugin.jar:/opt/solr/dist/plugins/NP-solr-dist-plugin.jar
+      - ./solr-config:/opt/solr/server/solr
+      - ./solr-config/solr.in.sh:/etc/default/solr.in.sh
+    ports:
+      - 8985:8983
+    entrypoint:
+      - docker-entrypoint.sh
+      - solr
+      - start
+      - -f
+      - -c
+      - -z
+      - zoo:2181
+      - -a
+      - "-Xdebug -Xrunjdwp:transport=dt_socket,server=y,suspend=n,address=1044 -Djute.maxbuffer=0x5000000"
+    environment:
+      - SOLR_OPTS=-Dsolr.jetty.request.header.size=65535
+      - SOLR_JAVA_MEM=-Xms1g -Xmx1g
+    #networks:
+    #  - np-net
+    deploy:
+      resources:
+        limits:
+          memory: 100GB
+
+  zoo:
+    image: zookeeper
+    container_name: np-zoo
+    restart: always
+    ports:
+      - 9086:8080
+      - 9087:2181
+    environment:
+      - JVMFLAGS=-Djute.maxbuffer=50000000
+    volumes:
+      - ./db/data/zoo/data:/data
+      - ./db/data/zoo/logs:/datalog
+    #networks:
+    #  - np-net
+    deploy:
+      resources:
+        limits:
+          memory: 100GB
+
+  solr-config:
+    build: ./solr-config
+    container_name: np-solr-config
+    ports:
+      - 9088:81
+    depends_on:
+      - solr
+      - zoo
+    #networks:
+    #  - np-net
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - ./solr-config/bash_scripts:/bash_scripts
+      - ./db/data/solr:/db/data/solr
+    command:
+      - sh
+      - -c
+      - "chmod +x /bash_scripts/init_config.sh && ls /bash_scripts && bash_scripts/init_config.sh /db/data/solr/data"
+    deploy:
+      resources:
+        limits:
+          memory: 100GB
