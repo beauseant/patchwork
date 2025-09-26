@@ -10,11 +10,30 @@
 
 <?php include 'includes/header.php'; ?>
 <?php include 'includes/sidebar.php'; ?>
+<?php include 'includes/utils.php'; ?>
 
         <main class="main-content p-4">
-            <div class="container-fluid mt-5">
-                <div class="alert alert-primary" role="alert">
-                        <?php echo 'Servidor funcionando correctamente y aceptando peticiones'; ?>
+            <div class="container-fluid mt-5">                
+                        <?php
+                            $salida =  pingHost();                            
+                            if (array_key_exists('NOOK', $salida)) {
+                                echo '
+                                    <div class="alert alert-danger" role="alert">
+                                        <p>Error en servidor: '. $salida['NOOK'] . ' No es posible subir archivos</p>' .
+                                    '</div>
+                                ';
+                                include 'includes/footer.php';
+                                exit();
+                            }
+                            if (array_key_exists('OK', $salida)) {      
+                                echo '
+                                    <div class="alert alert-success" role="alert">
+                                        <p>Conexión correcta con el servidor: '. $salida['OK']['service'] . '/'. $salida['OK']['timestamp']  . '</p>' .
+                                    '</div>
+                                ';                                    
+      
+                            }
+                         ?>
                 </div>
                 <div class="card">
                     <div class="card-header">
@@ -202,5 +221,4 @@ document.addEventListener('DOMContentLoaded', function () {
     tipoAdministrativo.addEventListener('change', toggleOptions);
     tipoTecnico.addEventListener('change', toggleOptions);
 </script>
-</body>
-</html>
+<?php include 'includes/footer.php'; ?>

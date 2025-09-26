@@ -83,15 +83,15 @@ try {
         }
         
         // Formatear los botones de acciones con todos los atributos data-* necesarios
-        $actions_html = '<button class="btn btn-sm btn-info me-2 btn-view" 
+        $actions_html = '<button class="btn btn-outline-secondary  btn-view"  
                             data-original-name="' . htmlspecialchars($doc['original_name'], ENT_QUOTES, 'UTF-8') . '"
                             data-stored-name="' . htmlspecialchars($doc['stored_name'], ENT_QUOTES, 'UTF-8') . '"
                             data-upload-date="' . $formatted_date . '"
                             data-doc-type="' . htmlspecialchars($doc['doc_type'], ENT_QUOTES, 'UTF-8') . '"
                             data-metadata=\'' . htmlspecialchars(json_encode($doc['metadata']), ENT_QUOTES, 'UTF-8') . '\'>
                             Ver
-                         </button>
-                         <button class="btn btn-sm btn-danger btn-delete"
+                         </button>                        
+                         <button class="btn btn-outline-danger btn-delete"
                             data-stored-name="' . htmlspecialchars($doc['stored_name'], ENT_QUOTES, 'UTF-8') . '"
                             data-original-name="' . htmlspecialchars($doc['original_name'], ENT_QUOTES, 'UTF-8') . '">
                             Borrar

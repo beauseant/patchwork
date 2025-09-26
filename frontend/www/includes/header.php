@@ -18,11 +18,16 @@
 </head>
 <body>
 
-    <header class="bg-primary text-white py-3 d-flex justify-content-between align-items-center px-3">
+
+    <header class="bg-primary  text-white py-3 d-flex justify-content-between align-items-center px-3 header2" style="background-image: linear-gradient(to right, #2F1918,#7A3A33,#4D0E0C,#BA5D06,#B17042,#BA5D06,#3D5934) !important;">
         <div>
             <h1 class="h3 mb-0">pAtChWoRK</h1>
             <p class="mb-0 small">Lorem ipsum dolor</p>
         </div>
     </header>
-<div class="wrapper d-flex">
 
+
+    <div class="wrapper d-flex">
+
+
+    <!-- fixed-top -->

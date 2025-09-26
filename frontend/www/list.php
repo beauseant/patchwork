@@ -177,12 +177,16 @@
         
         // Establecer el intervalo de refresco automático.
         setInterval(refreshTables, 10000);
+        
 
         // --- LÓGICA DE LOS MODALES (Manejadores de eventos con jQuery) ---
         
         // Se usa la delegación de eventos en el cuerpo de la tabla para que funcione con la paginación de DataTables.
         $('table.dataTable tbody').on('click', '.btn-view', function () {
             const data = $(this).data(); // jQuery extrae todos los atributos data-* en un objeto.
+
+            const dataprueba = $(this).data('originalName');
+            console.log(dataprueba);
 
             // Rellenar el modal de "Ver" con los datos del botón.
             $('#modal-original-name').text(data.originalName);
@@ -214,14 +218,12 @@
         $('table.dataTable tbody').on('click', '.btn-delete', function () {
             const data = $(this).data();
             $('#delete-file-name').text(data.storedName);
-            //$('#confirmDeleteBtn').data('storedName', data.storedName);
+            $('#confirmDeleteBtn').data('storedName', data.storedName);
             deleteModal.show();
         });
 
         $('table.dataTable tbody').on('click', '.btn-viewjson', function () {
             const doc = $(this).data('doc');
-
-
             $.post('view_json.php', { doc: doc }, function(response) {
                 if (response.status === 'success') {
                     var jsonString = response.message;
@@ -232,7 +234,7 @@
 
                     viewJsonModal.show();
                 } else {
-                    alert('Error al borrar: ' + response.message);
+                    alert('Error al mostrar: ' + response.message);
                 }
             }, 'json').fail(function() {
                 alert('Error de comunicación con el servidor.');
@@ -246,7 +248,7 @@
 
         // Evento para el botón de CONFIRMAR BORRADO.
         $('#confirmDeleteBtn').on('click', function() {
-            const storedName = $(this).data('storedName');
+            const storedName = $(this).data('stored-name');
             
             $.post('delete_document.php', { stored_name: storedName }, function(response) {
                 if (response.status === 'success') {
