@@ -5,7 +5,7 @@ $response = ['status' => 'error', 'message' => 'Petición no válida.'];
 
 include ('includes/extractMetada.php'); 
 
-if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['stored_name'])) {
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['stored_name'])) {    
     $stored_name = $_POST['stored_name'];
     $dbFile = 'uploads/database.sqlite';
     $uploadDir = 'uploads/';
@@ -19,6 +19,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['stored_name'])) {
         echo json_encode($response);
         exit();
     }
+
+    
 
     try {
         $pdo = new PDO('sqlite:' . $dbFile);

@@ -5,16 +5,16 @@
             <!--<span class="text ms-2">Encoger</span> -->
         </div>
 
-        <nav class="nav flex-column flex-grow-1 p-3">
-            <a class="nav-link d-flex align-items-center active" href="index.php">
+        <nav class="nav flex-column flex-grow-1 p-3 " >
+            <a class="nav-link d-flex align-items-center active linkcolor"  href="index.php">
                 <i class="bi bi-house-door icon fs-5"></i>
                 <span class="text">Inicio</span>
             </a>
-            <a class="nav-link d-flex align-items-center" href="load.php">
+            <a class="nav-link d-flex align-items-center linkcolor" href="load.php">
                 <i class="bi bi-upload icon fs-5"></i>
                 <span class="text">Subir documento</span>
             </a>
-            <a class="nav-link d-flex align-items-center" href="list.php">
+            <a class="nav-link d-flex align-items-center linkcolor" href="list.php">
                 <i class="bi bi-card-list icon fs-5"></i>
                 <span class="text">Ver estado</span>
             </a>
