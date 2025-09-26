@@ -1,76 +1,62 @@
 import logging
-import os
-from dotenv import load_dotenv
-from flask import request
-from flask_restx import Namespace, Resource, fields
-from src.core.metadata_extractor import MetadataExtractor
+from flask import request # type: ignore
+from flask_restx import Namespace, Resource, fields # type: ignore
+
+from src.core.metadata_extractor.metadata_extractor import MetadataExtractor
 
 # -----------------------------
-# ✅ Cargar Variables de Entorno
+# Logger
 # -----------------------------
-load_dotenv()
-api_key = os.getenv("OPENAI_API_KEY")
-if not api_key:
-    raise ValueError(
-        "La variable de entorno OPENAI_API_KEY no está configurada")
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger("MetadataExtractorAPI")
 
 # -----------------------------
-# ✅ Configuración del Logger
+# Namespace Flask-Restx
 # -----------------------------
-logging.basicConfig(level=logging.DEBUG)
-logger = logging.getLogger('MetadataExtractor')
+api = Namespace("Metadata Extraction")
 
 # -----------------------------
-# ✅ Definición del Namespace en Flask-Restx
-# -----------------------------
-api = Namespace('Metadata Extraction')
-
-# -----------------------------
-# ✅ Definición del Modelo de Entrada para Swagger
+# Modelo de entrada (solo 'text')
 # -----------------------------
 metadata_model = api.model("MetadataRequest", {
     "text": fields.String(required=True, description="Texto a analizar")
 })
 
 # -----------------------------
-# ✅ Definición del Endpoint de Extracción de Metadatos
+# Endpoint
 # -----------------------------
-
-
-@api.route('/extract/')
+@api.route("/extract/")
 class ExtractMetadata(Resource):
-    @api.expect(metadata_model)  # 💡 Esto añade el input en Swagger
+    @api.expect(metadata_model)
     @api.doc(
         responses={
-            200: 'Success: Metadata extracted successfully',
-            400: 'Bad Request: Missing required parameters or invalid data',
-            502: 'Metadata extraction error',
+            200: "Success: Metadata extracted successfully",
+            400: "Bad Request: Missing or invalid 'text'",
+            502: "Metadata extraction error",
         }
     )
     def post(self):
-
         try:
-            # 🚀 Obtener datos directamente del JSON en el body
-            data = request.get_json()
+            data = request.get_json(silent=True) or {}
+            text = data.get("text", "")
 
-            # Validar que 'text' exista y sea un string
-            if not data or 'text' not in data or not isinstance(data['text'], str):
-                return {"error": "'text' must be a non-empty string"}, 400
+            if not isinstance(text, str) or not text.strip():
+                return {"error": "'text' debe ser un string no vacío"}, 400
 
-            text = data['text']
-
-            # Inicializar el extractor de metadatos
-            extractor = MetadataExtractor(api_key=api_key, logger=logger)
-
-            # Ejecutar la extracción de metadatos
+            # Solo Ollama. Host se toma de OLLAMA_HOST (o default) dentro del extractor.
+            extractor = MetadataExtractor(
+                ollama_llm="llama3.1",
+                ollama_embed_model="mxbai-embed-large",
+            )
             result = extractor.extract_metadata_from_text(text)
 
-            # ✅ Corregido: Devuelve el resultado sin usar jsonify()
+            # Si hubo error, devolver 502; si no, 200 con las tres claves
+            if "error" in result:
+                logger.error(f"Metadata extraction error: {result['error']}")
+                return result, 502
+
             return result, 200
 
         except Exception as e:
-            logger.error(f"❌ Metadata extraction error: {str(e)}")
-            return {
-                "status": 502,
-                "error": str(e)
-            }, 502
+            logger.exception(f"Metadata extraction exception: {e}")
+            return {"error": str(e)}, 502

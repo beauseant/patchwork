@@ -19,3 +19,13 @@
 /fuel/app/logs/*/*/*
 /fuel/app/cache/*/*
 /fuel/app/config/crypt.php
+
+# backend
+backend/solr-plugins/NP-solr-dist-plugin/NP-solr-dist-plugin.jar
+*mallet-2.0.8
+backend/data
+backend/db
+backend/np-tools/.env
+*cache*
+data
+.venv

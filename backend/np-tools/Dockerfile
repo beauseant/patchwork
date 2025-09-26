@@ -19,7 +19,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     apt-get update && apt-get install -y --no-install-recommends \
     openjdk-8-jdk \
     poppler-utils \
-    python3.12 python3.12-dev python3.12-venv python3-pip \
+    python3.10 python3.10-dev python3.10-venv python3-pip \
     git ant wget curl \
     libbz2-dev libffi-dev libgdbm-dev libncurses5-dev \
     libnss3-dev libreadline-dev libsqlite3-dev libssl-dev \
@@ -33,7 +33,7 @@ RUN update-alternatives --set java /usr/lib/jvm/java-8-openjdk-amd64/jre/bin/jav
 RUN java -version
 
 # Create and activate a Python virtual environment
-RUN python3.12 -m venv $VENV_PATH
+RUN python3.10 -m venv $VENV_PATH
 ENV PATH="$VENV_PATH/bin:$PATH"
 
 # Upgrade pip inside the virtual environment

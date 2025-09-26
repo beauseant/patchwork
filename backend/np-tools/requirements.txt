@@ -42,3 +42,8 @@ dspy==2.6.3
 bert_score
 ollama
 openpyxl
+langdetect
+ctranslate2
+pyonmttok
+llama-index-embeddings-huggingface
+llama-index-retrievers-bm25

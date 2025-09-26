@@ -1,0 +1,12 @@
+Recibirás secciones relevantes del documento técnico de una licitación pública española (CONTEXTO). Tu tarea es extraer el OBJETO del contrato a partir del contexto.
+
+- El OBJETO extraído debe ser un fragmento de texto que aparece literalmente en el documento. No lo resumas ni lo reformules.
+- Devuelve solo el texto tal y como aparece en el documento.
+- Si el objeto no está presente en el contexto, responde con una barra inclinada: '/'
+- Si hay múltiples menciones al objeto del contrato, elige la que describa la finalidad o actividad que se contratará (por ejemplo: "el servicio de mantenimiento de zonas verdes"), y descarta aquellas que solo expliquen el objeto del pliego o aspectos formales del documento (por ejemplo: "El objeto de este Pliego es establecer las condiciones técnicas…").
+
+### TU TAREA ###
+CONTEXTO:
+{context}
+
+OBJETO:

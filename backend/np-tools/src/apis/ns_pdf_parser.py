@@ -9,9 +9,8 @@ import logging
 import time
 import os
 from flask_restx import Namespace, Resource, reqparse
-from flask import request
 from werkzeug.datastructures import FileStorage
-from src.core.pdf_parser import PDFparser
+from src.core.pdf_extractor.src.pdf_parser import PDFParser
 
 logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger("PDFExtractor")
@@ -30,10 +29,13 @@ file_upload_parser.add_argument(
 )
 
 # ======================================================
-# Create PDF Parser object
+# Create PDF Parser object (once)
 # ======================================================
-pdf_parser = PDFparser(logger=logger)
-
+pdf_parser = PDFParser(
+    extract_header_footer=False,
+    generate_img_desc=False,
+    generate_table_desc=False,
+)
 
 @api.route("/extract_text/")
 class extract_text(Resource):
@@ -50,30 +52,35 @@ class extract_text(Resource):
         args = file_upload_parser.parse_args()
         uploaded_file = args["file"]
 
-        if not uploaded_file or not uploaded_file.filename.endswith(".pdf"):
+        if not uploaded_file or not uploaded_file.filename.lower().endswith(".pdf"):
             return {"error": "Invalid file. Please upload a valid PDF."}, 400
+
+        temp_dir = "/tmp"
+        temp_pdf_path = os.path.join(temp_dir, uploaded_file.filename)
 
         try:
             # Save file temporarily
-            temp_dir = "/tmp"
-            temp_pdf_path = os.path.join(temp_dir, uploaded_file.filename)
             uploaded_file.save(temp_pdf_path)
 
-            # Extract text from PDF
-            extracted_text = pdf_parser.parse(temp_pdf_path)
+            # Extract text
+            raw_text = pdf_parser.extract_raw_text(temp_pdf_path, base_output_dir=temp_dir)
 
-            end_time = time.time() - start_time
+            elapsed = time.time() - start_time
             response = {
-                "responseHeader": {"status": 200, "time": end_time},
-                "response": {"text": extracted_text},
+                "responseHeader": {"status": 200, "time": elapsed},
+                "response": {"text": raw_text},
             }
             logger.info("Text extracted successfully")
-            
-            # Clean up temporary file
-            os.remove(temp_pdf_path)
-            
             return response, 200
 
         except Exception as e:
-            logger.error(f"Error extracting text: {str(e)}")
+            logger.error(f"Error extracting text: {str(e)}", exc_info=True)
             return {"error": "Failed to process the PDF", "details": str(e)}, 500
+
+        finally:
+            # Clean up temporary file
+            try:
+                if os.path.exists(temp_pdf_path):
+                    os.remove(temp_pdf_path)
+            except Exception:
+                logger.warning("Failed to remove temporary file: %s", temp_pdf_path)

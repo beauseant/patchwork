@@ -1,8 +1,8 @@
 import logging
 import time
-from flask import request
-from flask_restx import Namespace, Resource, fields
-from src.core.objective_parser import ObjectiveParser
+from flask import request # type: ignore
+from flask_restx import Namespace, Resource, fields # type: ignore
+from src.core.objective_extractor.extract import ObjectiveExtractor 
 
 # ======================================================
 # Logging Configuration
@@ -23,13 +23,13 @@ objective_extractor_model = api.model("ObjectiveExtractor", {
 })
 
 # ======================================================
-# Create Objective Parser Object
+# Create Objective Extractor Object (heavy init once)
 # ======================================================
-objective_parser = ObjectiveParser(logger=logger)
+extractor = ObjectiveExtractor(logger=logger)
 
 @api.route("/extract/")
 class Extract(Resource):
-    @api.expect(objective_extractor_model)  # This tells Swagger to expect JSON input
+    @api.expect(objective_extractor_model)
     @api.doc(
         responses={
             200: "Success: Objectives extracted successfully",
@@ -46,18 +46,18 @@ class Extract(Resource):
 
             if not data or "text" not in data:
                 return {"error": "Invalid input. Please provide a 'text' field in JSON."}, 400
-            
+
             logger.info("Received input for objective extraction")
 
-            input_text = data["text"].strip()
-            
-            logger.info(f"Input text: {input_text}")
+            input_text = (data["text"] or "").strip()
+
+            # avoid logging entire long payloads
+            logger.debug(f"Input text (preview): {input_text[:500]}{'...' if len(input_text) > 500 else ''}")
 
             if not input_text:
                 return {"error": "Invalid input. Please provide non-empty text."}, 400
 
-            # Extract objectives from text
-            extracted_objectives = objective_parser.parse(input_text)
+            extracted_objectives = {"extracted_objective": extractor.extract_extractive(input_text)}
 
             end_time = time.time() - start_time
             response = {
@@ -69,43 +69,5 @@ class Extract(Resource):
             return response, 200
 
         except Exception as e:
-            logger.error(f"Error extracting objectives: {str(e)}")
+            logger.error(f"Error extracting objectives: {str(e)}", exc_info=True)
             return {"error": "Failed to process the text", "details": str(e)}, 500
-
-
-"""
-@api.route("/extract/")
-class extract(Resource):
-    @api.doc(
-        parser=text_parser,
-        responses={
-            200: "Success: Objectives extracted successfully",
-            400: "Bad Request: Invalid input",
-            500: "Server Error: Failed to process the text",
-        },
-    )
-    def post(self):
-        start_time = time.time()
-        args = text_parser.parse_args()
-        input_text = args["text"]
-
-        if not input_text.strip():
-            return {"error": "Invalid input. Please provide non-empty text."}, 400
-
-        try:
-            # Extract objectives from text
-            extracted_objectives = objective_parser.parse(input_text)
-
-            end_time = time.time() - start_time
-            response = {
-                "responseHeader": {"status": 200, "time": end_time},
-                "response": extracted_objectives,
-            }
-            logger.info("Objectives extracted successfully")
-            
-            return response, 200
-
-        except Exception as e:
-            logger.error(f"Error extracting objectives: {str(e)}")
-            return {"error": "Failed to process the text", "details": str(e)}, 500
-"""

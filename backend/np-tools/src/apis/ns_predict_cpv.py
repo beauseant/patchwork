@@ -1,74 +1,94 @@
+# src/api/ns_predict_cpv8.py
+
 import time
 import logging
-import os
-from dotenv import load_dotenv
+from typing import List
 from flask import request
 from flask_restx import Namespace, Resource, reqparse
-from src.core.cpv_classifier_5 import CPVClassifierOpenAI
+from src.core.cpv_classifier.cpv_classifier_8 import CPV8ClassifierHF
 
-load_dotenv()  
-api_key = os.getenv("OPENAI_API_KEY")
-if not api_key:
-    raise ValueError("The OpenAI API key is missing. Please set it in the .env file.")
+HF_REPO_ID = "erick4556/cpv8-bert-spanish-ft"
 
-logging.basicConfig(level=logging.DEBUG)
-logger = logging.getLogger('PredictCpv')
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger("CPV8Predict")
+logger.setLevel(logging.INFO)
 
-api = Namespace('CPV Prediction')
+api = Namespace(name="Cpv Prediction - 8 digits")
 
 cpv_parser = reqparse.RequestParser()
-cpv_parser.add_argument("texts", help="Text(s) to predict CPV codes", action='split', required=True)
+cpv_parser.add_argument(
+    "texts", help="Text(s) to predict CPV-8 codes", action="split", required=False)
 
-@api.route('/predict')
-class predict(Resource):
+# Inicializa el modelo una sola vez
+try:
+    classifier = CPV8ClassifierHF(
+        repo_id=HF_REPO_ID,
+        device=None,          
+        default_threshold=0.80,
+        hf_local_dir="/models/cpv8"
+    )
+    logger.info("CPV8ClassifierHF inicializado correctamente.")
+except Exception as e:
+    logger.exception(f"Error inicializando CPV8ClassifierHF: {e}")
+    classifier = None
+
+
+def _extract_texts_from_request() -> List[str]:
+    # JSON: {"texts": [...]}
+    if request.is_json:
+        data = request.get_json(silent=True) or {}
+        texts = data.get("texts")
+        if isinstance(texts, list):
+            return [str(t) for t in texts if str(t).strip()]
+        elif isinstance(texts, str) and texts.strip():
+            return [texts.strip()]
+    # form-data/query
+    args = cpv_parser.parse_args()
+    texts = args.get("texts")
+    if isinstance(texts, list) and len(texts) > 0:
+        return [str(t).strip() for t in texts if str(t).strip()]
+    return []
+
+
+@api.route("/predict")
+class Predict(Resource):
     @api.doc(
         parser=cpv_parser,
         responses={
-            200: 'Success: CPV code generated successfully',
-            400: 'Bad Request: Missing required parameters',
-            502: 'CPV code generation error',
-        }
+            200: "Success",
+            400: "Bad Request",
+            502: "Model not available or prediction error",
+        },
     )
     def post(self):
         start_time = time.time()
 
-        args = cpv_parser.parse_args()
-        texts = args['texts']
+        if classifier is None:
+            return {"status": 502, "error": "Modelo no inicializado."}, 502
 
-        # Ensure texts is always a list
-        if not isinstance(texts, list):
-            texts = [texts]
-
-        # Initialize CPVClassifierOpenAI with the provided API key
-        cpv_classifier = CPVClassifierOpenAI(api_key, logger=logger)
+        texts = _extract_texts_from_request()
+        if not texts:
+            return {"status": 400, "error": "Debes enviar 'texts' como lista en JSON o form-data."}, 400
 
         try:
-            results = []
-            for text in texts:
-                prediction = cpv_classifier.predict_cpv_code(text)
-                results.append({
-                    "text": text,
-                    "cpv_code": prediction["cpv_predicted"] if prediction else None
-                })
-
-            execution_time = round(time.time() - start_time, 2)
-
-            response = {
+            results = classifier.predict_batch(texts)
+            payload = [
+                {
+                    "text": r.get("original_text", ""),
+                    "cpv_code": r.get("cpv_predicted", None)
+                }
+                for r in results
+            ]
+            return {
                 "status": 200,
-                "execution_time_seconds": execution_time,
-                "predictions": results
-            }
-
-            logger.info(f"CPV code(s) generated successfully: {results}")
-            return response, 200
-
+                "count": len(payload),
+                "execution_time_seconds": round(time.time() - start_time, 3),
+                "predictions": payload
+            }, 200
         except Exception as e:
-            execution_time = round(time.time() - start_time, 2)
-            logger.error(f"CPV code generation error: {str(e)}")
-
-            response = {
+            logger.exception(f"Error en predicción CPV-8: {e}")
+            return {
                 "status": 502,
-                "execution_time_seconds": execution_time,
-                "error": str(e)
-            }
-            return response, 502
+                "error": str(e),
+                "execution_time_seconds": round(time.time() - start_time, 3),
+            }, 502

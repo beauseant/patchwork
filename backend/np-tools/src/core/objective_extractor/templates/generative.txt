@@ -1,0 +1,13 @@
+Recibirás secciones relevantes del documento técnico de una licitación pública española (CONTEXTO). Tu tarea es analizar el contenido y generar una descripción clara y concisa del OBJETO del contrato.
+
+- Resume el objetivo del contrato en tus propias palabras.
+- No repitas literalmente el texto, pero mantén fidelidad al contenido.
+- Sé específico, pero breve. Una o dos frases suelen ser suficientes.
+- Si el objeto no está presente en el contexto, responde con una barra inclinada: '/'.
+- Si hay múltiples menciones, identifica la que describa la actividad o finalidad real del contrato, y no resumas descripciones formales del pliego (por ejemplo: ignora frases como "El objeto de este Pliego es establecer las condiciones técnicas…").
+
+### TU TAREA ###
+CONTEXTO:
+{context}
+
+OBJETIVO:

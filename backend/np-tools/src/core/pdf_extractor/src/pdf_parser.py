@@ -49,7 +49,7 @@ import os
 import pathlib
 import re
 import time
-from typing import Tuple
+from typing import Any, Dict, List, Tuple, Union
 
 import fitz
 import pandas as pd
@@ -63,9 +63,9 @@ from openai import OpenAI
 from pdf2image import convert_from_path
 from pdfminer.high_level import extract_pages
 from pdfminer.layout import LTFigure, LTPage, LTTextContainer
-from src.image_descriptor import ImageDescriptor
-from src.multi_column import column_boxes
-from src.utils import compare
+from src.core.pdf_extractor.src.image_descriptor import ImageDescriptor
+from src.core.pdf_extractor.src.multi_column import column_boxes
+from src.core.pdf_extractor.src.utils import compare
 from tqdm import tqdm
 
 
@@ -907,3 +907,34 @@ class PDFParser(object):
             json.dump(document_json, json_file, indent=2, ensure_ascii=False)
 
         return document_json
+
+    def extract_raw_text(self, pdf_path: Union[str, pathlib.Path], base_output_dir: Union[str, pathlib.Path]) -> str:
+        """
+        High-level helper: parse the PDF and return a single raw-text string.
+        It also ensures the usual output folders exist (like processOnePDF did).
+
+        - Creates <base_output_dir>/<pdf_stem>/
+        - Creates images/ and tables/ subfolders
+        - Calls self.parse(...)
+        - Flattens the document structure into raw text
+        """
+        pdf_file = pathlib.Path(pdf_path)
+        path_save = pathlib.Path(base_output_dir) / pdf_file.stem
+
+        path_save.mkdir(parents=True, exist_ok=True)
+        (path_save / "images").mkdir(parents=True, exist_ok=True)
+        (path_save / "tables").mkdir(parents=True, exist_ok=True)
+
+        # parse using your existing method
+        document = self.parse(pdf_path=pdf_file, path_save=path_save)
+
+        # flatten into raw text
+        def _get_pages(pages: List[Dict[str, Any]]) -> List[str]:
+            return [p["element_content"] for p in pages]
+
+        page_chunks = []
+        for page in document.get("pages", []):
+            page_chunks.extend(_get_pages(page.get("content", [])))
+
+        raw_text = " ".join(str(chunk) for chunk in page_chunks)
+        return raw_text

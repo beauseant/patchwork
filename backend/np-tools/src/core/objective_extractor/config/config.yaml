@@ -1,0 +1,96 @@
+################################
+#     LOGGING CONFIGURATION    #
+################################
+logger:
+  dir_logger: data/logs
+  console_log: True
+  file_log: True
+  log_level: INFO
+  logger_name: theta-eval
+  N_log_keep: 5 #maximum number of log files to keep
+
+################################
+#   EXTRACTOR CONFIGURATION    #
+################################
+extractor:
+  calculate_on: texto_administrativo # texto_tecnico
+  chunk_size: 512
+  chunk_overlap: 64
+  embedding_model: paraphrase-multilingual-MiniLM-L12-v2
+  translation_model: projecte-aina/aina-translator-ca-es
+  top_k: 20
+  max_k: 10
+  min_k: 3
+  fusion_alpha: 0.5
+  llm_model_type: llama3.1:8b
+  llm_model_type_gen: mixtral:8x22b
+  llm_model_type_ex: falcon3:10b-instruct-fp16
+  templates:
+    extractive: /np-tools/src/core/objective_extractor/templates/extractive.txt
+    generative: /np-tools/src/core/objective_extractor/templates/generative.txt
+
+################################
+#   LLM CONFIGURATION      #
+################################
+llm:
+  parameters:
+    temperature: 0
+    top_p: 0.1
+    frequency_penalty: 0.0
+    seed: 1234
+  gpt:
+    available_models:
+      {
+        "gpt-4o-2024-08-06",
+        "gpt-4o-mini-2024-07-18",
+        "chatgpt-4o-latest",
+        "gpt-4-turbo",
+        "gpt-4-turbo-2024-04-09",
+        "gpt-4",
+        "gpt-3.5-turbo",
+        "gpt-4o-mini",
+        "gpt-4o",
+        "gpt-4-32k",
+        "gpt-4-0125-preview",
+        "gpt-4-1106-preview",
+        "gpt-4-vision-preview",
+        "gpt-3.5-turbo-0125",
+        "gpt-3.5-turbo-instruct",
+        "gpt-3.5-turbo-1106",
+        "gpt-3.5-turbo-0613",
+        "gpt-3.5-turbo-16k-0613",
+        "gpt-3.5-turbo-0301",
+      }
+    path_api_key: .env
+  ollama:
+    available_models: {
+      "mixtral:8x22b",
+      "falcon3:10b-instruct-fp16",
+      "qwen3:8b",
+      "llama3.2",
+      "llama3.1:8b-instruct-q8_0",
+      "qwen:32b",
+      "llama3.3:70b",
+      "llama3.1:8b",
+      "deepseek-v3:latest"
+    }
+    host: http://kumo01.tsc.uc3m.es:11434
+  vllm:
+    available_models: {
+      "Qwen/Qwen3-8B",
+      "Qwen/Qwen3-0.6B",
+      "meta-llama/Llama-3.3-70B-Instruct",
+      "meta-llama/Meta-Llama-3.1-8B-Instruct",
+      "casperhansen/llama-3.3-70b-instruct-awq",
+      "Qwen/Qwen2.5-72B-Instruct-AWQ",
+      "Qwen/Qwen2.5-32B-Instruct-GPTQ-Int8",
+      "Qwen/Qwen2.5-32B-Instruct",
+      "Qwen/Qwen2.5-7B-Instruct",
+      "Qwen/Qwen3-32B-FP8",
+      "Qwen/Qwen3-32B",
+      "Qwen/Qwen2.5-32B-Instruct",
+      "Qwen/Qwen3-30B-A3B"
+    }
+    host: http://localhost:8000/v1
+  llama_cpp:
+    host: http://kumo01:11435/v1/chat/completions
