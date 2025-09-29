@@ -2,7 +2,8 @@
 FROM php:8.2-apache
 
 RUN apt-get update  && apt-get install -y \
-    poppler-utils
+    poppler-utils \
+    jq
 
 
 # Instalar extensiones necesarias y activar mod_rewrite

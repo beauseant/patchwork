@@ -42,12 +42,13 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             $newFileName = $fileMD5 . '.' . $fileExtension;
             $destPath = $uploadDir . $newFileName;
             
+
+
             // **CAMBIO 1: Mapa para traducir los valores de los checkboxes a texto legible**
             $metadataMap = [
                 'criterios_adjudicacion' => 'Criterios de adjudicación',
                 'solvencia' => 'Solvencia económica y técnica',
                 'condiciones_ejecucion' => 'Condiciones de ejecución especiales',
-                'condiciones_desempate' => 'Condiciones de desempate',
                 'objeto_contrato' => 'Objeto del contrato',
                 'cpv' => 'CPV'
             ];
@@ -118,6 +119,10 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                                     }
                                     if ($key == 'cpv' ){  
                                         exec( getcwd() . '/scripts/extractCPV.sh ' . getcwd() . '/'. $destPath  . '> /dev/null &'); // no $output                                        
+                                    }                                    
+
+                                    if ($key == 'criterios_adjudicacion' || $key == 'solvencia' || $key == 'condiciones_ejecucion' ){  
+                                        exec( getcwd() . '/scripts/extractCriterios.sh ' . getcwd() . '/'. $destPath  . '> /dev/null &'); // no $output                                        
                                     }                                    
 
                                     $stmtMeta->execute([

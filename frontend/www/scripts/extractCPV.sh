@@ -24,7 +24,7 @@ echo $FICHERO_A_ESPERAR
 
 
 # --- Configuración ---
-TIMEOUT_MINUTOS=1
+TIMEOUT_MINUTOS=5
 # ---------------------
 
 # Convertimos el timeout de minutos a segundos para la comparación
@@ -43,7 +43,10 @@ while true; do
     if [ -f "$FICHERO_A_ESPERAR" ]; then
         echo "" # Salto de línea para un formato limpio
         echo "✅ ¡Fichero encontrado en '${FICHERO_A_ESPERAR}'!"     
-        TEXTO=$(<$FICHERO_A_ESPERAR)     
+        TEXTO=$(<$FICHERO_A_ESPERAR) 
+        TEXTO="{\"text\":\"${TEXTO}\"}"
+
+        echo $TEXTO
         curl -X 'POST' \
             "${SERVIDOR}/cpv/predict"  \
             -H 'accept: application/json' \
@@ -63,6 +66,8 @@ while true; do
                 touch "${CPV}/error_rest"
             else
                 echo "No se encontró el error en '$CPVFILE'. El archivo no ha sido modificado."
+                #cat   $CPVFILE   | jq -r '.response.cpv_code' > "${CPVFILE}.tmp" && mv "${CPVFILE}.tmp" "$CPVFILE"
+                jq '.response | "cpv: \(.cpv_code) (\(.probability |  tostring))"' $CPVFILE  > "${CPVFILE}.tmp" && mv "${CPVFILE}.tmp" "$CPVFILE"
                 touch "${CPV}/finalizado"
             fi
         else

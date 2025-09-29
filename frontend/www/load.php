@@ -204,6 +204,7 @@ document.addEventListener('DOMContentLoaded', function () {
         <label class="form-label">**3. Elige los datos a extraer (Administrativo):**</label>
         <div class="form-check"><input class="form-check-input" type="checkbox" name="datosAExtraer[]" value="criterios_adjudicacion" id="check1" ><label class="form-check-label" for="check1">Criterios de adjudicación</label></div>
         <div class="form-check"><input class="form-check-input" type="checkbox" name="datosAExtraer[]" value="solvencia" id="check2"><label class="form-check-label" for="check2">Solvencia económica y técnica</label></div>
+        <div class="form-check"><input class="form-check-input" type="checkbox" name="datosAExtraer[]" value="condiciones_ejecucion" id="check3"><label class="form-check-label" for="check3">Condiciones de ejecución especiales</label></div>
     `;
     document.getElementById('opcionesTecnico').innerHTML = `
         <label class="form-label">**3. Elige los datos a extraer (Técnico):**</label>

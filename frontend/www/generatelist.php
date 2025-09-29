@@ -62,20 +62,40 @@ try {
                 #Actualizamos el objeto del contrato si es la primera vez que se solicita.
                 #para las siguientes ya s ha grabado en la base de datos:           
                 #error_log ( in_array ('color' , $estado), 3, '/tmp/log');     
-                if (  ( $meta['key'] == 'Objeto del contrato') && ( in_array ($meta['value'] , $estado) ))    {
-                    #error_log ($meta['key'], 3, '/tmp/log');
-                    #error_log ($meta['value'], 3, '/tmp/log');
-                    $objetoC = checkMetadato ($doc['stored_name'], 'OBJ');
+                if (  ( $meta['key'] == 'Objeto del contrato') && ( in_array ($meta['value'] , $estado) ))    {        
+                    $objetoC = checkMetadato ($doc['stored_name'], 'OBJ'); 
+                    #$data = implode(",", $objetoC);
                     $meta['value'] = $objetoC;
+                    #error_log ($data, 3, '/tmp/log');                    
                     $rst = $pdo->query('UPDATE metadatos SET metadata_value="' . $objetoC . '" WHERE document_id='. $doc['document_id'] .' AND metadata_key="Objeto del contrato"');
                 }
+                if (( $meta['key'] == 'CPV') && ( in_array ($meta['value'] , $estado))) {                    
+                    $objetoCPV = checkMetadato ($doc['stored_name'], 'CPV');                                        
+                    $objetoCPV  = str_replace('"','',$objetoCPV);
 
-                if (( $meta['key'] == 'CPV') && ( in_array ($meta['value'] , $estado))){                    
-                    $objetoC = checkMetadato ($doc['stored_name'], 'CPV');
-                    $meta['value'] = $objetoC;
-                    $rst = $pdo->query('UPDATE metadatos SET metadata_value="' . $objetoC . '" WHERE document_id='. $doc['document_id'] .' AND metadata_key="CPV"');
-                }               
-                $metadata_html .= '<li><strong>' . htmlspecialchars($meta['key'], ENT_QUOTES, 'UTF-8') . ':</strong> ' . htmlspecialchars($meta['value'], ENT_QUOTES, 'UTF-8') . '</li>';
+                    $meta['value'] = $objetoCPV;
+                    $rst = $pdo->query('UPDATE metadatos SET metadata_value="' . $objetoCPV . '" WHERE document_id='. $doc['document_id'] .' AND metadata_key="CPV"');
+                }
+                
+                if (( $meta['key'] == 'Criterios de adjudicación' ) && ( in_array ($meta['value'] , $estado))){                    
+                    $criterio = checkMetadato ($doc['stored_name'], 'CRITADJ');
+                    $meta['value'] = $criterio;   
+                    $meta['value'] = $criterio;                                     
+                    $rst = $pdo->query('UPDATE metadatos SET metadata_value="' . $criterio . '" WHERE document_id='. $doc['document_id'] .' AND metadata_key="Criterios de adjudicación"');
+                }
+                if (( $meta['key'] == 'Solvencia económica y técnica' ) && ( in_array ($meta['value'] , $estado))){  
+                    $criterio = checkMetadato ($doc['stored_name'], 'CRITSOL');                  
+                    $meta['value'] = $criterio;            
+                    $rst = $pdo->query('UPDATE metadatos SET metadata_value="' . $criterio . '" WHERE document_id='. $doc['document_id'] .' AND metadata_key="Solvencia económica y técnica"');        
+                }
+
+                if (( $meta['key'] == 'Condiciones de ejecución especiales' ) && ( in_array ($meta['value'] , $estado))){                    
+                    $criterio = checkMetadato ($doc['stored_name'], 'CRITESP');          
+                    $meta['value'] = $criterio;                    
+                    $rst = $pdo->query('UPDATE metadatos SET metadata_value="' . $criterio . '" WHERE document_id='. $doc['document_id'] .' AND metadata_key="Condiciones de ejecución especiales"');        
+                }             
+
+                $metadata_html .= '<li><strong>' . htmlspecialchars($meta['key'], ENT_QUOTES, 'UTF-8') . ':</strong> ' . htmlspecialchars(mb_strimwidth( $meta['value'],0,60,'...'), ENT_QUOTES, 'UTF-8') . '</li>';
             }
             $metadata_html .= '</ul>';
         } else {
@@ -89,12 +109,12 @@ try {
                             data-upload-date="' . $formatted_date . '"
                             data-doc-type="' . htmlspecialchars($doc['doc_type'], ENT_QUOTES, 'UTF-8') . '"
                             data-metadata=\'' . htmlspecialchars(json_encode($doc['metadata']), ENT_QUOTES, 'UTF-8') . '\'>
-                            Ver
+                            <i class="bi bi-arrow-down-right-circle icon fs-5"></i>
                          </button>                        
                          <button class="btn btn-outline-danger btn-delete"
                             data-stored-name="' . htmlspecialchars($doc['stored_name'], ENT_QUOTES, 'UTF-8') . '"
                             data-original-name="' . htmlspecialchars($doc['original_name'], ENT_QUOTES, 'UTF-8') . '">
-                            Borrar
+                            <i class="bi bi-trash icon fs-5"></i>
                          </button>';
 
         // Construir el objeto de la fila para DataTables
@@ -114,6 +134,7 @@ try {
             $data_tecnicos[] = $rowData;
         }
     }
+
     #error_log ( 'y', 3, '/tmp/log'); 
     // 4. Devolver la estructura JSON final que DataTables espera
     echo json_encode([

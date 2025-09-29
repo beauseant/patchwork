@@ -68,7 +68,6 @@ function checkExtractText ( $doc  ){
 
 
 function readJsonMetadata ( $file ){
-
     $json = file_get_contents($file);
     if ($json === false) {
         die('Error reading the JSON file');
@@ -78,7 +77,6 @@ function readJsonMetadata ( $file ){
     if ($json_data === null) {
         die('Error decoding the JSON file');
     }
-
     return $json_data['response'];
 }
 
@@ -98,40 +96,58 @@ function checkMetadato ( $doc, $tipo  ){
             $dir = $dir . '/obj/';
             $filedata = $dir . '/obj.txt';
             break;
+        case "CRITADJ":
+            $dir = $dir . '/criterios/';
+            $filedata = $dir . '/adj.txt';
+            break;
+        case "CRITSOL":
+            $dir = $dir . '/criterios/';
+            $filedata = $dir . '/sol.txt';
+            break;
+
+        case "CRITESP":
+            $dir = $dir . '/criterios/';
+            $filedata = $dir . '/esp.txt';
+            break;            
+
     }
 
     $dir  = $uploadDir . '/' .  $dir;    
     $filedata = $uploadDir . '/' .  $filedata;
+    
+    $error = false;
 
     if (is_dir($dir )){
         $salida = 'PROCESANDO';
     }
     if (is_file( $dir . 'error')){
         $salida = 'ERROR';
+        $error = true;
     }  
 
     if (is_file($dir .  'error_curl')){
         $salida = 'ERROR SERVIDOR';
+        $error = true;
     }        
 
     if (is_file( $dir . 'error_rest')){
         $salida = 'ERROR REST';
+        $error = true;
     }     
     
     if (is_file( $dir . 'error_timeout')){
         $salida = 'ERROR TIMEOUT';
+        $error = true;
     }  
-
-    if (is_file($filedata )){
-        $salida = readJsonMetadata ($filedata);
+    if (is_file($filedata ) && $error == false ){
+        #$salida = readJsonMetadata ($filedata);
+        $salida = file_get_contents($filedata);
         #$salida = file_get_contents ($filedata, true);
         #$salida = 'contenido';
     }  
     if ($salida==''){
         $salida = '-';
     }
-
-    
     return $salida;
 }
 

@@ -13,9 +13,12 @@ fi
 
 DIR_NAME="data/"$(basename "$1" .pdf)
 FILE_NAME=$(basename "$1")
-CPV="$DIR_NAME/cpv"
-CPVFILE="$DIR_NAME/cpv/cpv.txt"
-FICHERO_A_ESPERAR="$DIR_NAME/obj/obj.txt"
+CRIT="$DIR_NAME/criterios"
+CRITFILE="$DIR_NAME/criterios/crit.txt"
+CRITFILEADJ="$DIR_NAME/criterios/adj.txt"
+CRITFILESOL="$DIR_NAME/criterios/sol.txt"
+CRITFILEESP="$DIR_NAME/criterios/esp.txt"
+FICHERO_A_ESPERAR="$DIR_NAME/$FILE_NAME.txt_text.json"
 SERVIDOR=$(<servidor.cnf)
 
 
@@ -24,7 +27,7 @@ echo $FICHERO_A_ESPERAR
 
 
 # --- Configuración ---
-TIMEOUT_MINUTOS=1
+TIMEOUT_MINUTOS=5
 # ---------------------
 
 # Convertimos el timeout de minutos a segundos para la comparación
@@ -37,37 +40,40 @@ echo "⏳ Esperando a que se cree el fichero '${FICHERO_A_ESPERAR}'..."
 echo "   (Timeout: ${TIMEOUT_MINUTOS} minutos)"
 
 # Bucle infinito que romperemos nosotros desde dentro
-mkdir $CPV
+mkdir $CRIT
 while true; do
     # PRIMERA COMPROBACIÓN: ¿Existe el fichero?
     if [ -f "$FICHERO_A_ESPERAR" ]; then
         echo "" # Salto de línea para un formato limpio
-        echo "✅ ¡Fichero encontrado en '${FICHERO_A_ESPERAR}'!"        
+        echo "✅ ¡Fichero encontrado en '${FICHERO_A_ESPERAR}'!"     
+        TEXTO=$(<$FICHERO_A_ESPERAR)      
         curl -X 'POST' \
-            "${SERVIDOR}/pdf/extract_text/"  \
+            "${SERVIDOR}/metadata/extract/" \
             -H 'accept: application/json' \
             -H 'Content-Type: application/json' \
-            -d @/'tmp/datos.json' \
-            -d "file=@${FICHERO_A_ESPERAR};type=application/pdf" \
-            -o "${CPVFILE}"\
-
+            -d "${TEXTO}" \
+            -o "${CRITFILE}"\
 
         if [ $? -eq 0 ]; then
             #el curl puede terminar bien, pero contener un mensaje tipo     "error": "Failed to process the text",
             #si es así se borra el fichero:        
-            if grep -qF "Failed to process the text" "$CPVFILE"; then
-                echo "Error encontrado en '$CPVFILE'. Borrando el archivo..."
-                rm "$CPVFILE"
+            if grep -qF "error" "$CRITFILE"; then
+                echo "Error encontrado en '$CRITFILE'. Borrando el archivo..."
+                rm "$CRITFILE"
                 echo "Archivo borrado."
-                touch "${CPV}/error"
-                touch "${CPV}/error_rest"
+                touch "${CRIT}/error"
+                touch "${CRIT}/error_rest"
             else
-                echo "No se encontró el error en '$CPVFILE'. El archivo no ha sido modificado."
-                touch "${CPV}/finalizado"
+                echo "No se encontró el error en '$CRITFILE'. El archivo no ha sido modificado."
+                cat "$CRITFILE" | jq -r '.criterios_adjudicacion' > "${CRITFILEADJ}"
+                cat "$CRITFILE" | jq -r '.criterios_solvencia' > "${CRITFILESOL}"
+                cat "$CRITFILE" | jq -r '.condiciones_especiales' > "${CRITFILEESP}"
+                touch "${CRIT}/finalizado"
+
             fi
         else
-            touch "${CPV}/error"
-            touch "${CPV}/error_curl"
+            touch "${CRIT}/error"
+            touch "${CRIT}/error_curl"
 
         fi
         exit 0 # Termina el script con éxito
@@ -81,8 +87,8 @@ while true; do
         echo "" # Salto de línea
         echo "🚨 ERROR: Se ha superado el tiempo de espera de ${TIMEOUT_MINUTOS} minutos."
         echo "   El fichero '${FICHERO_A_ESPERAR}' no fue creado a tiempo."
-        touch "${CPV}/error"
-        touch "${CPV}/error_timeout"        
+        touch "${CRIT}/error"
+        touch "${CRIT}/error_timeout"        
         #rm -f /tmp/datos.json
         exit 1 # Termina el script con un código de error
     fi

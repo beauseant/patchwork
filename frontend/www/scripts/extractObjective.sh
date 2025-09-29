@@ -25,7 +25,7 @@ echo $FICHERO_A_ESPERAR
 
 
 # --- Configuración ---
-TIMEOUT_MINUTOS=1
+TIMEOUT_MINUTOS=5
 # ---------------------
 
 # Convertimos el timeout de minutos a segundos para la comparación
@@ -45,7 +45,6 @@ while true; do
         echo "" # Salto de línea para un formato limpio
         echo "✅ ¡Fichero encontrado en '${FICHERO_A_ESPERAR}'!"     
         TEXTO=$(<$FICHERO_A_ESPERAR)   
-        echo $TEXTO
         curl -X 'POST' \
             "${SERVIDOR}/objective/extract/" \
             -H 'accept: application/json' \
@@ -57,7 +56,7 @@ while true; do
         if [ $? -eq 0 ]; then
             #el curl puede terminar bien, pero contener un mensaje tipo     "error": "Failed to process the text",
             #si es así se borra el fichero:        
-            if grep -qF "Failed to process the text" "$OBJFILE"; then
+            if jq -e ".error" "$CRITFILE" > /dev/null 2>&1; then
                 echo "Error encontrado en '$OBJFILE'. Borrando el archivo..."
                 rm "$OBJFILE"
                 echo "Archivo borrado."
@@ -65,7 +64,9 @@ while true; do
                 touch "${OBJ}/error_rest"                
             else
                 echo "No se encontró el error en '$OBJFILE'. El archivo no ha sido modificado."
-                touch "${OBJ}/finalizado"
+                touch "${OBJ}/finalizado"                
+                cat   $OBJFILE   | jq -r '.response.extracted_objective' > "${OBJFILE}.tmp" && mv "${OBJFILE}.tmp" "$OBJFILE"
+
             fi
         else
             touch "${OBJ}/error"
@@ -74,6 +75,7 @@ while true; do
         fi
         exit 0 # Termina el script con éxito
     fi
+
 
 
     # SEGUNDA COMPROBACIÓN: ¿Ha pasado el tiempo de timeout?

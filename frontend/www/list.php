@@ -154,7 +154,8 @@
                 url: 'https://cdn.datatables.net/plug-ins/2.0.8/i18n/es-ES.json'
             },
             responsive: true,
-            destroy: true 
+            destroy: true ,
+            dom: 'rt<"bottom"lp><"clear">',
         };
 
         // Inicializar la tabla de Documentos Administrativos.

@@ -5,7 +5,10 @@ $response = ['status' => 'error', 'message' => 'Petición no válida.'];
 
 include ('includes/extractMetada.php'); 
 
-if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['stored_name'])) {    
+
+
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['stored_name'])) {  
+
     $stored_name = $_POST['stored_name'];
     $dbFile = 'uploads/database.sqlite';
     $uploadDir = 'uploads/';
@@ -20,9 +23,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['stored_name'])) {
         exit();
     }
 
-    
-
     try {
+        
         $pdo = new PDO('sqlite:' . $dbFile);
         $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
 
@@ -50,7 +52,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['stored_name'])) {
         // 4. Si todo ha ido bien en la BBDD, confirmar la transacción
         $pdo->commit();
 
+        
         // 5. Ahora, borrar el archivo físico del servidor
+        
         if (file_exists($filePath)) {
             unlink($filePath);
         }
