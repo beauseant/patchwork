@@ -150,7 +150,7 @@ class CPV8ClassifierHF:
         if not (code.isdigit() and len(code) == 8):
             self.logger.warning(
                 f"Etiqueta no es 8 dígitos: '{code}' (revisa labels.json)")
-        return {"original_text": text, "cpv_predicted": code}
+        return {"original_text": text, "cpv_predicted": code, "prob": prob}
 
     def predict_batch(self, texts: List[str]) -> List[Dict[str, str]]:
         """
