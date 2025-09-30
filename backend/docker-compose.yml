@@ -12,15 +12,15 @@ services:
     ports:
       - 9083:82
     environment:
-      SOLR_URL: http://solr:9085
-      NP_TOOLS_URL: http://np-tools:9084
+      SOLR_URL: http://solr:8983
+      NP_TOOLS_URL: http://np-tools:102
     depends_on:
       - solr
       - np-tools
     #networks:
     #  - np-net
     volumes:
-      - ./data/source:/data/source
+      - ../data:/data/source
       - ./np-config:/config
     deploy:
       resources:
@@ -42,7 +42,7 @@ services:
     #networks:
     #  - np-net
     volumes:
-      - ./data/source:/data/source
+      - ../data:/data/source
       - ./np-config:/config
     deploy:
       resources:
@@ -75,7 +75,7 @@ services:
       - ./solr-config:/opt/solr/server/solr
       - ./solr-config/solr.in.sh:/etc/default/solr.in.sh
     ports:
-      - 8985:8983
+      - 9085:8983
     entrypoint:
       - docker-entrypoint.sh
       - solr

@@ -51,7 +51,7 @@ class SolrResults(object):
         # other response metadata
         self.debug = json_response.get("debug", {})
         self.highlighting = json_response.get("highlighting", {})
-        self.facets = json_response.get("facet_counts", {})
+        self.facets = json_response.get("facets", {})
         self.spellcheck = json_response.get("spellcheck", {})
         self.stats = json_response.get("stats", {})
         self.qtime = json_response.get("responseHeader", {}).get("QTime", None)

@@ -103,7 +103,6 @@ class Corpus(object):
         })
 
         self._logger.info(ddf.columns)
-        self._logger.info("LLEGA AQUI")
         dictionary = Dictionary()
 
         def process_partition(partition):
@@ -128,7 +127,7 @@ class Corpus(object):
                 lambda x: [float(val) for val in x.split()] if isinstance(x, str) else []
             )
             """
-            partition["embeddings"] =  partition["embeddings"].apply(lambda x: [float(val) for _, val in enumerate(x.split())])
+            #partition["embeddings"] =  partition["embeddings"].apply(lambda x: [float(val) for _, val in enumerate(x.split())])
             
             for col in partition.columns:
                 partition[col] = partition[col].apply(

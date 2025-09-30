@@ -112,6 +112,7 @@
 
   <!-- Corpora fields  -->
   <field name="id" type="string" indexed="true" stored="true" required="true" multiValued="false" />
+  <field name="id_" type="string" indexed="true" stored="true" required="false" multiValued="false" />
   <field name="models" type="string" indexed="true" stored="true" multiValued="true" />
   <field name="SearcheableFields" type="string" indexed="true" stored="true" multiValued="true" />
   <field name="corpus_path" type="string" indexed="true" stored="true" required="false" multiValued="false" />
@@ -125,15 +126,28 @@
   <field name="lemmas" type="text_general" indexed="true" stored="true" multiValued="false" />
   <field name="expedient" type="text_general" indexed="true" stored="true" multiValued="false" />
   <field name="objective" type="text_general" indexed="true" stored="true" multiValued="false" />
-  <field name="nuts" type="text_general" indexed="true" stored="true" multiValued="false" />
-  <field name="org_loc" type="text_general" indexed="true" stored="true" multiValued="false" />
-  <field name="budget" type="pfloat" indexed="true" stored="true" multiValued="false" />
-  <field name="cpv" type="text_general" indexed="true" stored="true" multiValued="true" />
-  <field name="date" type="pdate" indexed="true" stored="true" multiValued="false" />
-  <field name="nwords_per_doc" type="pint" indexed="true" stored="true" multiValued="false" />
-  <field name="SearcheableField" type="text_general" indexed="true" stored="true" multiValued="false" />
-  <field name="origin" type="string" indexed="true" stored="true" required="false" multiValued="false" />
-  <field name="ident_proc" type="pint" indexed="true" stored="true" multiValued="false" />
+
+ <field name="texto_administrativo" type="text_general" indexed="true" stored="true" multiValued="false" />
+ <field name="texto_tecnico" type="text_general" indexed="true" stored="true" multiValued="false" />
+ <field name="resultado_administrativo" type="string" indexed="true" stored="true" multiValued="false" />
+ <field name="resultado_tecnico" type="string" indexed="true" stored="true" multiValued="false" />
+ <field name="extracted_objective" type="text_general" indexed="true" stored="true" multiValued="false" />
+ <field name="generated_objective" type="text_general" indexed="true" stored="true" multiValued="false" />
+ <field name="cpv_predicted" type="string" indexed="true" stored="true" multiValued="false" />
+ <field name="criterios_adjudicacion" type="text_general" indexed="true" stored="true" multiValued="false" />
+ <field name="criterios_solvencia" type="text_general" indexed="true" stored="true" multiValued="false" />
+ <field name="condiciones_especiales" type="text_general" indexed="true" stored="true" multiValued="false" />
+ <field name="nuts" type="string" indexed="true" stored="true" multiValued="false" />
+ <field name="org_loc" type="string" indexed="true" stored="true" multiValued="false" />
+ <field name="budget" type="pfloat" indexed="true" stored="true" multiValued="false" />
+ <field name="cpv" type="string" indexed="true" stored="true" multiValued="true" />
+<field name="two_cpv" type="string" indexed="true" stored="true" multiValued="true" />
+ <field name="date" type="pdate" indexed="true" stored="true" multiValued="false" />
+ <field name="nwords_per_doc" type="pint" indexed="true" stored="true" multiValued="false" />
+ <field name="SearcheableField" type="text_general" indexed="true" stored="true" multiValued="false" />
+ <field name="origin" type="string" indexed="true" stored="true" required="false" multiValued="false" />
+ <field name="ident_proc" type="pint" indexed="true" stored="true" multiValued="false" />
+ <field name="url" type="string" multiValued="true" stored="true" indexed="true"/>
 
   <!-- Model fields  -->
   <field name="alphas" type="pfloat" indexed="true" stored="true" multiValued="false" />

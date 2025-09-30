@@ -1,0 +1,53 @@
+{
+    "cordis": {
+        "id": "projectID",
+        "raw_text": "summary",
+        "title": "title",
+        "//": "Depending on the source 'id' is 'projectID' and 'objective' is 'summary'"
+    },
+    "scholar": {
+        "id": "corpusid",
+        "raw_text": "abstract",
+        "title": "title"
+    },
+    "scholar-ai": {
+        "id": "id",
+        "raw_text": "text",
+        "title": ""
+    },
+    "unis": {
+        "id": "iden",
+        "raw_text": "Texto",
+        "title": "Nombre"
+    },
+    "scopus": {
+        "id": "id",
+        "raw_text": "description",
+        "title": "title"
+    },
+    "es_2025-02-08_segmented_dataset.parquet.gzip": {
+        "id": "id",
+        "raw_text": "text",
+        "title": "title"
+    },
+    "en_2025-02-08_segmented_dataset.parquet.gzip": {
+        "id": "id",
+        "raw_text": "text",
+        "title": "title"
+    },
+    "en_2025-02-20_segmented_dataset.parquet.gzip": {
+        "id": "id_preproc",
+        "raw_text": "text",
+        "title": "title"
+    },
+    "es_2025-02-20_segmented_dataset.parquet.gzip": {
+        "id": "id_preproc",
+        "raw_text": "text",
+        "title": "title"
+    },
+    "pliegos": {
+        "id": "place_id",
+        "raw_text": "generated_objective",
+        "title": ""
+    }
+}

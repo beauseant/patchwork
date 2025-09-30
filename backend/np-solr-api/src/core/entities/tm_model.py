@@ -490,8 +490,8 @@ class TMmodel(object):
         self._load_betas()
         self._load_thetas()
         self._load_vocab()
-        self._load_sims()
-        self.load_tpc_word_descriptions_embeddings()
+        #self._load_sims()
+        #self.load_tpc_word_descriptions_embeddings()
         self.load_tpc_coords()
 
         return self._alphas, self._betas, self._thetas, self._vocab, self._sims, self._coords, self._tpc_embeddings
@@ -918,7 +918,7 @@ class TMmodel(object):
         self._load_ndocs_active()
         self._load_vocab()
         self._load_vocab_dicts()
-        self.load_tpc_word_descriptions_embeddings()
+        #self.load_tpc_word_descriptions_embeddings()
         
         self._logger.info(self._betas)
         self._logger.info(type(self._betas))
@@ -932,7 +932,7 @@ class TMmodel(object):
             "ndocs_active": [self._ndocs_active],
             "tpc_descriptions": [self._tpc_descriptions],
             "tpc_labels": [self._tpc_labels],
-            "tpc_embeddings": [self._tpc_embeddings]
+            #"tpc_embeddings": [self._tpc_embeddings]
         }
         
         df = pd.DataFrame(data)

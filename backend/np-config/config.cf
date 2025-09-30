@@ -12,7 +12,7 @@ mallet_path=/np-inferencer/src/core/models/mallet-2.0.8/bin/mallet
 
 [restapi]
 #Default setting for number of topics
-batch_size=100
+batch_size=1000
 corpus_col=corpora
 no_meta_fields=raw_text,lemmas,bow,_version_,embeddings
 thetas_max_sum=1000
@@ -70,3 +70,10 @@ title_field=title
 date_field=date
 MetadataDisplayed=id,objective,link
 SearcheableField=id,objective
+
+[combined_data_with_cpv_metadata_lemmas-config]
+id_field=place_id
+title_field=title
+date_field=date
+MetadataDisplayed=id,generated_objective,link
+SearcheableField=id,generated_objective

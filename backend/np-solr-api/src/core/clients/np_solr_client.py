@@ -1611,3 +1611,135 @@ class NPSolrClient(SolrClient):
         self.logger.info(f"-- -- Model info: {upd_model_info}")
         
         return upd_model_info, sc
+    
+    def do_Q30(
+        self,
+        corpus_col: str,
+        year: int,
+        start: str,
+        rows: str
+    ) -> Union[dict, int]:
+        """Executes query Q30.
+
+        Parameters
+        ----------
+        corpus_col: str
+            Name of the corpus collection
+        year: int
+            Year for which the documents are going to be retrieved
+
+        Returns
+        -------
+        json_object: dict
+            JSON object with the results of the query.
+        sc : int
+            The status code of the response.
+        """
+
+        # 0. Convert corpus name to lowercase
+        corpus_col = corpus_col.lower()
+
+        # 1. Check that corpus_col is indeed a corpus collection
+        if not self.check_is_corpus(corpus_col):
+            return
+
+        # 2. Get number of docs in the collection (it will be the maximum number of docs to be retireved) if rows is not specified
+        if rows is None:
+            q3 = self.querier.customize_Q3()
+            params = {k: v for k, v in q3.items() if k != 'q'}
+
+            sc, results = self.execute_query(
+                q=q3['q'], col_name=corpus_col, **params)
+
+            if sc != 200:
+                self.logger.error(
+                    f"-- -- Error executing query Q3. Aborting operation...")
+                return
+            rows = results.hits
+        if start is None:
+            start = str(0)
+
+        # 2. Execute query
+        q30 = self.querier.customize_Q30(
+            year=year,
+            start=start,
+            rows=rows)
+        params = {k: v for k, v in q30.items() if k != 'q'}
+        
+        self.logger.info(f"-- -- Q30 params: {params}")
+        self.logger.info(f"-- -- Q30 q: {q30['q']}")
+
+        sc, results = self.execute_query(
+            q=q30['q'], col_name=corpus_col, **params)
+
+        if sc != 200:
+            self.logger.error(
+                f"-- -- Error executing query Q30. Aborting operation...")
+            return
+
+        return results.docs, sc
+    
+    def do_Q31(
+        self,
+        corpus_col: str,
+    ) -> Union[dict, int]:
+        """Executes query Q31.
+
+        Parameters
+        ----------
+        corpus_col: str
+            Name of the corpus collection
+
+        Returns
+        -------
+        json_object: dict
+            JSON object with the results of the query.
+        sc : int
+            The status code of the response.
+        """
+
+        # 0. Convert corpus name to lowercase
+        corpus_col = corpus_col.lower()
+
+        # 1. Check that corpus_col is indeed a corpus collection
+        if not self.check_is_corpus(corpus_col):
+            return
+
+        # 3. Execute query
+        q31 = self.querier.customize_Q31()
+        params = {k: v for k, v in q31.items() if k != 'q'}
+
+        self.logger.info(f"-- -- Q31 params: {params}")
+        self.logger.info(f"-- -- Q31 q: {q31['q']}")
+
+        sc, results = self.execute_query(
+            q=q31['q'], col_name=corpus_col, **params)
+
+        if sc != 200:
+            self.logger.error(
+                f"-- -- Error executing query Q31. Aborting operation...")
+            return
+        
+        self.logger.info(f"facets: {results.facets}")
+        
+        buckets = (
+            results.facets.get("years", {}).get("buckets", [])
+        )
+
+        items = []
+        for b in buckets:
+            val = b.get("val", "")
+            # val is like "2024-01-01T00:00:00Z" → take first 4 chars as year
+            try:
+                year = int(val[:4])
+            except Exception:
+                continue
+            count = int(b.get("count", 0))
+            items.append((year, count))
+        items.sort(key=lambda x: x[0])
+        
+        # convert into a dictionary
+        items = [{"year": year, "count": count} for year, count in items]
+
+        return items, sc
+    

@@ -155,6 +155,21 @@ q22_parser.add_argument(
     required=False
 )
 
+
+q30_parser = reqparse.RequestParser()
+q30_parser.add_argument(
+    'corpus_collection', help='Name of the corpus collection', required=True)
+q30_parser.add_argument(
+    'year', help='Calendar year (UTC) to filter documents by their date field', required=True)
+q30_parser.add_argument(
+    'start', help='Specifies an offset (by default, 0) into the responses at which Solr should begin displaying content', required=False)
+q30_parser.add_argument(
+    'rows', help='Controls how many rows of responses are displayed at a time (default value: maximum number of docs in the collection)', required=False)
+
+q31_parser = reqparse.RequestParser()
+q31_parser.add_argument(
+    'corpus_collection', help='Name of the corpus collection', required=True)
+
 @api.route('/getThetasDocById/')
 class getThetasDocById(Resource):
     @api.doc(parser=q1_parser)
@@ -388,5 +403,35 @@ class inferTopicInformation(Resource):
 
         try:
             return sc.do_Q22(model_name=model_name, text_to_infer=text_to_infer)
+        except Exception as e:
+            return str(e), 500
+
+@api.route('/getDocsByYear/')
+class getDocsByYear(Resource):
+    @api.doc(parser=q30_parser)
+    def get(self):
+        args = q30_parser.parse_args()
+        corpus_collection = args['corpus_collection']
+        year = args['year']
+        start = args['start']
+        rows = args['rows']
+
+        try:
+            return sc.do_Q30(corpus_col=corpus_collection,
+                             year=int(year),
+                             start=start,
+                             rows=rows)
+        except Exception as e:
+            return str(e), 500
+        
+@api.route('/getAllYears/')
+class getAllYears(Resource):
+    @api.doc(parser=q31_parser)
+    def get(self):
+        args = q31_parser.parse_args()
+        corpus_collection = args['corpus_collection']
+
+        try:
+            return sc.do_Q31(corpus_col=corpus_collection)
         except Exception as e:
             return str(e), 500
