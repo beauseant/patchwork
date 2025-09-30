@@ -202,7 +202,7 @@ class Queries(object):
         self.Q30 = {
             'q': '*:*',
             'fq': '{}:[{} TO {}}}',
-            'fl': 'place_id,title,generated_objective,cpv,cpv_predicted,criterios_adjudicacion,criterios_solvencia,condiciones_especiales',  # adjust fields as you like
+            'fl': 'id,title,generated_objective,cpv,cpv_predicted,criterios_adjudicacion,criterios_solvencia,condiciones_especiales',  # adjust fields as you like
             'start': '{}',
             'rows': '{}'
         }
