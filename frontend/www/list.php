@@ -44,6 +44,10 @@
                 </tbody>
         </table>
     </div>
+<p data-bs-toggle="tooltip" data-bs-placement="top" title="Tooltip on top">
+  Tooltip on top
+</p>
+
 
     <div class="modal fade" id="viewModal" tabindex="-1" aria-labelledby="viewModalLabel" aria-hidden="true">
       <div class="modal-dialog modal-xl">

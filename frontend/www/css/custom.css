@@ -85,3 +85,8 @@ Cabecera página principal:
     border-bottom: 1px solid #ddd;
 }
 
+/*iconos*/
+.icon-40 { font-size: 40px; }
+.icon-100 { font-size: 100px; }
+.icon-200 { font-size: 200px; }
+.icon-300 { font-size: 300px; }

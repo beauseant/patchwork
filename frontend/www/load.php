@@ -43,8 +43,9 @@
                         <form id="upload-form" enctype="multipart/form-data">
 
                             <div class="mb-3">
-                                <label class="form-label">**1. Arrastra un PDF aquí o haz clic para seleccionarlo:**</label>
+                                <label class="form-label"><b>1. Arrastra un PDF aquí o haz clic para seleccionarlo:</b></label>
                                 <div id="drop-area">
+                                    <i class="bi bi-filetype-pdf icon-100" ></i>
                                     <p>Suelta tu archivo PDF aquí</p>
                                     <small class="text-muted">Solo se permiten archivos .pdf</small>
                                     <div id="file-name"></div>
@@ -53,7 +54,7 @@
                             </div>
 
                             <div class="mb-3">
-                                <label class="form-label">**2. Indica el tipo de documento:**</label>
+                                <label class="form-label"><b>2. Indica el tipo de documento:</b></label>
                                 <div>
                                     <div class="form-check form-check-inline">
                                         <input class="form-check-input" type="radio" name="docType" id="tipoAdministrativo" value="administrativo" required>
@@ -201,13 +202,13 @@ document.addEventListener('DOMContentLoaded', function () {
 
 <script>
     document.getElementById('opcionesAdministrativo').innerHTML = `
-        <label class="form-label">**3. Elige los datos a extraer (Administrativo):**</label>
+        <label class="form-label"><b>3. Elige los datos a extraer (Administrativo):</b></label>
         <div class="form-check"><input class="form-check-input" type="checkbox" name="datosAExtraer[]" value="criterios_adjudicacion" id="check1" ><label class="form-check-label" for="check1">Criterios de adjudicación</label></div>
         <div class="form-check"><input class="form-check-input" type="checkbox" name="datosAExtraer[]" value="solvencia" id="check2"><label class="form-check-label" for="check2">Solvencia económica y técnica</label></div>
         <div class="form-check"><input class="form-check-input" type="checkbox" name="datosAExtraer[]" value="condiciones_ejecucion" id="check3"><label class="form-check-label" for="check3">Condiciones de ejecución especiales</label></div>
     `;
     document.getElementById('opcionesTecnico').innerHTML = `
-        <label class="form-label">**3. Elige los datos a extraer (Técnico):**</label>
+        <label class="form-label"><b>3. Elige los datos a extraer (Técnico):</b></label>
         <div class="form-check"><input class="form-check-input" type="checkbox" name="datosAExtraer[]" value="objeto_contrato" id="check5"><label class="form-check-label" for="check5">Objeto del contrato</label></div>
         <div class="form-check"><input class="form-check-input" type="checkbox" name="datosAExtraer[]" value="cpv" id="check6" ><label class="form-check-label" for="check6">CPV</label></div>
     `;

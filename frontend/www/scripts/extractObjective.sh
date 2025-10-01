@@ -25,7 +25,7 @@ echo $FICHERO_A_ESPERAR
 
 
 # --- Configuración ---
-TIMEOUT_MINUTOS=5
+TIMEOUT_MINUTOS=20
 # ---------------------
 
 # Convertimos el timeout de minutos a segundos para la comparación

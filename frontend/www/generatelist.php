@@ -71,7 +71,7 @@ try {
                 }
                 if (( $meta['key'] == 'CPV') && ( in_array ($meta['value'] , $estado))) {                    
                     $objetoCPV = checkMetadato ($doc['stored_name'], 'CPV');                                        
-                    $objetoCPV  = str_replace('"','',$objetoCPV);
+                    $objetoCPV  = str_replace('cpv:','',str_replace('"','',$objetoCPV));
 
                     $meta['value'] = $objetoCPV;
                     $rst = $pdo->query('UPDATE metadatos SET metadata_value="' . $objetoCPV . '" WHERE document_id='. $doc['document_id'] .' AND metadata_key="CPV"');
@@ -95,7 +95,10 @@ try {
                     $rst = $pdo->query('UPDATE metadatos SET metadata_value="' . $criterio . '" WHERE document_id='. $doc['document_id'] .' AND metadata_key="Condiciones de ejecución especiales"');        
                 }             
 
-                $metadata_html .= '<li><strong>' . htmlspecialchars($meta['key'], ENT_QUOTES, 'UTF-8') . ':</strong> ' . htmlspecialchars(mb_strimwidth( $meta['value'],0,60,'...'), ENT_QUOTES, 'UTF-8') . '</li>';
+                $metadata_html .= '<li><strong>' . htmlspecialchars($meta['key'], ENT_QUOTES, 'UTF-8') . ':</strong> ' . 
+                                            htmlspecialchars(mb_strimwidth( $meta['value'],0,60,'...'), ENT_QUOTES, 'UTF-8') . 
+                                            '<i class="bi bi-info-circle" data-bs-toggle="tooltip" data-bs-placement="bottom" title="' .  $meta['value']. '"></i>'.
+                                   '</li>';
             }
             $metadata_html .= '</ul>';
         } else {

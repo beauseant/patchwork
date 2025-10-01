@@ -27,7 +27,7 @@
     </header>
 
 
-    <div class="wrapper d-flex">
+    <div class="wrapper collapsed d-flex">
 
 
     <!-- fixed-top -->
