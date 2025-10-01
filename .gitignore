@@ -29,3 +29,4 @@ backend/np-tools/.env
 *cache*
 data
 .venv
+.venv_sparse

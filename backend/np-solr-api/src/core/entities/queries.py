@@ -5,7 +5,13 @@ This module defines a class with the NP-Solr-API specific queries used to intera
 Author: Lorena Calvo-Bartolomé
 Date: 19/04/2023
 """
+from datetime import datetime, timezone
 
+def _year_bounds_utc(year: int) -> tuple[str, str]:
+    """Return ISO8601 UTC bounds [start, end) for a calendar year."""
+    start = datetime(year, 1, 1, tzinfo=timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+    end   = datetime(year + 1, 1, 1, tzinfo=timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+    return start, end
 
 class Queries(object):
 
@@ -188,6 +194,31 @@ class Queries(object):
             'rows': '{}'
         }
 
+        # ================================================================
+        # Q30: getDocsByYear
+        #   - Uses an fq date range [start TO end} (end-exclusive)
+        #   - Defaults to field 'date'
+        # ################################################################
+        self.Q30 = {
+            'q': '*:*',
+            'fq': '{}:[{} TO {}}}',
+            'fl': 'id,title,generated_objective,cpv,cpv_predicted,criterios_adjudicacion,criterios_solvencia,condiciones_especiales',  # adjust fields as you like
+            'start': '{}',
+            'rows': '{}'
+        }
+        
+        # ================================================================
+        # Q31: getAllYears
+        #   - JSON Facet: yearly buckets on 'date' from a start year to NOW
+        #   - NOTE: the parameter key must be exactly 'json.facet'
+        # ################################################################
+        self.Q31 = {
+            'q': '*:*',
+            'rows': '0',
+            # will be filled with a JSON string like:
+            # {"years":{"type":"range","field":"date","start":"2000-01-01T00:00:00Z","end":"NOW","gap":"+1YEAR","hardend":true}}
+            'json.facet': '{}'
+        }
 
 
     def customize_Q1(self,
@@ -594,3 +625,48 @@ class Queries(object):
             'rows': self.Q21_e['rows'].format(rows),
         }
         return custom_q21_e
+
+    def customize_Q30(
+        self,
+        year: int,
+        start: str = '0',
+        rows: str = '10',
+        date_field: str = 'date'
+    ) -> dict:
+        """
+        Build an fq that selects the given calendar year (UTC) on `date_field`.
+        """
+        s, e = _year_bounds_utc(int(year))
+        custom_q30 = {
+            'q': self.Q30['q'],
+            'fq': self.Q30['fq'].format(date_field, s, e),
+            'fl': self.Q30['fl'],
+            'start': self.Q30['start'].format(start),
+            'rows': self.Q30['rows'].format(rows),
+        }
+        return custom_q30
+
+    def customize_Q31(
+        self,
+        start_year: int = 2000,
+        date_field: str = 'date'
+    ) -> dict:
+        """
+        Yearly range facet from Jan 1 of `start_year` up to NOW on `date_field`.
+        Returns rows=0 and a json.facet param ready for /select.
+        """
+        start_iso, _ = _year_bounds_utc(int(start_year))
+        facet_json = (
+            '{'
+            f'"years":{{'
+            f'"type":"range","field":"{date_field}",'
+            f'"start":"{start_iso}","end":"NOW","gap":"+1YEAR","hardend":true'
+            f'}}'
+            '}'
+        )
+        custom_q31 = {
+            'q': self.Q31['q'],
+            'rows': self.Q31['rows'],
+            'json.facet': self.Q31['json.facet'].format(facet_json)
+        }
+        return custom_q31

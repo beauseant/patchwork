@@ -79,7 +79,8 @@ class Model(object):
         # Get model information from TMmodel
         self.tmmodel = TMmodel(
             self.path_to_model.joinpath("model_data/TMmodel"))
-        self.alphas, self.betas, self.thetas, self.vocab, self.sims, self.coords, self.tpc_embs = self.tmmodel.get_model_info_for_vis()
+        #self.alphas, self.betas, self.thetas, self.vocab, self.sims, self.coords, self.tpc_embs = self.tmmodel.get_model_info_for_vis()
+        self.alphas, self.betas, self.thetas, self.vocab, self.sims, self.coords, _ = self.tmmodel.get_model_info_for_vis()
 
         return
 
@@ -153,7 +154,7 @@ class Model(object):
         df["coords"] = self.coords
                 
         # Get topic embeddings
-        df["tpc_embeddings"] = df["tpc_embeddings"].apply(lambda x: [val for _, val in enumerate(x)])
+        #df["tpc_embeddings"] = df["tpc_embeddings"].apply(lambda x: [val for _, val in enumerate(x)])
 
         json_str = df.to_json(orient='records')
         json_lst = json.loads(json_str)
