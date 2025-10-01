@@ -1,9 +1,9 @@
 
 
 
-<?php include 'includes/header.php'; ?>
-<?php include 'includes/sidebar.php'; ?>
-<?php include 'includes/utils.php'; ?>
+<?php include '../includes/header.php'; ?>
+<?php include '../includes/sidebar.php'; ?>
+<?php include '../includes/utils.php'; ?>
 
         <main class="main-content p-4">
             <div class="container-fluid mt-5">                
@@ -216,4 +216,4 @@ document.addEventListener('DOMContentLoaded', function () {
     tipoAdministrativo.addEventListener('change', toggleOptions);
     tipoTecnico.addEventListener('change', toggleOptions);
 </script>
-<?php include 'includes/footer.php'; ?>
+<?php include '../includes/footer.php'; ?>

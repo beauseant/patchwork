@@ -1,5 +1,6 @@
 <?php
 header('Content-Type: application/json');
+include ('includes/utils.php');
 
 // Validamos que el parámetro 'corpus' exista
 if (!isset($_GET['corpus']) || empty($_GET['corpus'])) {
@@ -9,7 +10,9 @@ if (!isset($_GET['corpus']) || empty($_GET['corpus'])) {
 }
 
 $corpus = urlencode($_GET['corpus']); // Codificamos por si tiene caracteres especiales
-$apiUrl = "http://kumo01.tsc.uc3m.es:9083/queries/getAllYears/?corpus_collection={$corpus}";
+
+$servidor =  getServer();
+$apiUrl = $servidor . "/queries/getAllYears/?corpus_collection={$corpus}";
 
 $response = @file_get_contents($apiUrl);
 

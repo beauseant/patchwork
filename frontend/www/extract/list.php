@@ -1,5 +1,5 @@
-<?php include 'includes/header.php'; ?>
-<?php include 'includes/sidebar.php'; ?>
+<?php include '../includes/header.php'; ?>
+<?php include '../includes/sidebar.php'; ?>
 
 
 <main class="main-content p-4">
@@ -44,9 +44,7 @@
                 </tbody>
         </table>
     </div>
-<p data-bs-toggle="tooltip" data-bs-placement="top" title="Tooltip on top">
-  Tooltip on top
-</p>
+
 
 
     <div class="modal fade" id="viewModal" tabindex="-1" aria-labelledby="viewModalLabel" aria-hidden="true">
@@ -268,5 +266,5 @@
         });
     });
     </script>
-<?php include 'includes/footer.php'; ?>
+<?php include '../includes/footer.php'; ?>
 

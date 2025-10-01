@@ -1,11 +1,33 @@
 <?php include '../includes/header.php'; ?>
 <?php include '../includes/sidebar.php'; ?>
+<?php include '../includes/utils.php'; ?>
 
 
 
 
     <main class="main-content p-4">
         <div class="container-fluid mt-5">
+            <?php
+                            $salida =  pingHost();                            
+                            if (array_key_exists('NOOK', $salida)) {
+                                echo '
+                                    <div class="alert alert-danger" role="alert">
+                                        <p>Error en servidor: '. $salida['NOOK'] . ' No es posible mostrar resultados</p>' .
+                                    '</div>
+                                ';
+                                include '../includes/footer.php';
+                                exit();
+                            }
+
+                            if (array_key_exists('OK', $salida)) {      
+                                echo '
+                                    <div class="alert alert-success" role="alert">
+                                        <p>Conexión correcta con el servidor: '. $salida['OK']['service'] . '/'. $salida['OK']['timestamp']  . '</p>' .
+                                    '</div>
+                                ';                                    
+      
+                            }    
+            ?>    
            
         <h1 class="mb-4">Documentos de Licitaciones</h1>
 

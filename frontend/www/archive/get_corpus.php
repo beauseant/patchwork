@@ -1,7 +1,9 @@
 <?php
 header('Content-Type: application/json');
+include ('includes/utils.php');
 
-$apiUrl = 'http://kumo01.tsc.uc3m.es:9083/corpora/listAllCorpus/';
+$servidor =  getServer();
+$apiUrl = $servidor . 'corpora/listAllCorpus/';
 $response = @file_get_contents($apiUrl); // Usamos @ para suprimir warnings si la API falla
 
 if ($response === FALSE) {

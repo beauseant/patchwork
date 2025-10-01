@@ -20,9 +20,9 @@ if (!isset($_GET['corpus']) || !isset($_GET['year'])) {
 $corpus = urlencode($_GET['corpus']);
 $year = intval($_GET['year']);
 
-
+$servidor =  getServer();
 // --- Llamada a la API ---
-$apiUrl = "http://kumo01.tsc.uc3m.es:9083/queries/getDocsByYear/?corpus_collection={$corpus}&year={$year}&start={$start}&rows={$rows}";
+$apiUrl = $servidor . "/queries/getDocsByYear/?corpus_collection={$corpus}&year={$year}&start={$start}&rows={$rows}";
 $apiResponse = @file_get_contents($apiUrl);
 
 if ($apiResponse === FALSE) {
@@ -59,7 +59,7 @@ foreach ($data as $doc) {
 
 #sacamos, para el año solicitado el número de registros:
 #sacamos todos los años disponibles junto al número de documentos de cada uno:
-$dataYears = getYears ($corpus);
+$dataYears = getYears ($corpus, $servidor);
 $totalRecords = getCountByYear (json_decode ($dataYears, true), $year);
 
 $response = [

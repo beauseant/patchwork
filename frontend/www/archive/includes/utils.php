@@ -1,4 +1,5 @@
 <?php
+
 function getCountByYear($data, $year) {
     // Buscar el año en los datos
     foreach($data as $key => $value) {
@@ -11,9 +12,9 @@ function getCountByYear($data, $year) {
     return -1; // o puedes devolver 'Año no encontrado'
 }
 
-function getYears ($corpus){
+function getYears ($corpus, $servidor){
     $corpus = urlencode($corpus); // Codificamos por si tiene caracteres especiales
-    $apiUrl = "http://kumo01.tsc.uc3m.es:9083/queries/getAllYears/?corpus_collection={$corpus}";
+    $apiUrl = $servidor . "/queries/getAllYears/?corpus_collection={$corpus}";
 
     $response = @file_get_contents($apiUrl);
 
@@ -27,4 +28,16 @@ function getYears ($corpus){
 
 }
 
+
+
+
+function getServer () {
+    try {
+        $contenido = @file_get_contents( 'servidor.cnf' );
+    } catch (Exception $e) { 
+        print ($e->getMessage()); 
+        exit;
+    }
+    return $contenido;
+}
 ?>

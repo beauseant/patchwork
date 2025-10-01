@@ -7,5 +7,5 @@ services:
       - "8080:80"
     volumes:
       - ./www:/var/www/html
-      - /mnt/datos/sblanco/Documents/Trabajo/ReposGit/datospatchwork/uploads/:/var/www/html/uploads/
-      - /mnt/datos/sblanco/Documents/Trabajo/ReposGit/datospatchwork/data/:/var/www/html/data/
+      - /mnt/datos/sblanco/Documents/Trabajo/ReposGit/datospatchwork/uploads/:/var/www/html/extract/uploads/
+      - /mnt/datos/sblanco/Documents/Trabajo/ReposGit/datospatchwork/data/:/var/www/html/extract/data/

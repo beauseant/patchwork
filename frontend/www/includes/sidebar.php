@@ -10,11 +10,11 @@
                 <i class="bi bi-house-door icon fs-5"></i>
                 <span class="text">Inicio</span>
             </a>
-            <a class="nav-link d-flex align-items-center linkcolor" href="/load.php">
+            <a class="nav-link d-flex align-items-center linkcolor" href="/extract/load.php">
                 <i class="bi bi-upload icon fs-5"></i>
                 <span class="text">Subir documento</span>
             </a>
-            <a class="nav-link d-flex align-items-center linkcolor" href="/list.php">
+            <a class="nav-link d-flex align-items-center linkcolor" href="/extract/list.php">
                 <i class="bi bi-card-list icon fs-5"></i>
                 <span class="text">Ver estado</span>
             </a>
