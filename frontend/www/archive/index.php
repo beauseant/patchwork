@@ -1,23 +1,12 @@
-<!DOCTYPE html>
-<html lang="es">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Visor de Licitaciones</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link href="https://cdn.datatables.net/1.13.7/css/dataTables.bootstrap5.min.css" rel="stylesheet">
-    <style>
-        /* Estilo para que las celdas no se expandan demasiado */
-        #licitacionesTable td {
-            max-width: 300px;
-            overflow: hidden;
-            text-overflow: ellipsis;
-            white-space: nowrap;
-        }
-    </style>
-</head>
-<body>
-    <div class="container mt-4">
+<?php include '../includes/header.php'; ?>
+<?php include '../includes/sidebar.php'; ?>
+
+
+
+
+    <main class="main-content p-4">
+        <div class="container-fluid mt-5">
+           
         <h1 class="mb-4">Documentos de Licitaciones</h1>
 
         <div class="row mb-3">
@@ -31,27 +20,24 @@
             </div>
         </div>
 
-<table id="licitacionesTable" class="table table-striped table-bordered" style="width:100%">
-    <thead>
-        <tr>
-            <th>Título</th>
-            <th>CPV</th>
-            <th>Objetivo Generado</th>
-            <th>Criterios Adjudicación</th>
-            <th>Criterios Solvencia</th>
-            <th>Condiciones Especiales</th>
-            <th>Ver</th> </tr>
-    </thead>
-    <tbody></tbody>
-</table>
+        <table id="licitacionesTable" class="table table-striped table-bordered display responsive nowrap" style="width:100%">
+            <thead>
+                <tr>
+                    <th>Id</th>
+                    <th>Título</th>
+                    <th>CPV</th>
+                    <th>Objetivo Generado</th>
+                    <th>Criterios Adjudicación</th>
+                    <th>Criterios Solvencia</th>
+                    <th>Condiciones Especiales</th>
+                    <th>Ver</th> </tr>
+            </thead>
+            <tbody></tbody>
+        </table>
     </div>
 
-    
 
-    <script src="https://code.jquery.com/jquery-3.7.0.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
-    <script src="https://cdn.datatables.net/1.13.7/js/jquery.dataTables.min.js"></script>
-    <script src="https://cdn.datatables.net/1.13.7/js/dataTables.bootstrap5.min.js"></script>
+
 
   <script>
     $(document).ready(function() {
@@ -104,6 +90,8 @@
                 }
 
                 table = $('#licitacionesTable').DataTable({
+                    "searching": false, // Desactiva el cuadro de búsqueda
+                    "ordering": false,  // Desactiva la ordenación por columnas
                     "processing": true,
                     "serverSide": true,
                     "ajax": {
@@ -115,6 +103,7 @@
                         }
                     },
                     "columns": [ // MODIFICADO: Añadida la nueva columna al final
+                        { "data": "id" },
                         { "data": "title" },
                         { "data": "cpv" },
                         { "data": "generated_objective" },
@@ -134,6 +123,8 @@
                 });
             }
         });
+
+        
 
         // 4. GESTOR DE EVENTOS PARA EL MODAL (AÑADIDO)
         // Usamos '.tbody' para delegar el evento, asegurando que funcione
@@ -191,5 +182,4 @@
     </div>
 
 
-    </body>
-</html>
+<?php include '../includes/footer.php'; ?>

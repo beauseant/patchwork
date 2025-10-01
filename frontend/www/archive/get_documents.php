@@ -1,6 +1,9 @@
 <?php
 header('Content-Type: application/json');
 
+include ('includes/utils.php');
+
+
 // --- Parámetros de DataTables ---
 // DataTables envía 'start' para el offset y 'length' para el número de filas.
 $start = isset($_GET['start']) ? intval($_GET['start']) : 0;
@@ -16,6 +19,7 @@ if (!isset($_GET['corpus']) || !isset($_GET['year'])) {
 }
 $corpus = urlencode($_GET['corpus']);
 $year = intval($_GET['year']);
+
 
 // --- Llamada a la API ---
 $apiUrl = "http://kumo01.tsc.uc3m.es:9083/queries/getDocsByYear/?corpus_collection={$corpus}&year={$year}&start={$start}&rows={$rows}";
@@ -33,6 +37,7 @@ $data = json_decode($apiResponse, true);
 $normalizedData = [];
 foreach ($data as $doc) {
     $normalizedData[] = [
+        'id' => $doc['id'] ?? 'NA',
         'title' => $doc['title'] ?? 'NA',
         'cpv' => $doc['cpv'][0] ?? 'NA',
         'generated_objective' => $doc['generated_objective'] ?? 'NA',
@@ -50,7 +55,12 @@ foreach ($data as $doc) {
 // Lo ideal sería que la API de documentos también devolviera el total.
 // Como apaño, podrías almacenar el count del año en la sesión o pasarlo como parámetro.
 // Por ahora, asumiremos un total grande para que la paginación funcione visualmente.
-$totalRecords = 1000; // ¡OJO! Esto es un valor placeholder.
+#$totalRecords = 1000; // ¡OJO! Esto es un valor placeholder.
+
+#sacamos, para el año solicitado el número de registros:
+#sacamos todos los años disponibles junto al número de documentos de cada uno:
+$dataYears = getYears ($corpus);
+$totalRecords = getCountByYear (json_decode ($dataYears, true), $year);
 
 $response = [
     "draw" => $draw,

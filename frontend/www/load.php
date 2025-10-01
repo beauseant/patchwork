@@ -1,11 +1,4 @@
 
-    <style>
-        .hidden-options, .hidden { display: none; }
-        #drop-area { border: 2px dashed #ccc; border-radius: 8px; padding: 30px; text-align: center; color: #666; cursor: pointer; transition: border-color 0.3s, background-color 0.3s; }
-        #drop-area.highlight { border-color: #0d6efd; background-color: #f0f8ff; }
-        #drop-area p { margin: 0; font-size: 1.1em; }
-        #file-name { margin-top: 10px; font-weight: bold; color: #333; }
-    </style>
 
 
 <?php include 'includes/header.php'; ?>
