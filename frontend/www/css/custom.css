@@ -100,8 +100,57 @@ Cabecera página principal:
 }
 
 /* panel arrastrar pdf*/
-        .hidden-options, .hidden { display: none; }
-        #drop-area { border: 2px dashed #ccc; border-radius: 8px; padding: 30px; text-align: center; color: #666; cursor: pointer; transition: border-color 0.3s, background-color 0.3s; }
-        #drop-area.highlight { border-color: #0d6efd; background-color: #f0f8ff; }
-        #drop-area p { margin: 0; font-size: 1.1em; }
-        #file-name { margin-top: 10px; font-weight: bold; color: #333; }
+.hidden-options, .hidden { display: none; }
+#drop-area { border: 2px dashed #ccc; border-radius: 8px; padding: 30px; text-align: center; color: #666; cursor: pointer; transition: border-color 0.3s, background-color 0.3s; }
+#drop-area.highlight { border-color: #0d6efd; background-color: #f0f8ff; }
+#drop-area p { margin: 0; font-size: 1.1em; }
+#file-name { margin-top: 10px; font-weight: bold; color: #333; }
+
+
+/*********************************************************************************/
+/*********************************************************************************/
+/* Estilos para el treemap y la interacción */
+/*********************************************************************************/
+#treemap-container {
+    width: 100%;
+    height: 70vh; /* Altura relativa a la ventana */
+    min-height: 500px;
+    border: 1px solid #ddd;
+    border-radius: 5px;
+    overflow: hidden;
+    position: relative;
+}
+.node-rect {
+    stroke: #fff;
+    stroke-width: 2px;
+    transition: fill 0.3s ease;
+}
+.node-rect:hover {
+    opacity: 0.8;
+    cursor: pointer;
+}
+.node-label {
+    font-size: 12px;
+    fill: white;
+    pointer-events: none; /* Para que el texto no interfiera con el clic en el rectángulo */
+    text-shadow: 1px 1px 2px rgba(0,0,0,0.7);
+}
+.loading-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(255, 255, 255, 0.7);
+    z-index: 10;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+.spinner-border {
+    width: 3rem;
+    height: 3rem;
+}
+/*********************************************************************************/
+/*********************************************************************************/
+/*********************************************************************************/

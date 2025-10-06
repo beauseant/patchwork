@@ -41,7 +41,9 @@
                 <select id="yearSelector" class="form-select"></select>
             </div>
         </div>
-
+<div>
+        Columnas a mostrar: <a class="toggle-vis" data-column="0">Id</a> - <a class="toggle-vis" data-column="1">Título</a> - <a class="toggle-vis" data-column="2">CPV</a> - <a class="toggle-vis" data-column="3">Objetivo</a> - <a class="toggle-vis" data-column="4">C.Adjudicación</a> - <a class="toggle-vis" data-column="5">C. Solvencia</a> - <a class="toggle-vis" data-column="5">C. Especiales</a>
+    </div>
         <table id="licitacionesTable" class="table table-striped table-bordered display responsive nowrap" style="width:100%">
             <thead>
                 <tr>
@@ -62,6 +64,10 @@
 
 
   <script>
+
+
+
+ 
     $(document).ready(function() {
         let table; 
 
@@ -116,6 +122,8 @@
                     "ordering": false,  // Desactiva la ordenación por columnas
                     "processing": true,
                     "serverSide": true,
+                    "pageLength": 50,
+                    "scrollY": '800px',
                     "ajax": {
                         "url": "get_documents.php",
                         "type": "GET",
@@ -183,7 +191,31 @@
             const myModal = new bootstrap.Modal(document.getElementById('detalleModal'));
             myModal.show();
         });
+
+
+
+        document.querySelectorAll('a.toggle-vis').forEach((el) => {
+
+            table = $('#licitacionesTable').DataTable();
+
+            el.addEventListener('click', function (e) {
+                e.preventDefault();
+        
+                let columnIdx = e.target.getAttribute('data-column');
+                let column = table.column(columnIdx);
+        
+                // Toggle the visibility
+                column.visible(!column.visible());
+            });
+        });
+
+
+
     });
+
+
+
+
 </script>
 
 
