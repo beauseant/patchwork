@@ -3,9 +3,12 @@
 <?php include '../includes/utils.php'; ?>
 
 
-
+<?php 
+        $restServer = @file_get_contents( 'servidor.cnf' );
+?>
 
 <div class="container mt-4">
+
     <header class="text-center mb-4">
         <h1>📊 Visualizador de Tópicos con Treemap</h1>
         <p class="lead">Selecciona un corpus y un modelo para generar la visualización automáticamente.</p>
@@ -73,7 +76,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const modalDetailsContent = document.getElementById('modal-details-content');
 
     const PROXY_URL = 'proxy.php?url=';
-    const API_BASE_URL = 'http://kumo01.tsc.uc3m.es:9083';
+    const API_BASE_URL = '<?php echo $restServer; ?>';
 
     const showLoading = (isLoading) => {
         loadingOverlay.classList.toggle('d-none', !isLoading);

@@ -14,12 +14,12 @@
         <table id="tabla-administrativos" class="table table-striped table-bordered" style="width:90%">
             <thead>
                 <tr>
-                    <th>Nombre Original</th>
+                    <th>Original name</th>
                     <th>MD5</th>
-                    <th>Fecha de Subida</th>
-                    <th>Metadatos</th>
-                    <th>Texto</th>
-                    <th style="width: 120px;">Licitación</th>
+                    <th>Upload date</th>
+                    <th>Metadata</th>
+                    <th>Text</th>
+                    <th style="width: 120px;">Tender</th>
                 </tr>
             </thead>
             <tbody>
@@ -32,12 +32,12 @@
         <table id="tabla-tecnicos" class="table table-striped table-bordered" style="width:90%">
             <thead>
                 <tr>
-                    <th>Nombre Original</th>
+                    <th>Original name</th>
                     <th>MD5</th>                    
-                    <th>Fecha de Subida</th>
-                    <th>Metadatos</th>
-                    <th>Texto</th>                    
-                    <th style="width: 120px;">Licitación</th>
+                    <th>Upload date</th>
+                    <th>Metadata</th>
+                    <th>Text</th>                    
+                    <th style="width: 120px;">Tender</th>
                 </tr>
             </thead>
             <tbody>
@@ -58,15 +58,15 @@
             <div class="row">
                 <div class="col-md-4">
                     <h5>Información</h5>
-                    <p><strong>Nombre Original:</strong> <span id="modal-original-name"></span></p>
-                    <p><strong>Tipo:</strong> <span id="modal-doc-type"></span></p>
-                    <p><strong>Fecha de subida:</strong> <span id="modal-upload-date"></span></p>
+                    <p><strong>Original Name:</strong> <span id="modal-original-name"></span></p>
+                    <p><strong>MD5:</strong> <span id="modal-doc-type"></span></p>
+                    <p><strong>Upload date:</strong> <span id="modal-upload-date"></span></p>
                     <hr>
-                    <h5>Metadatos Solicitados</h5>
+                    <h5>Metadata:</h5>
                     <div id="modal-metadata-list"></div>
                 </div>
                 <div class="col-md-8">
-                    <h5>Visualizador de PDF</h5>
+                    <h5>View PDF</h5>
                     <iframe id="pdf-viewer" src="" frameborder="0"></iframe>
                 </div>
             </div>
@@ -152,12 +152,12 @@
                 { data: 'texto' },
                 { data: 'actions', orderable: false, searchable: false } // Columna de botones no se puede ordenar ni buscar.
             ],
-            language: {
+            /*language: {
                 url: 'https://cdn.datatables.net/plug-ins/2.0.8/i18n/es-ES.json'
-            },
+            },*/
             responsive: true,
             destroy: true ,
-            dom: 'rt<"bottom"lp><"clear">',
+            filter:true,
         };
 
         // Inicializar la tabla de Documentos Administrativos.

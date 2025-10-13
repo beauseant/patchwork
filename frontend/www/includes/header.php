@@ -14,6 +14,7 @@
     <link href="https://cdn.datatables.net/responsive/3.0.6/css/responsive.dataTables.css" rel="stylesheet">
 
     <script src="https://code.jquery.com/jquery-3.7.0.min.js"></script>
+    
     <script src="../js/script.js"></script>
 
 </head>
@@ -23,7 +24,7 @@
     <header class="bg-primary  text-white py-3 d-flex justify-content-between align-items-center px-3 header2" style="background-image: linear-gradient(to right, #2F1918,#7A3A33,#4D0E0C,#BA5D06,#B17042,#BA5D06,#3D5934) !important;">
         <div>
             <h1 class="h3 mb-0">pAtChWoRK</h1>
-            <p class="mb-0 small">Lorem ipsum dolor</p>
+            <p class="mb-0 small">Extract · Enrich · Explore Procurement Data</p>
         </div>
     </header>
 

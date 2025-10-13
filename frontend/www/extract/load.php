@@ -15,7 +15,7 @@
                                         <p>Error en servidor: '. $salida['NOOK'] . ' No es posible subir archivos</p>' .
                                     '</div>
                                 ';
-                                include 'includes/footer.php';
+                                include '../includes/footer.php';
                                 exit();
                             }
                             if (array_key_exists('OK', $salida)) {      
@@ -30,32 +30,41 @@
                 </div>
                 <div class="card">
                     <div class="card-header">
-                        <h2>Subir Documento para Extracción de Datos</h2>
-                    </div>
+                        <div class="row mb-1">
+                            <div class="col-md-5">
+                                <h2>Upload Document for Data Extraction</h2>
+                            </div>
+                            <div class="col-md-1">
+                                <!-- Button trigger modal -->
+                                <button type="button" class="btn btn-text" data-bs-toggle="modal" data-bs-target="#infoModal">
+                                    <i class="bi bi-info-circle"></i>
+                                </button>                            
+                            </div>
+                        </div>
                     <div class="card-body">
                         <form id="upload-form" enctype="multipart/form-data">
 
                             <div class="mb-3">
-                                <label class="form-label"><b>1. Arrastra un PDF aquí o haz clic para seleccionarlo:</b></label>
+                                <label class="form-label"><b>1. Drag and drop a PDF here or click to select one::</b></label>
                                 <div id="drop-area">
                                     <i class="bi bi-filetype-pdf icon-100" ></i>
-                                    <p>Suelta tu archivo PDF aquí</p>
-                                    <small class="text-muted">Solo se permiten archivos .pdf</small>
+                                    <p>Drag and drop a PDF here</p>
+                                    <small class="text-muted">(Only .pdf files are allowed)</small>
                                     <div id="file-name"></div>
                                 </div>
                                 <input type="file" id="pdfFile" name="pdfFile" accept="application/pdf" required class="d-none">
                             </div>
 
                             <div class="mb-3">
-                                <label class="form-label"><b>2. Indica el tipo de documento:</b></label>
+                                <label class="form-label"><b>2. Indicate the document type:</b></label>
                                 <div>
                                     <div class="form-check form-check-inline">
                                         <input class="form-check-input" type="radio" name="docType" id="tipoAdministrativo" value="administrativo" required>
-                                        <label class="form-check-label" for="tipoAdministrativo">Administrativo</label>
+                                        <label class="form-check-label" for="tipoAdministrativo">Administrative (PCAP)</label>
                                     </div>
                                     <div class="form-check form-check-inline">
                                         <input class="form-check-input" type="radio" name="docType" id="tipoTecnico" value="tecnico">
-                                        <label class="form-check-label" for="tipoTecnico">Técnico</label>
+                                        <label class="form-check-label" for="tipoTecnico">Technical (PCPT)</label>
                                     </div>
                                 </div>
                             </div>
@@ -64,7 +73,7 @@
                             <div id="opcionesTecnico" class="mb-3 hidden-options"></div>
 
                             <hr>
-                            <button type="submit" class="btn btn-primary w-100">Subir y Procesar Documento</button>
+                            <button type="submit" class="btn btn-primary w-100">Upload and Process Document</button>
                         
                         </form>
 
@@ -79,10 +88,57 @@
                     </div>
                 </div>
             </div>
-    </main>
+
+
+
+
+
+
+
+                    <!-- Modal -->
+                    <div class="modal fade" id="infoModal" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
+                    <div class="modal-dialog">
+                        <div class="modal-content">
+                        <div class="modal-header">
+                            <h5 class="modal-title" id="exampleModalLabel">Upload Document for Data Extraction</h5>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                        </div>
+                        <div class="modal-body">
+                        📑  Depending on the document type, different metadata fields can be extracted:<br>
+                        <ul>
+                            <li>Administrative documents: award criteria, tie-breaking rules, solvency requirements, and special execution conditions.</li>
+                            <li>Technical documents: contract objectives and CPV codes.</li>
+                        </ul>
+                        📑 
+                        Files uploaded to the system are identified by their MD5 checksum. This mechanism prevents uploading files with identical content but different names, while allowing files with the same name but different content to be uploaded. The system does allow the same file (i.e., with identical content) to be uploaded in different categories; for example, the same file can be uploaded both as a technical document and as an administrative document.</br></br>
+                        After submission, the task remains <b>pending</b> until automatically processed.</br></br>
+                        📑 
+                        You can track its processing status and view the enriched results in the <b>“Uploaded Documents (Enriched)”</b>page.
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                        </div>
+                        </div>
+                    </div>
+                    </div>
+
+
+
+
+        </main>
+
 </div>     <!--<div class="wrapper d-flex"> -->
+
+
+
 <script>
 document.addEventListener('DOMContentLoaded', function () {
+
+
+$('#my-modal-info').on('shown.bs.modal', function () {
+  $('#myInput').trigger('focus')
+})
+
     // Referencias a elementos del DOM
     const form = document.getElementById('upload-form');
     const dropArea = document.getElementById('drop-area');
@@ -188,6 +244,18 @@ document.addEventListener('DOMContentLoaded', function () {
         xhr.send(formData);
     });
 
+    //si se pide extraer cpv se marca de manera obligatoria el extraer objeto del contrato
+    check6.addEventListener("change", (event) => {
+        if (check6.checked ==1) {
+            check5.checked=1;
+        }
+
+  $('.example-popover').popover({
+    container: 'body'
+  })
+
+});
+
     // --- Lógica para opciones dinámicas (sin cambios) ---
     // ...
 });
@@ -195,15 +263,15 @@ document.addEventListener('DOMContentLoaded', function () {
 
 <script>
     document.getElementById('opcionesAdministrativo').innerHTML = `
-        <label class="form-label"><b>3. Elige los datos a extraer (Administrativo):</b></label>
-        <div class="form-check"><input class="form-check-input" type="checkbox" name="datosAExtraer[]" value="criterios_adjudicacion" id="check1" ><label class="form-check-label" for="check1">Criterios de adjudicación</label></div>
-        <div class="form-check"><input class="form-check-input" type="checkbox" name="datosAExtraer[]" value="solvencia" id="check2"><label class="form-check-label" for="check2">Solvencia económica y técnica</label></div>
-        <div class="form-check"><input class="form-check-input" type="checkbox" name="datosAExtraer[]" value="condiciones_ejecucion" id="check3"><label class="form-check-label" for="check3">Condiciones de ejecución especiales</label></div>
+        <label class="form-label"><b>3. Select the data to extract (Administrative, PCAP):</b></label>
+        <div class="form-check"><input class="form-check-input" type="checkbox" name="datosAExtraer[]" value="criterios_adjudicacion" id="check1" ><label class="form-check-label" for="check1">Award criteria</label></div>
+        <div class="form-check"><input class="form-check-input" type="checkbox" name="datosAExtraer[]" value="solvencia" id="check2"><label class="form-check-label" for="check2">Economic and technical solvency</label></div>
+        <div class="form-check"><input class="form-check-input" type="checkbox" name="datosAExtraer[]" value="condiciones_ejecucion" id="check3"><label class="form-check-label" for="check3">Special execution conditions</label></div>
     `;
     document.getElementById('opcionesTecnico').innerHTML = `
-        <label class="form-label"><b>3. Elige los datos a extraer (Técnico):</b></label>
-        <div class="form-check"><input class="form-check-input" type="checkbox" name="datosAExtraer[]" value="objeto_contrato" id="check5"><label class="form-check-label" for="check5">Objeto del contrato</label></div>
-        <div class="form-check"><input class="form-check-input" type="checkbox" name="datosAExtraer[]" value="cpv" id="check6" ><label class="form-check-label" for="check6">CPV</label></div>
+        <label class="form-label"><b>3. Select the data to extract (Technical, PCPT):</b></label>
+        <div class="form-check"><input class="form-check-input" type="checkbox" name="datosAExtraer[]" value="objeto_contrato" id="check5"><label class="form-check-label" for="check5">Contract objective</label></div>
+        <div class="form-check"><input class="form-check-input" type="checkbox" name="datosAExtraer[]" value="cpv" id="check6" ><label class="form-check-label" for="check6">CPV code</label></div>
     `;
     const tipoAdministrativo = document.getElementById('tipoAdministrativo');
     const tipoTecnico = document.getElementById('tipoTecnico');
@@ -216,4 +284,7 @@ document.addEventListener('DOMContentLoaded', function () {
     tipoAdministrativo.addEventListener('change', toggleOptions);
     tipoTecnico.addEventListener('change', toggleOptions);
 </script>
+
+
+
 <?php include '../includes/footer.php'; ?>

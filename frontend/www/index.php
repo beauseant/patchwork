@@ -3,46 +3,63 @@
 
     <!-- Contenido principal -->
         <main class="main-content p-4">
+          
             <div class="hero-section-inner d-flex justify-content-center align-items-center rounded mb-5">
             <div class="text-center p-3">
-                <h1 class="display-4 fw-bold">Bienvenido a pAtChWoRK</h1>
-                <p class="lead">Este es el contenido principal de la página.</p>
+                <h1 class="display-4 fw-bold">Welcome to pAtChWoRK</h1>
+                <p class="lead">An NLP-powered system that automates the extraction, enrichment, and exploitation of public procurement data to support stakeholders across the tendering process.</p>
             </div>
             </div>
 
-            <h2 class="mb-4">Descripción:</h2>
+            
 
             <div class="row text-center g-4">
 
-            <div class="col-md-6 col-lg-4 mb-3">
-                <div class="p-4 shadow-sm rounded bg-light h-100">
-                <i class="bi bi-gem fs-1 text-primary"></i>
-                <h3 class="mt-3 h5">Enlace 1</h3>
-                <p class="text-muted small">Utilizamos las últimas tecnologías para ofrecerte una experiencia de usuario fluida y atractiva.</p>
+                <div class="col-md-6 col-lg-3 mb-3">
+                    <a href="/extract/load.php" class="text-decoration-none">
+                        <div class="p-4 shadow-sm rounded bg-light h-100">                        
+                            <i class="bi bi-cloud-upload fs-1 text-primary"></i>
+                            <h3 class="mt-3 h5">Upload Procurement Documents</h3>
+                            <p class="text-muted small">Upload Spanish procurement PDFs (technical or administrative) to automatically extract key metadata such as objectives, CPV codes, award criteria, and special conditions.</p>
+                        </div>
+                    </a>
                 </div>
-            </div>
 
-            <div class="col-md-6 col-lg-4 mb-3">
-                <div class="p-4 shadow-sm rounded bg-light h-100">
-                <i class="bi bi-shield-check fs-1 text-success"></i>
-                <h3 class="mt-3 h5">Enlace 2</h3>
-                <p class="text-muted small">Tu seguridad es nuestra prioridad. Contamos con sistemas robustos para proteger tus datos.</p>
+                <div class="col-md-6 col-lg-3 mb-3">
+                        <a href="/archive/index.php" class="text-decoration-none">
+                            <div class="p-4 shadow-sm rounded bg-light h-100">
+                                <i class="bi bi-zoom-in fs-1 text-success"></i>
+                                <h3 class="mt-3 h5">Explore Pre-Enriched Documents </h3>
+                                <p class="text-muted small">Access already processed procurement files enriched with structured metadata for deeper analysis and retrieval.</p>
+                            </div>
+                        </a>
                 </div>
-            </div>
 
-            <div class="col-md-6 col-lg-4 mb-3">
-                <div class="p-4 shadow-sm rounded bg-light h-100">
-                <i class="bi bi-phone-vibrate fs-1 text-info"></i>
-                <h3 class="mt-3 h5">Enlace 3</h3>
-                <p class="text-muted small">Nuestra web se ve increíble en cualquier dispositivo, ya sea móvil, tablet u ordenador.</p>
+                <div class="col-md-6 col-lg-3 mb-3">
+                    <a href="/topics/index.php" class="text-decoration-none">
+                        <div class="p-4 shadow-sm rounded bg-light h-100">
+                            <i class="bi bi-file-earmark-bar-graph fs-1 text-info"></i>
+                            <h3 class="mt-3 h5">Discover Topics & Semantic Links</h3>
+                            <p class="text-muted small">Explore topic models and semantic graphs to identify similar tenders and uncover thematic patterns across procurement data.</p>
+                        </div>
+                    </a>
                 </div>
-            </div>
 
+                <div class="col-md-6 col-lg-3 mb-3">
+                    <div class="p-4 shadow-sm rounded bg-light h-100">
+                        <i class="bi bi-filter-square fs-1 text-secondary"></i>
+                        <h3 class="mt-3 h5">OECD Procurement Indicators</h3>
+                        <p class="text-muted small">Visualize and analyze procurement metrics aligned with OECD indicators for transparency and performance assessment.</p>
+                    </div>                        
+                </div>
             </div>
             
             <div class="mt-5">
-                <h4>Más información</h4>
-                <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed non risus. Suspendisse lectus tortor, dignissim sit amet, adipiscing nec, ultricies sed, dolor. Cras elementum ultrices diam. Maecenas ligula massa, varius a, semper congue, euismod non, mi. Proin porttitor, orci nec nonummy molestie, enim est eleifend mi, non fermentum diam nisl sit amet erat. Duis semper. Duis arcu massa, scelerisque vitae, consequat in, pretium a, enim. Pellentesque congue. Ut in risus volutpat libero pharetra tempor. Cras vestibulum bibendum augue. Praesent egestas leo in pede. Praesent blandit odio eu enim. Pellentesque sed dui ut augue blandit sodales. Vestibulum ante ipsum primis in faucibus orci luctus et ultrices posuere cubilia Curae; Aliquam nibh.</p>
+                <h4>About Us</h4>
+                <p>We are researchers from Universidad Carlos III de Madrid, Universidad Politécnica de Madrid, and the City Council of Zaragoza working to make public procurement more transparent and efficient.</p>
+                <p>pAtChWoRK builds on components developed in the NextProcurement Project (Open Harmonized and Enriched Public Procurement Platform, European Commission).  It uses NLP and large language models to extract, enrich, and explore procurement data, supporting administrators, auditors, and bidders to find and analyze information through semantic search, contract classification, and policy insights.</p>
+                <p>Built for Spanish procurement data, pAtChWoRK’s modular design can easily adapt to other countries and contexts.</p>
+                <p><b>Contact</b>: jarenas[at]ing.uc3m.es</p>
             </div>
 
         </main>
