@@ -5,44 +5,64 @@
 <main class="main-content p-4">
     <div class="container-fluid mt-5">
         <div class="d-flex justify-content-between align-items-center mb-4">
-        
-            <h1 class="mb-0">Listado de Documentos</h1>
-            <a href="index.php" class="btn btn-success">Ir a Subir Archivo</a>
+            <h1 class="mb-0">Uploaded Documents (Enriched)</h1>
+            <a href="load.php" class="btn btn-success">Upload archive</a>
         </div>
 
-        <h2 class="mt-5">📑 Documentos Administrativos</h2>
-        <table id="tabla-administrativos" class="table table-striped table-bordered" style="width:90%">
-            <thead>
-                <tr>
-                    <th>Original name</th>
-                    <th>MD5</th>
-                    <th>Upload date</th>
-                    <th>Metadata</th>
-                    <th>Text</th>
-                    <th style="width: 120px;">Tender</th>
-                </tr>
-            </thead>
-            <tbody>
-                </tbody>
-        </table>
 
-        <hr class="my-5">
 
-        <h2>🛠️ Documentos Técnicos</h2>
-        <table id="tabla-tecnicos" class="table table-striped table-bordered" style="width:90%">
-            <thead>
-                <tr>
-                    <th>Original name</th>
-                    <th>MD5</th>                    
-                    <th>Upload date</th>
-                    <th>Metadata</th>
-                    <th>Text</th>                    
-                    <th style="width: 120px;">Tender</th>
-                </tr>
-            </thead>
-            <tbody>
-                </tbody>
-        </table>
+        <div class="accordion" id="accordionDocs">
+        <div class="accordion-item">
+            <h2 class="accordion-header" id="headingOne">
+            <button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#collapseOne" aria-expanded="true" aria-controls="collapseOne">
+                <h2 class="mt-2">📑 Administrative Documents (PCAP)</h2>
+            </button>
+            </h2>
+            <div id="collapseOne" class="accordion-collapse collapse show" aria-labelledby="headingOne" data-bs-parent="#accordionExample">
+            <div class="accordion-body">
+                <table id="tabla-administrativos" class="table table-striped table-bordered" style="width:90%">
+                    <thead>
+                        <tr>
+                            <th>Original name</th>
+                            <th>MD5</th>
+                            <th>Upload date</th>
+                            <th>Metadata</th>
+                            <th>Text</th>
+                            <th style="width: 120px;">Tender</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        </tbody>
+                </table>
+            </div>
+            </div>
+        </div>
+        <div class="accordion-item">
+            <h2 class="accordion-header" id="headingTwo">
+            <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseTwo" aria-expanded="false" aria-controls="collapseTwo">
+                <h2 class="mt-2"> 🛠️ Technical Documents (PCPT)</h2>
+            </button>
+            </h2>
+            <div id="collapseTwo" class="accordion-collapse collapse" aria-labelledby="headingTwo" data-bs-parent="#accordionExample">
+            <div class="accordion-body">
+                <table id="tabla-tecnicos" class="table table-striped table-bordered" style="width:90%">
+                    <thead>
+                        <tr>
+                            <th>Original name</th>
+                            <th>MD5</th>                    
+                            <th>Upload date</th>
+                            <th>Metadata</th>
+                            <th>Text</th>                    
+                            <th style="width: 120px;">Tender</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        </tbody>
+                </table>        
+            </div>
+            </div>
+        </div>
+        </div>    
     </div>
 
 
