@@ -199,6 +199,8 @@ class Model(object):
                     id_ = int(id_.strip('"'))
                 except Exception as e:
                     self._logger.info("-- -- Id is not an integer. Keeping as string...")
+                if len(id_.split("_")) > 1:
+                    id_ = id_.split("_")[0]
                 return id_
             with open(self.path_to_model.joinpath("train_data").joinpath("corpus.txt"), encoding="utf-8") as file:
                 ids_corpus = [process_line(line) for line in file]

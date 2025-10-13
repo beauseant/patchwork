@@ -6,12 +6,17 @@ Author: Lorena Calvo-Bartolomé
 Date: 19/04/2023
 """
 from datetime import datetime, timezone
+from typing import List, Tuple
+
 
 def _year_bounds_utc(year: int) -> tuple[str, str]:
     """Return ISO8601 UTC bounds [start, end) for a calendar year."""
-    start = datetime(year, 1, 1, tzinfo=timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
-    end   = datetime(year + 1, 1, 1, tzinfo=timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+    start = datetime(year, 1, 1, tzinfo=timezone.utc).strftime(
+        "%Y-%m-%dT%H:%M:%SZ")
+    end = datetime(
+        year + 1, 1, 1, tzinfo=timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
     return start, end
+
 
 class Queries(object):
 
@@ -122,10 +127,15 @@ class Queries(object):
         self.Q9 = {
             'q': '*:*',
             'sort': 'payload(doctpc_{},t{}) desc, nwords_per_doc desc',
-            'fl': 'payload(doctpc_{},t{}), objective, nwords_per_doc, id',
+            'fl': 'payload(doctpc_{},t{}), generated_objective, nwords_per_doc, id',
+            'fq': [
+                'doctpc_{}:[* TO *]',           
+                'generated_objective:[* TO *]',      
+                'nwords_per_doc:[* TO *]'     
+            ],
             'start': '{}',
             'rows': '{}'
-        }  # doctpc_{}
+        }
 
         # ================================================================
         # # Q10: getModelInfo
@@ -163,7 +173,7 @@ class Queries(object):
 
         # If adding a new one, start numeration at 20
         # ================================================================
-        # # Q20: getDocsRelatedToWord 
+        # # Q20: getDocsRelatedToWord
         # # Get documents related to a word according to a given topic model.
         # # To calculate this, we use a Word2Vec model trained on the same data as the topic model. In this model, the chemical descriptions of topics are embedded in the same space as words. When a word is inputted, it is embedded in this space, and the closest topic, based on its chemical description, is selected. Subsequently, the documents associated with that topic are retrieved.
         # ##################################################################
@@ -173,7 +183,7 @@ class Queries(object):
             'start': '{}',
             'rows': '{}'
         }
-        
+
         # ================================================================
         # # Q21: getDocsSimilarToFreeTextEmb
         # # Retrieve documents that are semantically similar to a given free text using BERT embeddings. The free text is represented by its BERT embeddings, and these embeddings for the documents in the collection are precalculated and indexed into Solr for efficient retrieval.
@@ -202,11 +212,11 @@ class Queries(object):
         self.Q30 = {
             'q': '*:*',
             'fq': '{}:[{} TO {}}}',
-            'fl': 'id,title,generated_objective,cpv,cpv_predicted,criterios_adjudicacion,criterios_solvencia,condiciones_especiales',  # adjust fields as you like
+            'fl': '{}',
             'start': '{}',
             'rows': '{}'
         }
-        
+
         # ================================================================
         # Q31: getAllYears
         #   - JSON Facet: yearly buckets on 'date' from a start year to NOW
@@ -220,6 +230,20 @@ class Queries(object):
             'json.facet': '{}'
         }
 
+        # ================================================================
+        # Q32: getDocsByYearAugmented
+        # - it includes a search keyword in a given field (e.g., title, objective, etc.) like Q7; if no keyword is needed, use '*'
+        # - it includes a date range like Q30
+        # - it includes a SortBY and SortOrder (e.g., 'date desc' or 'id asc')
+        # ################################################################
+        self.Q32 = {
+            'q': '{}:{}',
+            'fq': '{}:[{} TO {}}}',
+            'sort': '{}',
+            'fl': '{}',
+            'start': '{}',
+            'rows': '{}'
+        }
 
     def customize_Q1(self,
                      id: str,
@@ -427,10 +451,12 @@ class Queries(object):
             'q': self.Q9['q'],
             'sort': self.Q9['sort'].format(model_name, topic_id),
             'fl': self.Q9['fl'].format(model_name, topic_id),
+            #'fq': self.Q9['fq'],
             'start': self.Q9['start'].format(start),
             'rows': self.Q9['rows'].format(rows),
         }
-
+        #custom_q9["fq"][0] = custom_q9["fq"][0].format(model_name)
+        
         return custom_q9
 
     def customize_Q10(self,
@@ -556,7 +582,7 @@ class Queries(object):
             'rows': self.Q20['rows'].format(rows),
         }
         return custom_q20
-    
+
     def customize_Q21(
         self,
         doc_embeddings: str,
@@ -589,7 +615,7 @@ class Queries(object):
             'rows': self.Q21['rows'].format(rows),
         }
         return custom_q21
-    
+
     def customize_Q21_e(
         self,
         doc_embeddings: str,
@@ -631,7 +657,8 @@ class Queries(object):
         year: int,
         start: str = '0',
         rows: str = '10',
-        date_field: str = 'date'
+        date_field: str = 'date',
+        display_fields: str = 'id,title,generated_objective,cpv,cpv_predicted,criterios_adjudicacion,criterios_solvencia,condiciones_especiales'
     ) -> dict:
         """
         Build an fq that selects the given calendar year (UTC) on `date_field`.
@@ -640,7 +667,7 @@ class Queries(object):
         custom_q30 = {
             'q': self.Q30['q'],
             'fq': self.Q30['fq'].format(date_field, s, e),
-            'fl': self.Q30['fl'],
+            'fl': self.Q30['fl'].format(display_fields),
             'start': self.Q30['start'].format(start),
             'rows': self.Q30['rows'].format(rows),
         }
@@ -670,3 +697,53 @@ class Queries(object):
             'json.facet': self.Q31['json.facet'].format(facet_json)
         }
         return custom_q31
+
+    def customize_Q32(
+        self,
+        sort_by_order: List[Tuple[str, str]],
+        start_year: int,
+        end_year: int,
+        keyword: str,
+        searchable_field: str,
+        date_field: str,
+        display_fields: str,
+        start: str = '0',
+        rows: str = '10',
+    ) -> dict:
+        """
+        - Search keyword in a given field (use '*' for no keyword filter).
+        - If BOTH start_year and end_year are provided, apply a date-range filter.
+        Otherwise, return all years (no date filter).
+        - Supports multiple sort fields with asc/desc.
+        """
+
+        # Build sort string
+        sort_by_order_lst = []
+        for sb, so in sort_by_order:
+            if so.lower() not in ('asc', 'desc'):
+                raise ValueError("Sort order must be either 'asc' or 'desc'.")
+            sort_by_order_lst.append(f'{sb} {so.lower()}')
+        sort_by_order_str = ', '.join(sort_by_order_lst)
+
+        # Decide whether to apply the date filter
+        apply_date_filter = (start_year is not None and end_year is not None)
+        if apply_date_filter:
+            if start_year > end_year:
+                raise ValueError("'start_year' must be <= 'end_year'.")
+            s, _ = _year_bounds_utc(start_year)
+            _, e = _year_bounds_utc(end_year)
+
+        # Assemble query
+        custom_q32 = {
+            'q': self.Q32['q'].format(searchable_field, keyword),
+            'sort': self.Q32['sort'].format(sort_by_order_str),
+            'fl': self.Q32['fl'].format(display_fields),
+            'start': self.Q32['start'].format(start),
+            'rows': self.Q32['rows'].format(rows),
+        }
+
+        # Only include fq if both years are set; otherwise return all years
+        if apply_date_filter:
+            custom_q32['fq'] = self.Q32['fq'].format(date_field, s, e)
+
+        return custom_q32

@@ -170,6 +170,24 @@ q31_parser = reqparse.RequestParser()
 q31_parser.add_argument(
     'corpus_collection', help='Name of the corpus collection', required=True)
 
+q32_parser = reqparse.RequestParser()
+q32_parser.add_argument(
+    'corpus_collection', help='Name of the corpus collection', required=True)
+q32_parser.add_argument(
+    'start', help='Specifies an offset (by default, 0) into the responses at which Solr should begin displaying content', required=False)
+q32_parser.add_argument(
+    'rows', help='Controls how many rows of responses are displayed at a time (default value: maximum number of docs in the collection)', required=False)
+q32_parser.add_argument(
+    'sort_by_order', help='Sort criteria as comma-separated field:order pairs (e.g., "date:desc,title:asc"). Default: "date:desc"', required=False, default='date:desc')
+q32_parser.add_argument(
+    'start_year', help='Start year for filtering documents by date', required=False, type=int)
+q32_parser.add_argument(
+    'end_year', help='End year for filtering documents by date', required=False, type=int)
+q32_parser.add_argument(
+    'keyword', help='Keyword to search in the searchable field (default: *)', required=False, default='*')
+q32_parser.add_argument(
+    'searchable_field', help='Field to search the keyword in (default: *)', required=False, default='*')
+
 @api.route('/getThetasDocById/')
 class getThetasDocById(Resource):
     @api.doc(parser=q1_parser)
@@ -433,5 +451,49 @@ class getAllYears(Resource):
 
         try:
             return sc.do_Q31(corpus_col=corpus_collection)
+        except Exception as e:
+            return str(e), 500
+
+
+@api.route('/getDocsByYearAugmented/')
+class getDocsByYearAugmented(Resource):
+    @api.doc(parser=q32_parser)
+    def get(self):
+        args = q32_parser.parse_args()
+        corpus_collection = args['corpus_collection']
+        start = args['start']
+        rows = args['rows']
+        sort_by_order_str = args['sort_by_order']
+        start_year = int(args['start_year']) if args['start_year'] else None
+        end_year = int(args['end_year']) if args['end_year'] else None
+        keyword = args['keyword']
+        searchable_field = args['searchable_field']
+        
+        # Convert sort_by_order string to List[Tuple[str, str]] format expected by do_Q32
+        # Format: "field1:order1,field2:order2" -> [("field1", "order1"), ("field2", "order2")]
+        sort_by_order = []
+        if sort_by_order_str:
+            for sort_item in sort_by_order_str.split(','):
+                if ':' in sort_item:
+                    field, order = sort_item.strip().split(':', 1)
+                    sort_by_order.append((field.strip(), order.strip()))
+                else:
+                    # Default to 'desc' if no order specified
+                    sort_by_order.append((sort_item.strip(), 'desc'))
+        else:
+            # Default sort
+            sort_by_order = [("date", "desc")]
+        
+        try:
+            return sc.do_Q32(
+                corpus_col=corpus_collection,
+                start=start,
+                rows=rows,
+                sort_by_order=sort_by_order,
+                start_year=start_year,
+                end_year=end_year,
+                keyword=keyword,
+                searchable_field=searchable_field
+            )
         except Exception as e:
             return str(e), 500
