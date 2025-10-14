@@ -1,71 +1,76 @@
 <?php
 header('Content-Type: application/json');
 
-include ('includes/utils.php');
+// --- 1. Recoger todos los parámetros ---
+$start = $_GET['start'] ?? 0;
+$rows = $_GET['length'] ?? 10;
+$draw = $_GET['draw'] ?? 0;
+$searchValue = $_GET['search']['value'] ?? '';
+$corpus = $_GET['corpus'] ?? '';
+$year = $_GET['year'] ?? '';
+$searchableField = $_GET['searchable_field'] ?? '*';
+$totalRecords = $_GET['records_total'] ?? 0;
+$sortBy = $_GET['sort_by_order'] ?? 'date:desc';
+$keyword = !empty($searchValue) ? $searchValue : '*';
 
+// --- 2. Construir la URL para la API ---
+$apiBaseUrl = 'http://kumo01.tsc.uc3m.es:9083/queries/getDocsByYearAugmented/';
+$queryParams = [
+    'corpus_collection' => $corpus, 'start' => $start, 'rows' => $rows,
+    'sort_by_order' => $sortBy, 'start_year' => $year, 'keyword' => $keyword,
+    'searchable_field' => $searchableField
+];
+$apiUrl = $apiBaseUrl . '?' . http_build_query($queryParams);
 
-// --- Parámetros de DataTables ---
-// DataTables envía 'start' para el offset y 'length' para el número de filas.
-$start = isset($_GET['start']) ? intval($_GET['start']) : 0;
-$rows = isset($_GET['length']) ? intval($_GET['length']) : 10;
-// DataTables envía un contador 'draw' para evitar ataques XSS y sincronizar peticiones.
-$draw = isset($_GET['draw']) ? intval($_GET['draw']) : 0;
+// --- 3. Llamar a la API ---
+$ch = curl_init($apiUrl);
+curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, 10);
+curl_setopt($ch, CURLOPT_TIMEOUT, 20);
+$apiResponse = curl_exec($ch);
+$httpcode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+curl_close($ch);
 
-// --- Parámetros personalizados ---
-if (!isset($_GET['corpus']) || !isset($_GET['year'])) {
-    http_response_code(400);
-    echo json_encode(['error' => 'Faltan los parámetros "corpus" o "year".']);
-    exit;
-}
-$corpus = urlencode($_GET['corpus']);
-$year = intval($_GET['year']);
-
-$servidor =  getServer();
-// --- Llamada a la API ---
-$apiUrl = $servidor . "/queries/getDocsByYear/?corpus_collection={$corpus}&year={$year}&start={$start}&rows={$rows}";
-$apiResponse = @file_get_contents($apiUrl);
-
-if ($apiResponse === FALSE) {
-    http_response_code(500);
-    echo json_encode(['error' => 'No se pudo obtener los documentos de la API.']);
+// --- 4. Comprobar la respuesta ---
+if ($apiResponse === false || $httpcode != 200) {
+    echo json_encode(["draw" => $draw, "recordsTotal" => 0, "recordsFiltered" => 0, "data" => [], "error" => "API connection failed with code: $httpcode"]);
     exit;
 }
 
 $data = json_decode($apiResponse, true);
 
-// --- Normalizar datos (Añadir 'NA' si falta una clave) ---
-$normalizedData = [];
-foreach ($data as $doc) {
-    $normalizedData[] = [
-        'id' => $doc['id'] ?? 'NA',
-        'title' => $doc['title'] ?? 'NA',
-        'cpv' => $doc['cpv'][0] ?? 'NA',
-        'generated_objective' => $doc['generated_objective'] ?? 'NA',
-        'criterios_adjudicacion' => $doc['criterios_adjudicacion'] ?? 'NA',
-        'criterios_solvencia' => $doc['criterios_solvencia'] ?? 'NA', // Esta puede faltar
-        'condiciones_especiales' => $doc['condiciones_especiales'] ?? 'NA'
-    ];
+// Comprobación de seguridad final
+if ($data === null) {
+    $jsonError = json_last_error_msg();
+    echo json_encode(["draw" => $draw, "recordsTotal" => 0, "recordsFiltered" => 0, "data" => [], "error" => "FATAL: JSON Decode failed. Error: " . $jsonError]);
+    exit;
 }
 
-// --- Construir la respuesta para DataTables ---
-// NOTA: Tu API no devuelve el número total de registros. Para una paginación correcta,
-// DataTables necesita 'recordsTotal' y 'recordsFiltered'.
-// Una solución es usar el 'count' que obtienes en la llamada de años.
-// Por simplicidad aquí, lo dejaremos como un número grande o lo calcularemos si fuera posible.
-// Lo ideal sería que la API de documentos también devolviera el total.
-// Como apaño, podrías almacenar el count del año en la sesión o pasarlo como parámetro.
-// Por ahora, asumiremos un total grande para que la paginación funcione visualmente.
-#$totalRecords = 1000; // ¡OJO! Esto es un valor placeholder.
+// --- 5. Normalizar los datos ---
+$normalizedData = [];
+foreach ($data as $doc) {
+    // -----------------------------------------------------------------
+    // !!! LA SOLUCIÓN FINAL !!!
+    // Comprobamos si el documento es válido (si tiene un 'title').
+    // Si no lo tiene, simplemente lo ignoramos y pasamos al siguiente.
+    // -----------------------------------------------------------------
+    if (isset($doc['title'])) {
+        $normalizedData[] = [
+            'title' => $doc['title'], // Ya no necesitamos '?? NA' aquí porque sabemos que existe
+            'cpv' => isset($doc['cpv'][0]) ? str_replace(["['", "']", "' '"], ['', '', ', '], $doc['cpv'][0]) : 'NA',
+            'generated_objective' => $doc['generated_objective'] ?? 'NA',
+            'criterios_adjudicacion' => $doc['criterios_adjudicacion'] ?? 'NA',
+            'criterios_solvencia' => $doc['criterios_solvencia'] ?? 'NA',
+            'condiciones_especiales' => $doc['condiciones_especiales'] ?? 'NA'
+        ];
+    }
+}
 
-#sacamos, para el año solicitado el número de registros:
-#sacamos todos los años disponibles junto al número de documentos de cada uno:
-$dataYears = getYears ($corpus, $servidor);
-$totalRecords = getCountByYear (json_decode ($dataYears, true), $year);
-
+// --- 6. Enviar la respuesta final ---
 $response = [
-    "draw" => $draw,
-    "recordsTotal" => $totalRecords, // Total de registros sin filtrar
-    "recordsFiltered" => $totalRecords, // Total de registros después de filtrar (no implementamos filtro)
+    "draw" => intval($draw),
+    "recordsTotal" => intval($totalRecords),
+    "recordsFiltered" => intval($totalRecords),
     "data" => $normalizedData
 ];
 

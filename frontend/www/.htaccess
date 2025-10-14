@@ -1,0 +1,5 @@
+AddDefaultCharset UTF-8
+AuthUserFile /var/www/html/.httpasswd
+AuthName Licitaciones
+AUthType Basic
+require user mollete

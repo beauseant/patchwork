@@ -1,5 +1,5 @@
 <?php include 'includes/header.php'; ?>
-<?php include 'includes/sidebar.php'; ?>
+<?php include 'includes/sidebar.php'; #  eeH4jeka7ooR-u.soh?>
 
     <!-- Contenido principal -->
         <main class="main-content p-4">
