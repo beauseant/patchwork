@@ -150,3 +150,11 @@ class deleteSearcheableFields(Resource):
         except Exception as e:
             return str(e), 500
         
+@api.route('/getAllSearchableFileds/')
+class getAllSearchableFileds(Resource):
+    def get(self):
+        try:
+            searchable_fields, code = sc.get_all_searchable_fields()
+            return searchable_fields, code
+        except Exception as e:
+            return str(e), 500

@@ -9,7 +9,7 @@ Modifed: 24/01/2024 (Updated for NP-Solr-Service (NextProcurement Proyect))
 import configparser
 import logging
 import pathlib
-from typing import List, Union
+from typing import List, Tuple, Union
 from src.core.clients.external.np_tools_client import NPToolsClient
 from src.core.clients.base.solr_client import SolrClient
 from src.core.entities.corpus import Corpus
@@ -36,6 +36,8 @@ class NPSolrClient(SolrClient):
         self.path_source = pathlib.Path(cf.get('restapi', 'path_source'))
         self.thetas_max_sum = int(cf.get('restapi', 'thetas_max_sum'))
         self.betas_max_sum = int(cf.get('restapi', 'betas_max_sum'))
+        self.searchable_fields = cf.get('restapi', 'searchable_fields')
+        self.date_field = cf.get('restapi', 'date_field')
 
         # Create Queries object for managing queries
         self.querier = Queries()
@@ -636,6 +638,17 @@ class NPSolrClient(SolrClient):
                 f"-- -- {model_col} is not a model collection. Aborting operation...")
             return False
         return True
+    
+    def get_all_searchable_fields(self) -> List[str]:
+        """Returns the list of fields used for searching documents in the similarities and document search functions.
+
+        Returns
+        -------
+        searchable_fields : List[str]
+            List of fields used for searching documents.
+        """
+
+        return self.searchable_fields.split(","), 200
 
     # ======================================================
     # AUXILIARY FUNCTIONS
@@ -1743,3 +1756,98 @@ class NPSolrClient(SolrClient):
 
         return items, sc
     
+    def do_Q32(
+        self,
+        corpus_col: str,
+        start: str,
+        rows: str,
+        sort_by_order: List[Tuple[str, str]] = [("date", "desc")],
+        start_year: int = None,
+        end_year: int = None,
+        keyword: str = "*",
+        searchable_field: str = '*',
+    ) -> Union[dict, int]:
+        """Executes query Q32.
+
+        Parameters
+        ----------
+        corpus_col: str
+            Name of the corpus collection
+        start: str
+            Index of the first document to be retrieved
+        rows: str
+            Number of documents to be retrieved
+        sort_by_order: List[Tuple[str, str]]
+            List of tuples with the field to sort by and the order (asc or desc)
+        start_year: int
+            Start year for filtering documents by date
+        end_year: int
+            End year for filtering documents by date
+        keyword: str
+            Keyword to search in the searchable_field
+        searchable_field: str
+            Field to search the keyword in
+        date_field: str
+            Field containing the date information
+        display_fields: List[str]
+            List of fields to be displayed in the results
+
+        Returns
+        -------
+        json_object: dict
+            JSON object with the results of the query.
+        sc : int
+            The status code of the response.
+        """
+        # 0. Convert corpus name to lowercase
+        corpus_col = corpus_col.lower()
+
+        # 1. Check that corpus_col is indeed a corpus collection
+        if not self.check_is_corpus(corpus_col):
+            return
+
+        # 2. Get number of docs in the collection (it will be the maximum number of docs to be retireved) if rows is not specified
+        if rows is None:
+            q3 = self.querier.customize_Q3()
+            params = {k: v for k, v in q3.items() if k != 'q'}
+
+            sc, results = self.execute_query(
+                q=q3['q'], col_name=corpus_col, **params)
+
+            if sc != 200:
+                self.logger.error(
+                    f"-- -- Error executing query Q3. Aborting operation...")
+                return
+            rows = results.hits
+        if start is None:
+            start = str(0)
+
+        # 2. Execute query
+        q32 = self.querier.customize_Q32(
+            sort_by_order=sort_by_order,
+            start_year=start_year,
+            end_year=end_year,
+            keyword=keyword,
+            searchable_field=searchable_field,
+            date_field=self.date_field,
+            display_fields=self.searchable_fields,
+            start=start,
+            rows=rows
+        )
+        params = {k: v for k, v in q32.items() if k != 'q'}
+        
+        self.logger.info(f"-- -- Q32 params: {params}")
+        self.logger.info(f"-- -- Q32 q: {q32['q']}")
+
+        sc, results = self.execute_query(
+            q=q32['q'], col_name=corpus_col, **params)
+
+        if sc != 200:
+            self.logger.error(
+                f"-- -- Error executing query Q32. Aborting operation...")
+            return
+
+        return results.docs, sc
+
+        
+        
