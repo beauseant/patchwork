@@ -726,13 +726,20 @@ class Queries(object):
         sort_by_order_str = ', '.join(sort_by_order_lst)
 
         # Decide whether to apply the date filter
-        apply_date_filter = (start_year is not None and end_year is not None)
+        apply_date_filter = (start_year is not None or end_year is not None)
         if apply_date_filter:
-            if start_year > end_year:
-                raise ValueError("'start_year' must be <= 'end_year'.")
-            s, _ = _year_bounds_utc(start_year)
-            _, e = _year_bounds_utc(end_year)
-
+            if start_year is not None and end_year is not None:
+                if start_year > end_year:
+                    raise ValueError("'start_year' must be <= 'end_year'.")
+                s, _ = _year_bounds_utc(start_year)
+                _, e = _year_bounds_utc(end_year)
+            elif start_year is not None:
+                s, _ = _year_bounds_utc(start_year)
+                _, e = _year_bounds_utc(start_year)
+            elif end_year is not None:
+                s, _ = _year_bounds_utc(end_year)
+                _, e = _year_bounds_utc(end_year)
+                
         # Assemble query
         custom_q32 = {
             'q': self.Q32['q'].format(searchable_field, keyword),
