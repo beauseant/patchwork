@@ -1,28 +1,37 @@
-<!DOCTYPE html>
-<html lang="es">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Visor de Licitaciones</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link href="https://cdn.datatables.net/1.13.7/css/dataTables.bootstrap5.min.css" rel="stylesheet">
-    <style>
-        #licitacionesTable td {
-            max-width: 300px;
-            overflow: hidden;
-            text-overflow: ellipsis;
-            white-space: nowrap;
-        }
-    </style>
-</head>
-<body>
-    <div class="container mt-4">
+<?php include '../includes/header.php'; ?>
+<?php include '../includes/sidebar.php';?>
+<?php include '../includes/utils.php'; ?>
+
+   <main class="main-content p-4">
+        <div class="container-fluid mt-5">
+            <?php
+                            $salida =  pingHost();                            
+                            if (array_key_exists('NOOK', $salida)) {
+                                echo '
+                                    <div class="alert alert-danger" role="alert">
+                                        <p>Error en servidor: '. $salida['NOOK'] . ' No es posible mostrar resultados</p>' .
+                                    '</div>
+                                ';
+                                include '../includes/footer.php';
+                                exit();
+                            }
+
+                            if (array_key_exists('OK', $salida)) {      
+                                echo '
+                                    <div class="alert alert-success" role="alert">
+                                        <p>Conexión correcta con el servidor: '. $salida['OK']['service'] . '/'. $salida['OK']['timestamp']  . '</p>' .
+                                    '</div>
+                                ';                                    
+      
+                            }    
+            ?>    
+           
         <h1 class="mb-4">Documentos de Licitaciones</h1>
 
         <div class="row mb-3">
             <div class="col-md-6">
                 <label for="corpusSelector" class="form-label"><strong>Corpus:</strong></label>
-                <select id="corpusSelector" class="form-select"></select>
+                <select id="corpusSelector" disabled class="form-select"></select>
             </div>
             <div class="col-md-6">
                 <label for="yearSelector" class="form-label"><strong>Año:</strong></label>
@@ -39,24 +48,31 @@
             </div>
         </div>
 
-        <table id="licitacionesTable" class="table table-striped table-bordered" style="width:100%">
+
+    <div>
+        Columnas a mostrar: <a class="toggle-vis" data-column="0">Title</a> - <a class="toggle-vis" data-column="1">CPV</a> - <a class="toggle-vis" data-column="2">Generated objective</a> - <a class="toggle-vis" data-column="3">Award criteria</a> - <a class="toggle-vis" data-column="4">Solvency criteria</a> - <a class="toggle-vis" data-column="5">Special conditions</a>
+    </div>
+
+    
+        <table id="licitacionesTable" class="table table-striped table-borderless table-hover  table-responsive-sm" style="width:80%">
+
             <thead>
                 <tr>
-                    <th>Título</th>
+                    <th>Title</th>
                     <th>CPV</th>
-                    <th>Objetivo Generado</th>
-                    <th>Criterios Adjudicación</th>
-                    <th>Criterios Solvencia</th>
-                    <th>Condiciones Especiales</th>
-                    <th>Ver</th>
+                    <th >Generated objective</th>
+                    <th>Award criteria</th>
+                    <th>Solvency criteria</th>
+                    <th>Special conditions</th>
+                    <th>View</th>
                 </tr>
             </thead>
             <tbody></tbody>
         </table>
     </div>
 
-    <div class="modal fade" id="detalleModal" tabindex="-1" aria-labelledby="modalTitle" aria-hidden="true">
-      </div>
+
+
 
     <script src="https://code.jquery.com/jquery-3.7.0.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
@@ -67,6 +83,7 @@
         $(document).ready(function() {
             let table;
 
+            
             // 1. Cargar Corpus y CAMPOS DE BÚSQUEDA al iniciar
             $.ajax({
                 url: 'get_corpus.php',
@@ -161,21 +178,93 @@
                             "defaultContent": '<button class="btn btn-primary btn-sm btn-ver">Ver</button>'
                         }
                     ],
-                    "language": {
+                    "scrollX": true,
+                    /*"language": {
                         "url": "https://cdn.datatables.net/plug-ins/1.13.7/i18n/es-ES.json"
-                    }
+                    }*/
                 });
             }
+
             
+
+
+
             // La primera carga de la tabla la dispara el 'change' del selector de año
             $('#yearSelector').on('change', initializeDataTable);
 
-            // 4. Gestor del modal (sin cambios)
+           // --- CÓDIGO DEL MODAL CORREGIDO Y OPTIMIZADO ---
+
+            // 1. Obtenemos la instancia del modal UNA SOLA VEZ, cuando la página carga.
+            const detalleModal = new bootstrap.Modal(document.getElementById('detalleModal'));
+
+            // 2. Creamos el "escuchador" de eventos para los botones "Ver"
             $('#licitacionesTable tbody').on('click', '.btn-ver', function() {
-                const data = table.row($(this).parents('tr')).data();
-                // ... (código del modal sin cambios)
+                const row = table.row($(this).parents('tr'));
+                const data = row.data();
+                
+                // Verificamos que 'data' no sea undefined antes de usarlo
+                if (data) {
+                    const modalContentHtml = `
+                        <p><strong>Título:</strong> ${data.title}</p>
+                        <hr>
+                        <p><strong>CPV:</strong> ${data.cpv}</p>
+                        <hr>
+                        <p><strong>Objetivo Generado:</strong></p>
+                        <p>${data.generated_objective}</p>
+                        <hr>
+                        <p><strong>Criterios de Adjudicación:</strong></p>
+                        <p style="white-space: pre-wrap;">${data.criterios_adjudicacion}</p>
+                        <hr>
+                        <p><strong>Criterios de Solvencia:</strong></p>
+                        <p style="white-space: pre-wrap;">${data.criterios_solvencia}</p>
+                        <hr>
+                        <p><strong>Condiciones Especiales:</strong></p>
+                        <p style="white-space: pre-wrap;">${data.condiciones_especiales}</p>
+                    `;
+
+                    $('#modalTitle').text(data.title);
+                    $('#modalBody').html(modalContentHtml);
+
+                    // 3. Simplemente mostramos el modal que ya teníamos preparado.
+                    detalleModal.show();
+                }
+            });
+
+        document.querySelectorAll('a.toggle-vis').forEach((el) => {
+
+            table = $('#licitacionesTable').DataTable();
+
+            el.addEventListener('click', function (e) {
+                e.preventDefault();
+        
+                let columnIdx = e.target.getAttribute('data-column');
+                let column = table.column(columnIdx);
+        
+                // Toggle the visibility
+                column.visible(!column.visible());
             });
         });
+
+
+
+        });
     </script>
-</body>
-</html>
+
+
+    <div class="modal fade" id="detalleModal" tabindex="-1" aria-labelledby="modalTitle" aria-hidden="true">
+        <div class="modal-dialog modal-lg modal-dialog-scrollable">
+            <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="modalTitle">Detalles de la Licitación</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body" id="modalBody">
+                </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
+            </div>
+            </div>
+        </div>
+    </div>    
+    
+<?php include '../includes/footer.php'; ?>

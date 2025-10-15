@@ -37,7 +37,7 @@
                             <div class="col-md-1">
                                 <!-- Button trigger modal -->
                                 <button type="button" class="btn btn-text" data-bs-toggle="modal" data-bs-target="#infoModal">
-                                    <i class="bi bi-info-circle"></i>
+                                    <h2><i style="margin-left:-190px;color:#6f42c1;" class="alert-success bi bi-info-circle"></i></h2>
                                 </button>                            
                             </div>
                         </div>
@@ -96,7 +96,7 @@
 
 
                     <!-- Modal -->
-                    <div class="modal fade" id="infoModal" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
+                    <div class="modal fade modal-lg" id="infoModal" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
                     <div class="modal-dialog">
                         <div class="modal-content">
                         <div class="modal-header">
@@ -104,16 +104,18 @@
                             <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                         </div>
                         <div class="modal-body">
-                        📑  Depending on the document type, different metadata fields can be extracted:<br>
+                            <i style="font-size:30px;"class="bi bi-tools"></i><br>
+                        Depending on the document type, different metadata fields can be extracted:<br>
                         <ul>
                             <li>Administrative documents: award criteria, tie-breaking rules, solvency requirements, and special execution conditions.</li>
                             <li>Technical documents: contract objectives and CPV codes.</li>
                         </ul>
-                        📑 
+                        <i style="font-size:30px;" class="bi bi-cloud-arrow-up"></i><br>
                         Files uploaded to the system are identified by their MD5 checksum. This mechanism prevents uploading files with identical content but different names, while allowing files with the same name but different content to be uploaded. The system does allow the same file (i.e., with identical content) to be uploaded in different categories; for example, the same file can be uploaded both as a technical document and as an administrative document.</br></br>
+                        <i style="font-size:30px;" class="bi bi-cup-hot""></i><br>
                         After submission, the task remains <b>pending</b> until automatically processed.</br></br>
-                        📑 
-                        You can track its processing status and view the enriched results in the <b>“Uploaded Documents (Enriched)”</b>page.
+                        
+                        You can track its processing status and view the enriched results in the <b><a href="/extract/list.php">“Uploaded Documents (Enriched)”</a></b> page.
                         </div>
                         <div class="modal-footer">
                             <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>

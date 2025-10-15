@@ -46,6 +46,9 @@ if ($data === null) {
     exit;
 }
 
+/*echo json_encode(["draw" => $draw, "recordsTotal" => 0, "recordsFiltered" => 0, "year"=> $apiUrl,"data" => [], "error" => count ($data)]);
+exit;*/
+
 // --- 5. Normalizar los datos ---
 $normalizedData = [];
 foreach ($data as $doc) {

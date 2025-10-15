@@ -22,7 +22,7 @@
                 <i class="bi bi-archive icon fs-5"></i>
                 <span class="text">Explore Documents </span>
             </a>            
-            <a class="nav-link d-flex align-items-center linkcolor" href="topics/index.php">
+            <a class="nav-link d-flex align-items-center linkcolor" href="/topics/index.php">
                 <i class="bi bi-file-earmark-bar-graph icon fs-5"></i>
                 <span class="text">Discover Topics</span>
             </a>                 
