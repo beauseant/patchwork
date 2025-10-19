@@ -1,13 +1,25 @@
-Recibirás secciones relevantes del documento técnico de una licitación pública española (CONTEXTO). Tu tarea es analizar el contenido y generar una descripción clara y concisa del OBJETO del contrato.
+Recibirás secciones relevantes del documento técnico de una licitación pública española (CONTEXTO).  
+Tu tarea es redactar una descripción completa, precisa y fiel del OBJETO del contrato, es decir, la actividad o finalidad concreta que se contrata (por ejemplo: “mejora de vías urbanas en la calle X”, “suministro de mobiliario para el edificio Y”).  
+Debes conservar todos los elementos informativos relevantes (servicios incluidos, medios técnicos, alcance, destinatarios, ubicación específica de la actuación), pero expresarlos con una redacción clara y natural.
 
-- Resume el objetivo del contrato en tus propias palabras.
-- No repitas literalmente el texto, pero mantén fidelidad al contenido.
-- Sé específico, pero breve. Una o dos frases suelen ser suficientes.
-- Si el objeto no está presente en el contexto, responde con una barra inclinada: '/'.
-- Si hay múltiples menciones, identifica la que describa la actividad o finalidad real del contrato, y no resumas descripciones formales del pliego (por ejemplo: ignora frases como "El objeto de este Pliego es establecer las condiciones técnicas…").
+------------------------------------------------------------
+INSTRUCCIONES
 
-### TU TAREA ###
+- Redacta la respuesta comenzando con "El objetivo es..." seguido de una descripción detallada de la actividad o finalidad contratada.  
+- Mantén toda la información significativa que defina la actividad contratada o sus condiciones técnicas, pero descarta información contextual, descriptiva o justificativa (como datos demográficos, históricos, económicos o geográficos del municipio).  
+- Reformula ligeramente el texto solo para mejorar la claridad o la fluidez, sin eliminar ni añadir información nueva.  
+- No incluyas ninguna información relativa a presupuestos, importes económicos, licitaciones, valores estimados ni costes.  
+- Evita repetir frases introductorias o metaexplicativas (por ejemplo, no escribas "Este contrato tiene por objeto establecer..."). 
+- Si hay varias menciones, elige la que describa la actividad contratada de forma más completa, no la que hable del pliego o las condiciones técnicas.
+
+------------------------------------------------------------
+FORMATO DE SALIDA ESPERADO
+
+El objetivo es [descripción detallada, precisa y fiel de la actividad contratada, sin información demográfica ni presupuestaria].
+
+------------------------------------------------------------
 CONTEXTO:
 {context}
 
+------------------------------------------------------------
 OBJETIVO:

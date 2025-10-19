@@ -25,7 +25,10 @@ objective_extractor_model = api.model("ObjectiveExtractor", {
 # ======================================================
 # Create Objective Extractor Object (heavy init once)
 # ======================================================
-extractor = ObjectiveExtractor(logger=logger)
+extractor = ObjectiveExtractor(
+    logger=logger,
+    config_path="/np-tools/src/core/objective_extractor/config/config.yaml"
+)
 
 @api.route("/extract/")
 class Extract(Resource):
@@ -57,7 +60,7 @@ class Extract(Resource):
             if not input_text:
                 return {"error": "Invalid input. Please provide non-empty text."}, 400
 
-            extracted_objectives = {"extracted_objective": extractor.extract_extractive(input_text)}
+            extracted_objectives = {"generated_objective": extractor.extract_generative(input_text)}
 
             end_time = time.time() - start_time
             response = {

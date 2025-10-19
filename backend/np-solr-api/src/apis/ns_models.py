@@ -71,6 +71,50 @@ class ListAllModels(Resource):
     def get(self):
         try:
             models_lst, code = sc.list_model_collections()
-            return models_lst, code
+            
+            # models have the form "0_45_6_topics" -> "iter_cpv_topics"
+            # make a list of dictionaries with key cpv and value granularity
+            
+            # sort elements in models_lst so all 0_45_XX appear together
+            models_lst.sort(key=lambda x: (x.split('_')[1], x.split('_')[2]))
+            models_lst_formatted = []
+            for i in range(len(models_lst)):
+                parts = models_lst[i].split('_')
+                cpv = parts[1]
+                granularity = parts[2]
+                models_lst_formatted.append({'cpv': cpv, 'granularity': granularity})
+                
+            # group by cpv
+            grouped_models = {}
+            for model in models_lst_formatted:
+                cpv = model['cpv']
+                granularity = model['granularity']
+                if cpv not in grouped_models:
+                    grouped_models[cpv] = []
+                grouped_models[cpv].append(granularity)
+            
+            # convert each granularity value to high-level:granularity or low-level:granularity
+            for cpv in grouped_models:
+                granularities = grouped_models[cpv]
+                granularities = [int(g) for g in granularities]
+                granularities_formatted = []
+                
+                if granularities[0] < granularities[1]:
+                    granularities_formatted.append(
+                       {"low":granularities[0]}
+                    )
+                    granularities_formatted.append(
+                       {"high":granularities[1]}
+                    )
+                else:
+                    granularities_formatted.append(
+                       {"high":granularities[0]}
+                    )
+                    granularities_formatted.append(
+                       {"low":granularities[1]}
+                    )
+                grouped_models[cpv] = granularities_formatted
+                    
+            return grouped_models, code
         except Exception as e:
             return str(e), 500

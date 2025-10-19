@@ -1302,8 +1302,9 @@ class NPSolrClient(SolrClient):
         # 6. Normalize scores
         for el in results.docs:
             el['score'] *= (100/(self.thetas_max_sum ^ 2))
-
-        return results.docs, sc
+            
+        # return dictionary with keys topics and mostSimilar
+        return {'topics': thetas, 'mostSimilar': results.docs}, sc
 
     def do_Q15(self,
         corpus_col: str,

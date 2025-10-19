@@ -6,7 +6,7 @@ logger:
   console_log: True
   file_log: True
   log_level: INFO
-  logger_name: theta-eval
+  logger_name: objective-extractor
   N_log_keep: 5 #maximum number of log files to keep
 
 ################################
@@ -16,15 +16,83 @@ extractor:
   calculate_on: texto_administrativo # texto_tecnico
   chunk_size: 512
   chunk_overlap: 64
-  embedding_model: paraphrase-multilingual-MiniLM-L12-v2
-  translation_model: projecte-aina/aina-translator-ca-es
-  top_k: 20
-  max_k: 10
-  min_k: 3
-  fusion_alpha: 0.5
+  embedding_model: "mixedbread-ai/mxbai-embed-large-v1"  
+  #embedding_model: paraphrase-multilingual-MiniLM-L12-v2
+  translation_model_ca_es: "Helsinki-NLP/opus-mt-ca-es" #"projecte-aina/aina-translator-ca-es"
+  translation_model_gl_es: "Helsinki-NLP/opus-mt-gl-es"
+  translation_model_eu_es: "Helsinki-NLP/opus-mt-eu-es"
+
+  # Reranking parameters
+  enable_rerank: false
+
+  # Anchor window parameters
+  window_anchor_start: 300
+  window_anchor_end: 500
+  
+  # BM25 and retrieval parameters
+  enable_bm25: false
+  bm25_on_anchor: false
+  dense_confidence_thr: 0.35 #0.28
+  long_doc_chunk_thr: 120 #80
+  rrf_k: 60
+  budget_chars: 3500
+  max_per_chunk: 1200
+  diversity_pos_gap: 1
+  rel_drop: 0.6
+  budget_soft: 0.85
+  max_k: 9
+  min_k: 4
+  budget_on_top_k: 3
+  
+  # BM25 penalty parameters
+  bm25_noise_penalty: 0.6
+  
+  # Reranking weight parameters
+  rerank_base_weight: 0.35 #0.45
+  rerank_purpose_weight: 0.45 #0.35
+  rerank_position_weight: 0.10
+  rerank_noise_weight: 0.10
+  
+  # Text processing parameters
+  sentence_boundary_ratio: 0.6
+  
+  # Anchor window radius parameters
+  anchor_window_radius_wide: 2  # radius for building window around anchor
+  anchor_window_radius_narrow: 1  # radius for required nodes marking
+  
+  # Node scoring parameters
+  window_nodes_base_score: 0.25  # baseline score for window nodes
+  pool_nodes_base_score: 0.3     # baseline score for general pool nodes
+  
+  # Language detection and translation
+  translation_threshold: 0.75    # threshold for deciding when to translate
+  translation_device: 0          # GPU device for translation (-1 for CPU)
+  translation_max_length: 512   # max sequence length for translation
+  
+  # Text cleaning thresholds
+  dot_leader_line_max_length: 200    # max length for dot leader lines to filter
+  numbered_header_max_length: 80     # max length for numbered headers to filter
+  
+  # Adaptive threshold calculation
+  std_dev_factor: 0.25  # factor for standard deviation in threshold calculation
+
+  # Noise score parameters
+  noise_min_denominator: 8
+  noise_words_per_bad_hit: 30
+  
+  # Objective validation parameters
+  objective_min_length: 15
+  objective_max_length: 350
+
+  # separator for context prompt
+  context_separator: "\n\n"
+  
+  # Model configurations
   llm_model_type: llama3.1:8b
   llm_model_type_gen: mixtral:8x22b
   llm_model_type_ex: falcon3:10b-instruct-fp16
+  
+  # Template files
   templates:
     extractive: /np-tools/src/core/objective_extractor/templates/extractive.txt
     generative: /np-tools/src/core/objective_extractor/templates/generative.txt
@@ -40,7 +108,8 @@ llm:
     seed: 1234
   gpt:
     available_models:
-      {
+      { 
+        "gpt-5-mini",
         "gpt-4o-2024-08-06",
         "gpt-4o-mini-2024-07-18",
         "chatgpt-4o-latest",
@@ -74,7 +143,7 @@ llm:
       "llama3.1:8b",
       "deepseek-v3:latest"
     }
-    host: http://kumo01.tsc.uc3m.es:11434
+    host: http://kumo02.tsc.uc3m.es:11434
   vllm:
     available_models: {
       "Qwen/Qwen3-8B",

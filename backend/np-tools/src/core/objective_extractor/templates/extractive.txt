@@ -1,12 +1,24 @@
-Recibirás secciones relevantes del documento técnico de una licitación pública española (CONTEXTO). Tu tarea es extraer el OBJETO del contrato a partir del contexto.
+Recibirás secciones relevantes del documento técnico de una licitación pública española (CONTEXTO).  
+Tu tarea es identificar y extraer literalmente el fragmento del texto que describe el OBJETO del contrato, es decir, la actividad o finalidad concreta que se contrata (por ejemplo: “el servicio de mantenimiento de zonas verdes”, “la ejecución de obras de mejora de la vía pública”, “el suministro de mobiliario de oficina”).
 
-- El OBJETO extraído debe ser un fragmento de texto que aparece literalmente en el documento. No lo resumas ni lo reformules.
-- Devuelve solo el texto tal y como aparece en el documento.
-- Si el objeto no está presente en el contexto, responde con una barra inclinada: '/'
-- Si hay múltiples menciones al objeto del contrato, elige la que describa la finalidad o actividad que se contratará (por ejemplo: "el servicio de mantenimiento de zonas verdes"), y descarta aquellas que solo expliquen el objeto del pliego o aspectos formales del documento (por ejemplo: "El objeto de este Pliego es establecer las condiciones técnicas…").
+------------------------------------------------------------
+INSTRUCCIONES
 
-### TU TAREA ###
+- Devuelve únicamente el fragmento literal del contexto que exprese el objeto del contrato.  
+- No resumas, no reescribas ni reformules** el texto bajo ningún concepto.  
+- Si el objeto no aparece de forma explícita en el contexto, responde solo con una barra inclinada: /.  
+- Si hay varias menciones, elige la que describa la actividad o finalidad contratada, no la que hable del objeto del pliego o de las condiciones técnicas (por ejemplo, descarta frases como "El objeto de este pliego es establecer las condiciones…").  
+- No incluyas explicaciones adicionales, comentarios, ni texto fuera del fragmento literal.
+
+------------------------------------------------------------
+FORMATO DE SALIDA ESPERADO
+
+[Fragmento literal del objeto del contrato extraído del contexto]  
+o / si no se encuentra.
+
+------------------------------------------------------------
 CONTEXTO:
 {context}
 
+------------------------------------------------------------
 OBJETO:

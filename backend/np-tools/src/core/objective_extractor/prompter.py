@@ -11,7 +11,7 @@ from joblib import Memory  # type: ignore
 from ollama import Client  # type: ignore
 from openai import OpenAI  # type: ignore
 
-memory = Memory(location='/data/cache', verbose=0)
+memory = Memory(location='cache', verbose=0)
 
 
 def hash_input(*args):
@@ -273,7 +273,7 @@ class Prompter:
         system_prompt_template_path: str = None,
     ) -> Union[str, List[str]]:
         """Public method to execute a prompt given a system prompt template and a question."""
-
+    
         # Load the system prompt template
         system_prompt_template = None
         if system_prompt_template_path is not None:
@@ -284,9 +284,8 @@ class Prompter:
         if temperature is not None:
             self.params["temperature"] = temperature
         params_tuple = tuple(sorted(self.params.items()))
-
-        print("Cache key:", hash_input(system_prompt_template, question,
-              self.model_type, self.backend, params_tuple, self.context, use_context))
+        
+        print("Cache key:", hash_input(system_prompt_template, question, self.model_type, self.backend, params_tuple, self.context, use_context))
         cached_data = self._cached_prompt_impl(
             template=system_prompt_template,
             question=question,
@@ -303,5 +302,8 @@ class Prompter:
         # Update context if necessary
         if use_context:
             self.context = cached_data["inputs"]["context"]
+                                
+        if "<think>" in result:
+            result = result.split("</think>")[-1].strip()
 
         return result, logprobs

@@ -30,3 +30,4 @@ backend/np-tools/.env
 data
 .venv
 .venv_sparse
+.env

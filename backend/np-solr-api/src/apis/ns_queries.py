@@ -20,6 +20,44 @@ api = Namespace(
 # Create Solr client
 sc = NPSolrClient(api.logger)
 
+# ======================================================
+# Auxiliary functions
+# ======================================================
+def get_model_collection_by_cpv_granularity(cpv, granularity, models_lst):
+    """
+    Get the appropriate model collection name based on CPV code and granularity.
+    
+    Parameters:
+    -----------
+    cpv : str
+        The CPV code to filter models by
+    granularity : str
+        Either 'high' or 'low' to determine which granularity value to select
+    models_lst : list
+        List of available model names
+        
+    Returns:
+    --------
+    tuple
+        (model_collection_name, error_message, status_code)
+        If successful: (model_name, None, 200)
+        If error: (None, error_message, error_code)
+    """
+    # Filter models that match the given CPV code
+    matching_models = [int(model.split('_')[2]) for model in models_lst 
+                      if len(model.split('_')) >= 3 and model.split('_')[1] == cpv]
+    
+    if not matching_models:
+        return None, f"No models found for CPV code: {cpv}", 404
+    
+    if granularity == 'high':
+        granularity_value = max(matching_models)
+    else:  # granularity == 'low'
+        granularity_value = min(matching_models)
+    
+    model_collection = f"0_{cpv}_{granularity_value}_topics"
+    return model_collection, None, 200
+
 # Define parsers to take inputs from user
 q1_parser = reqparse.RequestParser()
 q1_parser.add_argument(
@@ -65,39 +103,51 @@ q7_parser.add_argument(
 q7_parser.add_argument(
     'rows', help='Controls how many rows of responses are displayed at a time (default value: maximum number of docs in the collection)', required=False)
 
+###
 q8_parser = reqparse.RequestParser()
 q8_parser.add_argument(
-    'model_collection', help='Name of the model collection', required=True)
+    'cpv', help='CPV code of the topic model', required=True)
+q8_parser.add_argument(
+    'granularity', help='Granularity level of the topic model', required=True, choices=['high', 'low'])
 q8_parser.add_argument(
     'start', help='Specifies an offset (by default, 0) into the responses at which Solr should begin displaying content', required=False)
 q8_parser.add_argument(
     'rows', help='Controls how many rows of responses are displayed at a time (default value: maximum number of docs in the collection)', required=False)
 
+##
 q9_parser = reqparse.RequestParser()
 q9_parser.add_argument(
     'corpus_collection', help='Name of the corpus collection', required=True)
 q9_parser.add_argument(
-    'model_name', help='Name of the model reponsible for the creation of the doc-topic distribution', required=True)
+    'cpv', help='CPV code of the topic model', required=True)
 q9_parser.add_argument(
-    'topic_id', help="ID of the topic whose top documents according to 'model_name' are being searched", required=True)
+    'granularity', help='Granularity level of the topic model', required=True, choices=['high', 'low'])
+q9_parser.add_argument(
+    'topic_id', help="ID of the topic whose top documents are being searched", required=True)
 q9_parser.add_argument(
     'start', help='Specifies an offset (by default, 0) into the responses at which Solr should begin displaying content', required=False)
 q9_parser.add_argument(
     'rows', help='Controls how many rows of responses are displayed at a time (default value: maximum number of docs in the collection)', required=False)
 
+##
 q10_parser = reqparse.RequestParser()
 q10_parser.add_argument(
-    'model_collection', help='Name of the model collection', required=True)
+    'cpv', help='CPV code of the topic model', required=True)
+q10_parser.add_argument(
+    'granularity', help='Granularity level of the topic model', required=True, choices=['high', 'low'])
 q10_parser.add_argument(
     'start', help='Specifies an offset (by default, 0) into the responses at which Solr should begin displaying content', required=False)
 q10_parser.add_argument(
     'rows', help='Controls how many rows of responses are displayed at a time (default value: maximum number of docs in the collection)', required=False)
 
+##
 q14_parser = reqparse.RequestParser()
 q14_parser.add_argument(
     'corpus_collection', help='Name of the corpus collection', required=True)
 q14_parser.add_argument(
-    'model_name', help='Name of the model responsible for the creation of the doc-topic distribution', required=True)
+    'cpv', help='CPV code of the topic model', required=True)
+q14_parser.add_argument(
+    'granularity', help='Granularity level of the topic model', required=True, choices=['high', 'low'])
 q14_parser.add_argument(
     'text_to_infer', help="Text to be inferred", required=True)
 q14_parser.add_argument(
@@ -109,7 +159,9 @@ q20_parser = reqparse.RequestParser()
 q20_parser.add_argument(
     'corpus_collection', help='Name of the corpus collection', required=True)
 q20_parser.add_argument(
-    'model_collection', help='Name of the model collection', required=True)
+    'cpv', help='CPV code of the topic model', required=True)
+q20_parser.add_argument(
+    'granularity', help='Granularity level of the topic model', required=True, choices=['high', 'low'])
 q20_parser.add_argument(
     'word', help="Word to search for documents that are similar to it.", required=True)
 q20_parser.add_argument(
@@ -131,6 +183,7 @@ q21_parser.add_argument(
 q21_parser.add_argument(
     'rows', help='Controls how many rows of responses are displayed at a time (default value: maximum number of docs in the collection)', required=False)
 
+#### TODO revise
 q22_parser = reqparse.RequestParser()
 q22_parser.add_argument(
     'text_to_infer',
@@ -143,18 +196,12 @@ q22_parser.add_argument(
     required=False
 )
 q22_parser.add_argument(
-    'granularity',
-    help='Specifies the level of topic detail: "large" (more topics) or "small" (fewer topics). Default is "large".',
-    default="large",
-    required=False
-)
-
+    'granularity', help='Granularity level of the topic model', required=True, choices=['high', 'low'])
 q22_parser.add_argument(
     'model_name',
     help="Model to be used for the inference in case 'cpv' and 'granularity' are not provided.",
     required=False
 )
-
 
 q30_parser = reqparse.RequestParser()
 q30_parser.add_argument(
@@ -289,7 +336,26 @@ class getTopicsLabels(Resource):
     @api.doc(parser=q8_parser)
     def get(self):
         args = q8_parser.parse_args()
-        model_collection = args['model_collection']
+        
+        models_lst, code = sc.list_model_collections()
+        
+        if code != 200:
+            return "Error retrieving model collections.", code
+        
+        # models have the form "0_45_6_topics" -> "iter_cpv_topics"
+        # make a list of dictionaries with key cpv and value granularity
+        # assume 0 as id and map cpv and granularity. If granularity is 'high' take the higher value, if 'low' the lower one.
+        # @TODO: there should be a better way for the naming convention of the models; right now two models could have the same name for different collections unless we assume just one collection which is not really scalable
+        cpv = args['cpv']
+        granularity = args['granularity']
+        
+        # Get the appropriate model collection using auxiliary function
+        model_collection, error_msg, status_code = get_model_collection_by_cpv_granularity(
+            cpv, granularity, models_lst)
+        
+        if error_msg:
+            return error_msg, status_code
+        
         start = args['start']
         rows = args['rows']
 
@@ -300,17 +366,25 @@ class getTopicsLabels(Resource):
         except Exception as e:
             return str(e), 500
 
-
 @api.route('/getTopicTopDocs/')
 class getTopicTopDocs(Resource):
     @api.doc(parser=q9_parser)
     def get(self):
         args = q9_parser.parse_args()
         corpus_collection = args['corpus_collection']
-        model_name = args['model_name']
+        cpv = args['cpv']
+        granularity = args['granularity']
         topic_id = args['topic_id']
         start = args['start']
         rows = args['rows']
+
+        models_lst, code = sc.get_corpus_models(corpus_col=corpus_collection)
+        if code != 200:
+            return "Error retrieving model collections for the corpus.", code
+        model_name, error_msg, status_code = get_model_collection_by_cpv_granularity(
+            cpv, granularity, models_lst)
+        if error_msg:
+            return error_msg, status_code
 
         try:
             return sc.do_Q9(corpus_col=corpus_collection,
@@ -327,9 +401,20 @@ class getModelInfo(Resource):
     @api.doc(parser=q10_parser)
     def get(self):
         args = q10_parser.parse_args()
-        model_collection = args['model_collection']
+        cpv = args['cpv']
+        granularity = args['granularity']
+
         start = args['start']
         rows = args['rows']
+        
+        models_lst, code = sc.list_model_collections()
+        if code != 200:
+            return "Error retrieving model collections.", code
+        model_collection, error_msg, status_code = get_model_collection_by_cpv_granularity(
+            cpv, granularity, models_lst)
+        if error_msg:
+            return error_msg, status_code
+        
         try:
             return sc.do_Q10(model_col=model_collection,
                              start=start,
@@ -345,10 +430,19 @@ class getDocsSimilarToFreeTextTM(Resource):
     def get(self):
         args = q14_parser.parse_args()
         corpus_collection = args['corpus_collection']
-        model_name = args['model_name']
+        cpv = args['cpv']
+        granularity = args['granularity']
         text_to_infer = args['text_to_infer']
         start = args['start']
         rows = args['rows']
+        
+        models_lst, code = sc.get_corpus_models(corpus_col=corpus_collection)
+        if code != 200:
+            return "Error retrieving model collections for the corpus.", code
+        model_name, error_msg, status_code = get_model_collection_by_cpv_granularity(
+            cpv, granularity, models_lst)
+        if error_msg:
+            return error_msg, status_code
 
         try:
             return sc.do_Q14(corpus_col=corpus_collection,
@@ -366,14 +460,24 @@ class getDocsRelatedToWord(Resource):
     def get(self):
         args = q20_parser.parse_args()
         corpus_collection = args['corpus_collection']
-        model_collection = args['model_collection']
+        cpv = args['cpv']
+        granularity = args['granularity']
         search_word = args['word']
         start = args['start']
         rows = args['rows']
+
+        models_lst, code = sc.get_corpus_models(corpus_col=corpus_collection)
+        if code != 200:
+            return "Error retrieving model collections for the corpus.", code
+        model_name, error_msg, status_code = get_model_collection_by_cpv_granularity(
+            cpv, granularity, models_lst)
+        if error_msg:
+            return error_msg, status_code
+
         try:
             return sc.do_Q20(
                 corpus_col=corpus_collection,
-                model_name=model_collection,
+                model_name=model_name,
                 search_word=search_word,
                 embedding_model="word2vec",
                 start=start,
@@ -411,9 +515,18 @@ class inferTopicInformation(Resource):
         
         if args['cpv'] is None and args['model_name'] is None:
             return "CPV code or model name not provided.", 500
-        
-        if args['cpv'] is not None:
-            model_name = args['cpv'] + "_" + args['granularity']
+
+        if args['cpv'] is not None and args['granularity'] is not None:
+            cpv = args['cpv']
+            granularity = args['granularity']
+            models_lst, code = sc.list_model_collections()
+            if code != 200:
+                return "Error retrieving model collections.", code
+            model_name, error_msg, status_code = get_model_collection_by_cpv_granularity(
+                cpv, granularity, models_lst)
+            if error_msg:
+                return error_msg, status_code
+            
         else:
             model_name = args['model_name']
             

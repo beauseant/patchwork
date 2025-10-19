@@ -95,7 +95,7 @@ class predict(Resource):
             model_to_infer = model_name
         
         # We look for the model in case the user did not write the name properly
-        look_dir = pathlib.Path("/data/source/cpv_models")
+        look_dir = pathlib.Path("/data/source")
         model_path = None
         for folder in os.listdir(look_dir):
             if folder.lower() == model_to_infer.lower():
@@ -109,14 +109,15 @@ class predict(Resource):
         else:        
             model_for_infer = look_dir / f"default_{granularity}"
             if not model_for_infer.is_dir():
+                model_name = args["model_name"]
                 logger.error(
-                    f"-- -- Model for inference not found: { args["model_for_infer"]} and default model is also not available.")
+                    f"-- -- Model for inference not found: {model_name} and default model is also not available.")
                 end_time = time.time() - start_time
                 sc = 501
                 responseHeader = {
                     "status": sc,
                     "time": end_time,
-                    "error": f"Model for inference not found: { args["model_for_infer"]}"
+                    "error": f"Model for inference not found: {model_name}"
                 }
                 response = {
                     "responseHeader": responseHeader,
@@ -127,6 +128,7 @@ class predict(Resource):
                 logger.info(f"Using default model for inference: {model_for_infer}")
 
         # Perform inference
+        logger.info("llegamos aqui")
         if isinstance(text_to_infer, str):
             text_to_infer_lst = text_to_infer.split(",")
             if len(text_to_infer_lst) == 1:
@@ -142,13 +144,13 @@ class predict(Resource):
                 "error": str(e)
             }
             return response, sc
-        
+        logger.info("llegamos aqui 2")
         try:
             thetas = inferencer.predict(
                 texts=text_to_infer_lst,
                 model_for_infer_path=model_for_infer
             )
-
+            logger.info(f"Inference results: {thetas}")
             end_time = time.time() - start_time
 
             # Generate response

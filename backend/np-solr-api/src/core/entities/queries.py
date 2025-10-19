@@ -69,7 +69,7 @@ class Queries(object):
         # ================================================================
         self.Q5 = {
             'q': "{{!vd f=doctpc_{} vector=\"{}\" distance=\"{}\"}}",
-            'fl': "id,objective,link,score",
+            'fl': "id,generated_objective,link,score",
             'start': '{}',
             'rows': '{}'
         }
@@ -98,7 +98,7 @@ class Queries(object):
         # ================================================================
         self.Q7 = {
             'q': '{}:{}',
-            'fl': 'id,objective',
+            'fl': 'id,generated_objective',
             'start': '{}',
             'rows': '{}'
         }
@@ -179,7 +179,7 @@ class Queries(object):
         # ##################################################################
         self.Q20 = {
             'q': "{{!knn f=tpc_embeddings topK=100}}{}",
-            'fl': "id,objective,link,place_id,score",
+            'fl': "id,generated_objective,link,place_id,score",
             'start': '{}',
             'rows': '{}'
         }
@@ -190,7 +190,7 @@ class Queries(object):
         # ################################################################
         self.Q21 = {
             'q': "{{!knn f=embeddings topK=100}}{}",
-            'fl': "id,objective,link,place_id,score",
+            'fl': "id,generated_objective,link,place_id,score",
             'start': '{}',
             'rows': '{}'
         }
@@ -199,7 +199,7 @@ class Queries(object):
         self.Q21_e = {
             'q': "{{!knn f=embeddings topK=100}}{}",
             'fq': '{{!edismax qf={}}} {}',
-            'fl': 'id,objective,link,place_id,score',
+            'fl': 'id,generated_objective,link,place_id,score',
             'start': '{}',
             'rows': '{}'
         }

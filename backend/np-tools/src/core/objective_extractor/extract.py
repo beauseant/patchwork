@@ -1,78 +1,228 @@
+from transformers import AutoModelForSeq2SeqLM, AutoTokenizer, pipeline
+from typing import Dict, Optional
+import argparse
 import heapq
 import logging
+import math
 import pathlib
-from langdetect import detect  # type: ignore
-from langdetect.lang_detect_exception import LangDetectException  # type: ignore
-import ctranslate2  # type: ignore
-import pyonmttok  # type: ignore
-from huggingface_hub import snapshot_download  # type: ignore
-
-from tqdm import tqdm  # type: ignore
-import pandas as pd  # type: ignore
 import re
 
-from llama_index.core import VectorStoreIndex, Document  # type: ignore
+import pandas as pd  # type: ignore
+from bert_score import score  # type: ignore
+from src.core.objective_extractor.file_utils import init_logger, load_yaml_config_file
+from huggingface_hub import snapshot_download  # type: ignore
+from langdetect import detect  # type: ignore
+from langdetect.lang_detect_exception import LangDetectException  # type: ignore
+from llama_index.core import Document, VectorStoreIndex  # type: ignore
 from llama_index.core.node_parser import SentenceSplitter  # type: ignore
-from llama_index.embeddings.huggingface import HuggingFaceEmbedding  # type: ignore
 from llama_index.core.schema import TextNode  # type: ignore
+from llama_index.embeddings.huggingface import HuggingFaceEmbedding  # type: ignore
 from llama_index.retrievers.bm25 import BM25Retriever  # type: ignore
-
 from src.core.objective_extractor.prompter import Prompter
-from src.core.objective_extractor.file_utils import load_yaml_config_file, init_logger
+from tqdm import tqdm  # type: ignore
+
+################################################################################
+# Regexes
+################################################################################
+RE_ANCHOR = re.compile(
+    r"""
+    \b(
+        objeto\s+de\s+la\s+contrataci[oó]n
+      | objeto\s+del\s+contrato
+      | objeto\s+dei\s+contrato
+      | objeto\s+del\s+procedimiento\s+de\s+contrataci[oó]n
+      | informaci[oó]n\s+sobre\s+el\s+procedimiento\s+de\s+contrataci[oó]n
+      | objetivos?\s+del\s+contrato
+      | objeto\s+del\s+pliego
+
+      | objecte\s+de\s+la\s+contractaci[oó]
+      | objecte\s+del\s+contracte
+      | objecte\s+del\s+procediment\s+de\s+contractaci[oó]n?
+      | informaci[oó]?\s+sobre\s+el\s+procediment\s+de\s+contractaci[oó]n?
+      | objectius?\s+del\s+contracte
+      | objecte\s+del\s+plec
+
+      | el\s+presente\s+(?:pliego|proyecto|contrato)\s+(?:tiene|tendr[aá])\s+por\s+objeto
+      | tiene\s+por\s+objeto
+      | el\s+present\s+(?:plec|projecte|contracte)\s+(?:t[eé]|tindr[aà])\s+per\s+objecte
+      | t[eé]\s+per\s+objecte
+
+      | definir\s+las\s+obras\s+de
+      | definir\s+les\s+obres\s+de
+      | suministro\s+de
+    | subministrament\s+de
+
+    )\b
+    """,
+    re.IGNORECASE | re.VERBOSE,
+)
+
+END = r"(?=[\.\n;]|$)"  # non-greedy end: period, break, or end of text
+
+PATTERNS_ANCHOR = [
+    rf"(?:el\s+presente\s+(?:pliego|proyecto|contrato)\s+(?:tiene|tendr[aá])\s+por\s+objeto)\s*[:\-]?\s*(.+?){END}",
+    rf"(?:tiene\s+por\s+objeto)\s*[:\-]?\s*(.+?){END}",
+    rf"(?:objeto\s+del\s+(?:contrato|pliego))\s*[:\-]?\s*(.+?){END}",
+    rf"(?:objeto\s+de\s+la\s+contrataci[oó]n)\s*[:\-]?\s*(.+?){END}",
+    rf"(?:objeto\s+del\s+procedimiento\s+de\s+contrataci[oó]n)\s*[:\-]?\s*(.+?){END}",
+    rf"(?:objetivos?\s+del\s+contrato)\s*[:\-]?\s*(.+?){END}",
+    rf"(?:objeto\s+dei\s+contrato)\s*[:\-]?\s*(.+?){END}",
+    rf"(?:definir\s+las\s+obras\s+de)\s*[:\-]?\s*(.+?){END}",
+    rf"(?:suministro\s+de)\s*[:\-]?\s*(.+?){END}",
+
+    rf"(?:el\s+present\s+(?:plec|projecte|contracte)\s+(?:t[eé]|tindr[aà])\s+per\s+objecte)\s*[:\-]?\s*(.+?){END}",
+    rf"(?:t[eé]\s+per\s+objecte)\s*[:\-]?\s*(.+?){END}",
+    rf"(?:objecte\s+del\s+(?:contracte|plec))\s*[:\-]?\s*(.+?){END}",
+    rf"(?:objecte\s+de\s+la\s+contractaci[oó])\s*[:\-]?\s*(.+?){END}",
+    rf"(?:objecte\s+del\s+procediment\s+de\s+contractaci[oó]n?)\s*[:\-]?\s*(.+?){END}",
+    rf"(?:objectius?\s+del\s+contracte)\s*[:\-]?\s*(.+?){END}",
+    rf"(?:definir\s+les\s+obres\s+de)\s*[:\-]?\s*(.+?){END}",
+    rf"(?:subministrament\s+de)\s*[:\-]?\s*(.+?){END}",
+]
 
 
-def safe_detect(text):
+# patterns that lead to noise (normative/administrative text)
+RE_BAD = re.compile(
+    r'\b(art[ií]culo|cap[ií]tulo|normativa|legislaci[oó]n|obligaciones?|protecci[oó]n\s+de\s+datos|'
+    r'control\s+de\s+calidad|prevenci[oó]n|seguridad\s+y\s+salud|revisi[oó]n\s+de\s+precios|'
+    r'valoraci[oó]n|abono\s+de\s+las\s+obras|maquinaria|medios\s+personales|director[a]?\s+de\s+obra|D\.?O\.?)\b',
+    re.IGNORECASE,
+)
+
+# some cleaning
+RE_DOT_LEADER = re.compile(r'\.{5,}')  # "........"
+
+# 1.2 Objeto del contrato.......................15
+# 3.4.1 Condiciones técnicas....................28
+# Anexo I Documentación........................45
+RE_TOC_LINE = re.compile(
+    r'^\s*(?:\d+(?:[\.\s]\d+){0,3})\s*[-–.]?\s*[A-ZÁÉÍÓÚÑa-záéíóúñ][^.\n]{2,}\.{3,}\s*\d+\s*$'
+)
+
+# 1. OBJETO DEL CONTRATO
+# 2.3 Condiciones generales
+# 4.1.2 Especificaciones técnicas
+RE_NUMBERED_HEADER = re.compile(
+    r'^\s*(?:\d+(?:[\.\-\s]\d+){0,4})\s*[-–\.]*\s*[A-ZÁÉÍÓÚÑa-záéíóúñ].{0,120}$'
+)
+
+# EXCAVADORA HIDRÁULICA
+# 1.- CAMIÓN GRÚA AUTOPROPULSADA
+# HORMIGONERA AUTOPROPULSADA DE 350 L
+# MÁQUINA FRESADORA DE PAVIMENTO
+RE_MACHINERY_LINE = re.compile(
+    r'^\s*(?:\d+(?:\.\d+)*\.-?\s*)?[A-ZÁÉÍÓÚÑ]{3,}(?:\s+[A-ZÁÉÍÓÚÑ]{3,}){0,6}\.?(\s*\.)*\s*$'
+)
+
+# lines that contain only page numbers,
+RE_PAGE_ONLY = re.compile(r'^\s*\d+\s*(?:/\s*\d+)?\s*$')
+################################################################################
+
+# aux functions to get node id and position
+
+
+def _nid(n):
+    """ Extract node ID robustly from different node types. """
+    if hasattr(n, "node") and hasattr(n.node, "node_id"):
+        return n.node.node_id
+    return getattr(n, "node_id", id(n))
+
+
+def _pos(n):
+    """ Extract node position robustly from different node types. """
     try:
-        if text.strip():
-            return detect(text)
-    except LangDetectException:
-        pass
-    return None
+        return n.node.metadata.get("idx", None)
+    except Exception:
+        return (getattr(n, "metadata", {}) or {}).get("idx", None)
+
 
 class CleanedBM25Retriever(BM25Retriever):
-    def __init__(self, nodes, **kwargs):
-        cleaned_nodes = [
-            self._clean_node(n) for n in nodes
-            if self._clean_node(n).text.strip()
-        ]
+    """BM25 with light cleaning to be more robust against OCR and weird punctuation."""
 
+    def __init__(self, nodes, **kwargs):
+        cleaned_nodes = []
+        for n in nodes:
+            cn = self._clean_node(n)
+            if cn.text.strip():
+                cleaned_nodes.append(cn)
         if not cleaned_nodes:
             raise ValueError(
                 "CleanedBM25Retriever received no valid nodes after cleaning.")
-
         super().__init__(nodes=cleaned_nodes, **kwargs)
 
     def _clean_node(self, node: TextNode) -> TextNode:
         cleaned_text = re.sub(r"[:.,\"()\n\-]", " ", node.text.lower())
         return TextNode(text=cleaned_text, id_=node.node_id, metadata=node.metadata)
 
-class ObjectiveExtractor(object):
+
+class MultiToSpanishTranslator:
+    """
+    OPUS Marian (Helsinki-NLP) translator: ca/gl/eu -> es using Hugging Face pipelines.
+    Load once; route by detected source language.
+    """
+
+    def __init__(
+        self,
+        ca_repo: Optional[str] = "Helsinki-NLP/opus-mt-ca-es",
+        gl_repo: Optional[str] = "Helsinki-NLP/opus-mt-gl-es",
+        eu_repo: Optional[str] = "Helsinki-NLP/opus-mt-eu-es",
+        device: int = -1,
+        max_length: int = 512,
+    ):
+        self._pipes: Dict[str, any] = {}
+
+        def _load(lang: str, repo: Optional[str]):
+            if not repo:
+                return
+            tok = AutoTokenizer.from_pretrained(repo)
+            mdl = AutoModelForSeq2SeqLM.from_pretrained(repo)
+            max_pos = getattr(
+                mdl.config, "max_position_embeddings", max_length)
+
+            self._pipes[lang] = pipeline(
+                task="translation",
+                model=mdl,
+                tokenizer=tok,
+                device=device,
+                model_kwargs={"max_length": min(max_length, max_pos)}
+            )
+
+        _load("ca", ca_repo)
+        _load("gl", gl_repo)
+        _load("eu", eu_repo)
+
+    def available(self, lang: str) -> bool:
+        return lang in self._pipes
+
+    def translate(self, text: str, lang: str) -> str:
+        """
+        Translate from 'ca' | 'gl' | 'eu' -> 'es'.
+        If the lang isn't loaded, returns the input text unchanged.
+        """
+        pipe = self._pipes.get(lang)
+        if not pipe:
+            return text
+        return pipe(text)[0]["translation_text"]
+
+
+class ObjectiveExtractor:
     def __init__(
         self,
         logger: logging.Logger = None,
-        config_path: pathlib.Path = pathlib.Path(
-            "/np-tools/src/core/objective_extractor/config/config.yaml"),
+        config_path: pathlib.Path = pathlib.Path(".config/config.yaml"),
         ollama_host: str = "http://kumo01.tsc.uc3m.es:11434",
         **kwargs
     ):
-        """
-        Initialize the Objective Extractor with configuration and models.
-        """
         self._logger = logger if logger else init_logger(config_path, __name__)
         config = load_yaml_config_file(config_path, "extractor", self._logger)
-
-        # Merge config with any additional keyword arguments
         config = {**config, **kwargs}
 
+        # embedding model
         self.embed_model = HuggingFaceEmbedding(
             model_name=config.get("embedding_model"))
+        self.embedding_model_type = config.get("embedding_model")
 
-        model_dir = snapshot_download(repo_id=config.get(
-            "translation_model"), revision="main")
-        self.ct2_tokenizer = pyonmttok.Tokenizer(
-            mode="none", sp_model_path=f"{model_dir}/spm.model")
-        self.ct2_translator = ctranslate2.Translator(model_dir)
-
+        # sentence splitter
         self.node_parser = SentenceSplitter(
             chunk_size=config.get("chunk_size"),
             chunk_overlap=config.get("chunk_overlap")
@@ -80,38 +230,1088 @@ class ObjectiveExtractor(object):
 
         self._logger.info(
             f"Initializing prompter EXTRACTIVE with model type: {config.get('llm_model_type_ex')}")
-        self.prompter_ex = Prompter(model_type=config.get(
+        self.prompter_ex = Prompter(config_path=config_path, model_type=config.get(
             "llm_model_type_ex"), ollama_host=ollama_host)
 
         self._logger.info(
             f"Initializing prompter GENERATIVE with model type: {config.get('llm_model_type_gen')}")
-        self.prompter_gen = Prompter(model_type=config.get(
+        self.prompter_gen = Prompter(config_path=config_path, model_type=config.get(
             "llm_model_type_gen"), ollama_host=ollama_host)
 
         self.calculate_on = config.get("calculate_on")
-        self.top_k = int(config.get("top_k", 20))
-        self.max_k = int(config.get("max_k", 10))
-        self.min_k = int(config.get("min_k", 3))
-        self.fusion_alpha = config.get("fusion_alpha", 0.5)
+        self.evaluate_on = config.get("evaluate_on")
+        self.max_k = config.get("max_k")
+        self.min_k = config.get("min_k")
+        self.budget_on_top_k = config.get("budget_on_top_k")
+        self.enable_rerank = config.get("enable_rerank")
+
+        self.window_anchor_start = config.get("window_anchor_start")
+        self.window_anchor_end = config.get("window_anchor_end")
+
+        self.enable_bm25 = config.get("enable_bm25")
+        self.bm25_on_anchor = config.get("bm25_on_anchor")
+        self.dense_confidence_thr = config.get("dense_confidence_thr")
+        self.long_doc_chunk_thr = config.get("long_doc_chunk_thr")
+        self.rrf_k = config.get("rrf_k")
+
+        # Noise score parameters
+        self.noise_min_denominator = config.get("noise_min_denominator")
+        self.noise_words_per_bad_hit = config.get(
+            "noise_words_per_bad_hit")
+
+        # Objective snippet length validation parameters
+        self.objective_min_length = config.get("objective_min_length")
+        self.objective_max_length = config.get("objective_max_length")
+
+        # Context selection parameters
+        self.budget_chars = config.get("budget_chars", 3500)
+        self.max_per_chunk = config.get("max_per_chunk", 1200)
+        self.diversity_pos_gap = config.get("diversity_pos_gap", 1)
+        self.rel_drop = config.get("rel_drop", 0.6)
+        self.budget_soft = config.get("budget_soft", 0.85)
+
+        # BM25 penalty parameters
+        self.bm25_noise_penalty = config.get("bm25_noise_penalty", 0.6)
+
+        # Reranking weight parameters
+        self.rerank_base_weight = config.get("rerank_base_weight", 0.45)
+        self.rerank_purpose_weight = config.get("rerank_purpose_weight", 0.35)
+        self.rerank_position_weight = config.get(
+            "rerank_position_weight", 0.10)
+        self.rerank_noise_weight = config.get("rerank_noise_weight", 0.10)
+
+        # Text processing parameters
+        self.sentence_boundary_ratio = config.get(
+            "sentence_boundary_ratio", 0.6)
+
+        # Anchor window parameters
+        self.anchor_window_radius_wide = config.get(
+            "anchor_window_radius_wide", 2)
+        self.anchor_window_radius_narrow = config.get(
+            "anchor_window_radius_narrow", 1)
+
+        # Node scoring parameters
+        self.window_nodes_base_score = config.get(
+            "window_nodes_base_score", 0.25)
+        self.pool_nodes_base_score = config.get("pool_nodes_base_score", 0.3)
+
+        # Language detection and translation
+        self.translation_threshold = config.get("translation_threshold", 0.75)
+        self.translation_device = config.get("translation_device", 0)
+        self.translation_max_length = config.get(
+            "translation_max_length", 1024)
+
+        # translation models
+        tm_ca = config.get("translation_model_ca_es")
+        tm_gl = config.get("translation_model_gl_es")
+        tm_eu = config.get("translation_model_eu_es")
+
+        self.multi_translator = MultiToSpanishTranslator(
+            ca_repo=tm_ca,
+            gl_repo=tm_gl,
+            eu_repo=tm_eu,
+            device=self.translation_device,
+            max_length=self.translation_max_length,
+        )
+
+        # Text cleaning thresholds
+        self.dot_leader_line_max_length = config.get(
+            "dot_leader_line_max_length", 200)
+        self.numbered_header_max_length = config.get(
+            "numbered_header_max_length", 80)
+
+        # Adaptive threshold calculation
+        self.std_dev_factor = config.get("std_dev_factor", 0.25)
+
+        # Separator for context joining
+        self.separator = config.get("context_separator", "\n\n")
 
         with open(config.get("templates", {}).get("generative", "")) as f:
             self.generative_prompt = f.read()
-
         with open(config.get("templates", {}).get("extractive", "")) as f:
             self.extractive_prompt = f.read()
 
         self._logger.info(
             "ObjectiveExtractor initialized with config: %s", config_path)
 
+    def _find_object_snippet(
+        self,
+        text: str,
+        min_length: int = 15,
+        max_length: int = 350
+    ) -> str | None:
+        """
+        Extracts an explicit 'objective reference phrase (e.g., "el presente pliego tiene por objeto", etc.) from text using regex patterns.
+
+        Parameters:
+        -----------
+        text: str
+            The text to search for objective statements
+        min_length: int
+            Minimum length for valid objective snippets 
+        max_length: int
+            Maximum length for valid objective snippets 
+
+        Returns:
+        --------
+            str | None: The extracted objective snippet if found and valid, None otherwise
+        """
+
+        t = re.sub(r'\s+', ' ', text or '').strip()
+
+        for pat in PATTERNS_ANCHOR:
+            m = re.search(pat, t, flags=re.IGNORECASE)
+            if m:
+                cand = re.sub(r'\s+', ' ', m.group(1).strip())
+                if min_length <= len(cand) <= max_length:
+                    return cand
+        return None
+
+    def _noise_score(
+        self,
+        context_candidate: str,
+        min_denominator: int = 8,
+        words_per_bad_hit: int = 30
+    ) -> float:
+        """Calculates a noise score of a candidate for context chunk based on the presence of 'bad' patterns.
+
+        The score is calculated as: bad_hits / max(min_denominator, words / words_per_bad_hit)
+
+        Parameters
+        ----------
+        context_candidate: str
+            The text to analyze for noise patterns
+        min_denominator: int
+            Minimum denominator threshold to ensure that for very short texts, the noise score doesn't become artificially inflated.
+        words_per_bad_hit: int
+            Scaling factor for text length. For every 'words_per_bad_hit' words, one 'bad' pattern is tolerated before the noise score increases. 
+
+        Returns
+        -------
+            float: Noise score between 0.0 and 1.0, where higher values indicate more noise
+        """
+
+        if not context_candidate:
+            return 1.0
+
+        bad_hits = len(RE_BAD.findall(context_candidate))
+        words = max(1, len(re.findall(r'\w+', context_candidate)))
+        ratio = min(1.0, bad_hits / max(min_denominator,
+                    words / words_per_bad_hit))
+
+        return ratio
+
+    def _build_window_around_node(
+        self,
+        nodes,
+        center_idx: int,
+        radius: int = 1
+    ):
+        """Builds a context window around a central node.
+
+        Parameters
+        -----------
+        nodes: list
+            List of nodes with metadata containing 'idx' for position
+        center_idx: int
+            The index of the central node
+        radius: int, optional
+            The radius of the context window, defaults to 1
+
+        Returns
+        -------
+            list: List of nodes within the context window
+        """
+        bypos = {(getattr(n, "node", None) or n).metadata.get(
+            "idx", 0): n for n in nodes}
+        positions = sorted(bypos.keys())
+        anchor_pos = min(positions, key=lambda p: abs(
+            p - center_idx)) if positions else center_idx
+        window = []
+        for p in range(anchor_pos - radius, anchor_pos + radius + 1):
+            if p in bypos:
+                window.append(bypos[p])
+        return window
+
+    def _clip_to_sentence_boundaries(
+        self,
+        text: str,
+        limit: int
+    ) -> str:
+        """
+        Cuts text to a maximum length without cutting off mid-sentence if possible.
+
+        Parameters
+        ----------
+        text : str
+            The text to be clipped.
+        limit : int
+            The maximum length of the clipped text.
+
+        Returns
+        -------
+        str
+            The clipped text, ideally ending at a sentence boundary.
+        """
+        if len(text) <= limit:
+            return text
+        cut = text[:limit]
+        m = re.search(r'(?s)(.*?)([\.!?]\s+|\n\n)(?!.*[\.!?]\s+|\n\n)', cut)
+        if m and len(m.group(0)) > limit * self.sentence_boundary_ratio:
+            return m.group(0).strip()
+        return cut.strip()
+
+    def _wrap_nodes_with_score(
+        self,
+        nodes,
+        base: float = 0.0
+    ):
+        """
+        Wraps nodes to ensure each item has .score and .get_content(). This is needed because nodes come through different paths:
+        - Retriever nodes: from BM25 or vector searchers, are wrapped in retriever result objects with .score and .get_content() methods by default.
+        - Window nodes: raw TextNodes with only .text attribute and metadata
+
+        Parameters
+        ----------
+        nodes : list
+            List of nodes that may or may not have .score and .get_content() methods.
+            Can include TextNode objects, retriever result nodes, or window nodes.
+        base : float, optional
+            Base score to assign to nodes that don't already have a score, defaults to 0.0.
+            Typically used to give window/anchor nodes a baseline score (e.g., 0.25).
+
+        Returns
+        -------
+        list
+            List of nodes where all items are guaranteed to have .score and .get_content() methods.
+        """
+        wrapped = []
+        for n in nodes:
+            if hasattr(n, "score") and callable(getattr(n, "get_content", None)):  #  direct node
+                wrapped.append(n)
+                continue
+            node_obj = getattr(n, "node", None) or n
+
+            class _DummyNodeWithScore:
+                def __init__(self, node, score):
+                    self.node = node
+                    self.score = float(score)
+
+                def get_content(self):
+                    if hasattr(self.node, "get_content") and callable(getattr(self.node, "get_content", None)):
+                        return self.node.get_content()
+                    return getattr(self.node, "text", "") or ""
+
+            wrapped.append(_DummyNodeWithScore(
+                node_obj, base))  #  wrapped node
+        return wrapped
+
+    def _strip_toc_and_equipment(self, text: str) -> str:
+        """
+        Removes:
+        - Lines with dot leaders and page numbers (TOC).
+        - Numbered header lines typical of indexes.
+        - Dot leader strings.
+        - Uppercase machinery listings.
+        - Lines that are just page numbers.
+        while whitelisting lines that contain anchors (RE_ANCHOR) and are not TOC or page-only lines.
+
+        Parameters
+        ----------
+        text : str
+            The text to be cleaned.
+
+        Returns
+        -------
+        str
+            The cleaned text.
+        """
+
+        cleaned_lines = []
+        for raw in text.splitlines():
+            line = raw.strip()
+            if not line:
+                continue
+            if RE_ANCHOR.search(line):
+                # preserve the anchor unless it's also a TOC or page-only line
+                if RE_TOC_LINE.match(line) or RE_PAGE_ONLY.match(line):
+                    continue
+                cleaned_lines.append(raw)
+                continue
+            if RE_PAGE_ONLY.match(line):
+                continue
+            if RE_TOC_LINE.match(line):
+                continue
+            if RE_DOT_LEADER.search(line) and len(line) < self.dot_leader_line_max_length:
+                continue
+            if RE_MACHINERY_LINE.match(line):
+                continue
+            if RE_NUMBERED_HEADER.match(line) and len(line) <= self.numbered_header_max_length:
+                continue
+            cleaned_lines.append(raw)
+
+        out = "\n".join(cleaned_lines)
+        out = re.sub(r'\.{4,}', '…', out)
+
+        return out
+
+    def _purpose_signal(self, text: str) -> float:
+        """Calculates the purpose signal (i.e., if the text contains anchor signals the score is boosted; noise patterns reduce the score). 
+
+        Parameters
+        ----------
+        text : str
+            The text to analyze for purpose signals.
+
+        Returns
+        -------
+        float: Purpose signal score between 0.0 and 1.0.
+        """
+        score = 0.0
+        if RE_ANCHOR.search(text or ''):
+            score += 1.0
+        if RE_BAD.search(text or ''):
+            score -= 0.5
+        return max(0.0, min(1.0, score))
+
+    def rerank_nodes(
+        self,
+        nodes,
+        total_count: int = None
+    ):
+        """
+        Recalculates a node score by re-ranking it based on a weighted combination of a series of factors specific to the objective extraction task:
+
+        new_score = base_weight * base_score + purpose_weight * purpose_signal - noise_weight * noise_score + position_weight * position_bonus
+
+        where:
+        - base_score: Original retriever score
+        - purpose_signal: Objective-related patterns (+1.0 for anchors, -0.5 for noise)
+        - noise_score: Subtracts points for administrative/legal jargon
+        - position_bonus: Higher scores for chunks appearing earlier in document
+
+
+        Parameters
+        ----------
+        nodes : list
+            List of nodes with initial scores from retrievers
+        total_count : int, optional
+            Total number of chunks for position bonus calculation, defaults to len(nodes)
+
+        Returns
+        -------
+        list
+            Nodes sorted by new scores in descending order
+        """
+
+        N = total_count or len(nodes) or 1
+        for n in nodes:
+
+            # base_score
+            base = float(getattr(n, "score", 0.0) or 0.0)
+            if hasattr(n, "get_content") and callable(getattr(n, "get_content", None)):
+                txt = n.get_content()
+            elif hasattr(n, "node") and hasattr(n.node, "get_content"):
+                txt = n.node.get_content()
+            else:
+                txt = ""
+
+            # purpose_signal
+            p = self._purpose_signal(txt)
+            try:
+                idx = n.node.metadata.get('idx', 0)
+            except Exception:
+                idx = (getattr(n, "metadata", {}) or {}).get('idx', 0)
+
+            # position_bonus
+            pos_bonus = max(0.0, 1.0 - (idx / max(1, N - 1)))
+
+            # noise_score
+            noise = self._noise_score(txt)
+
+            # final score
+            n.score = (self.rerank_base_weight * base +
+                       self.rerank_purpose_weight * p +
+                       self.rerank_position_weight * pos_bonus -
+                       self.rerank_noise_weight * noise)
+
+        nodes.sort(key=lambda x: float(
+            getattr(x, "score", 0.0) or 0.0), reverse=True)
+        return nodes
+
+    def _select_context_chunks(
+        self,
+        nodes,
+        required_ids=None,
+        min_k=4,
+        max_k=9,
+        budget_chars=3500,
+        max_per_chunk=1200,
+        diversity_pos_gap=1,
+        rel_drop=0.6,
+        budget_soft=0.85,
+    ):
+        """
+        Selects context chunks from a list of nodes (text chunks from document) based on scores, required nodes, budget (character limit), diversity (positional spread), and relative drop-off (score threshold).
+
+        Parameters
+        ----------
+        nodes : list
+            List of nodes with .score and .get_content() methods.
+        required_ids : list, optional
+            List of node IDs that must be included in the selection.
+        min_k : int, optional
+            Minimum number of chunks to be selected as context.
+        max_k : int, optional
+            Maximum number of chunks to be selected as context.
+        budget_chars : int, optional
+            Maximum total character count for selected chunks.
+        max_per_chunk : int, optional
+            Maximum character length per individual chunk.
+        diversity_pos_gap : int, optional
+            Minimum positional gap between selected chunks to ensure diversity.
+        rel_drop : float, optional
+            Relative score drop threshold for stopping selection.
+        budget_soft : float, optional
+            Soft budget factor to allow some flexibility in character limit.
+
+        Returns
+        -------
+        list
+            List of selected text chunks as strings.    
+        """
+
+        required_ids = set(required_ids or [])
+
+        # Identify positions of required nodes for diversity protection
+        required_positions = set()
+        for n in nodes:
+            nid = _nid(n)
+            if nid in required_ids:
+                p = _pos(n)
+                if p is not None:
+                    for d in range(-diversity_pos_gap, diversity_pos_gap + 1):
+                        required_positions.add(p + d)
+
+        # Normalize scores to [0, 1]
+        scores = [float(getattr(n, "score", 0.0) or 0.0) for n in nodes]
+        if scores:
+            smin, smax = min(scores), max(scores)
+            if smax > smin:
+                for n in nodes:
+                    n.score = (float(getattr(n, "score", 0.0)
+                               or 0.0) - smin) / (smax - smin)
+            else:
+                for n in nodes:
+                    n.score = 0.5
+
+        # ensure we iterate by descending score so early breaks are valid
+        nodes = sorted(nodes, key=lambda n: float(
+            getattr(n, "score", 0.0) or 0.0), reverse=True)
+
+        # Calculate adaptive base threshold (60th percentile or mu - 0.25*sd)
+        vals = [float(getattr(n, "score", 0.0) or 0.0) for n in nodes]
+        if vals:
+            P = 0.60
+            p60_idx = int(math.ceil((1.0 - P) * (len(vals) - 1)))
+            p60 = vals[p60_idx]
+            mu = sum(vals) / len(vals)
+            sd = math.sqrt(sum((v - mu) ** 2 for v in vals) /
+                           max(1, len(vals) - 1)) if len(vals) > 1 else 0.0
+        else:
+            p60, mu, sd = 0.0, 0.0, 0.0
+
+        base_thr = max(p60, mu - self.std_dev_factor * sd)
+
+        selected = []
+        used_chars = 0
+        selected_positions = []
+        picked_ids = set()  # avoid duplicates across phases
+
+        # include all required nodes first
+        for n in nodes:
+            nid = _nid(n)
+            if nid not in required_ids:
+                continue
+            if nid in picked_ids:  # skip if already picked
+                continue
+            if len(selected) >= max_k:  # enforce max_k
+                break
+            txt = (n.get_content() or "").strip()
+            if not txt:
+                continue
+            chunk = self._clip_to_sentence_boundaries(txt, max_per_chunk)
+            if not chunk:
+                continue
+
+            # include requireds regardless of budget (but still count chars)
+            extra = len(chunk) + (2 if selected else 0)
+            selected.append(chunk)
+            used_chars += extra
+            pos = _pos(n)
+            if pos is not None:
+                selected_positions.append(pos)
+            picked_ids.add(nid)
+
+        # select remaining best nodes with constraints based on thresholds, diversity, and budget
+        prev_score = None
+        for n in nodes:
+            nid = _nid(n)
+            if nid in picked_ids:  # skip duplicates
+                continue
+            if nid in required_ids:  # keep requireds isolated to the first phase
+                continue
+
+            sc = float(getattr(n, "score", 0.0) or 0.0)
+            pos = _pos(n)
+
+            # adaptive base threshold
+            near_required = (
+                pos in required_positions) if pos is not None else False
+            if len(selected) >= min_k and sc < base_thr and not near_required:
+                break
+
+            # positional diversity
+            if pos is not None and selected_positions and diversity_pos_gap > 0:
+                too_close = any(
+                    abs(pos - p) <= diversity_pos_gap for p in selected_positions)
+                if too_close and not near_required:
+                    if len(selected) >= min_k:
+                        continue
+
+            # marginal utility (relative drop) and soft budget
+            if prev_score is not None and len(selected) >= min_k:
+                rel = sc / max(prev_score, 1e-6)
+                if rel < rel_drop and used_chars > budget_soft * budget_chars and not near_required:
+                    break
+
+            txt = (n.get_content() or "").strip()
+            if not txt:
+                continue
+            chunk = self._clip_to_sentence_boundaries(txt, max_per_chunk)
+            if not chunk:
+                continue
+            extra = len(chunk) + (len(self.separator) if selected else 0)
+
+            if len(selected) >= max_k:
+                break
+            if used_chars + extra > budget_chars and len(selected) >= min_k:
+                break
+
+            selected.append(chunk)
+            used_chars += extra
+            prev_score = sc
+            if pos is not None:
+                selected_positions.append(pos)
+            picked_ids.add(nid)
+            if len(selected) >= max_k:
+                break
+
+        # guarantee min_k
+        i = 0
+        while len(selected) < min_k and i < len(nodes):
+            n = nodes[i]
+            i += 1
+            nid = _nid(n)
+            if nid in picked_ids or nid in required_ids:
+                continue
+            if len(selected) >= max_k:
+                break
+            txt = (n.get_content() or "").strip()
+            if not txt:
+                continue
+            # try to keep diversity unless truly needed for min_k
+            pos = _pos(n)
+            if pos is not None and selected_positions and diversity_pos_gap > 0:
+                too_close = any(
+                    abs(pos - p) <= diversity_pos_gap for p in selected_positions)
+                if too_close and (len(selected) + 1) < min_k:
+                    continue
+
+            chunk = self._clip_to_sentence_boundaries(txt, max_per_chunk)
+            if not chunk:
+                continue
+            extra = len(chunk) + (2 if selected else 0)
+            if used_chars + extra <= budget_chars:
+                selected.append(chunk)
+                used_chars += extra
+                if pos is not None:
+                    selected_positions.append(pos)
+                picked_ids.add(nid)
+
+        return selected
+
+    def _prepare_context(self, text):
+        """
+        Prepares the context for objective extraction:
+
+        1. Text cleaning: Removes bullets, TOC entries, machinery lists, numbered headers, and page references.
+        2. Regex-based Anchor Detection: Searches for explicit objective phrases using pre-defined patterns
+        3. Document Chunking: Splits text into overlapping chunks with positional metadata
+        4. Multi-Retrieval: Uses vector search (dense) + optional BM25 (sparse) retrieval. BM25 is triggered only when no anchor is found by regex.
+        5. Anchor Window Creation: Builds context windows around detected objective anchors (±2 chunks)
+        6. RRF Fusion: Combines BM25 and vector results using RRF and noise penalties on BM25 scores with reranking
+        7. Adaptive Selection: Three-phase selection: (a) mandatory chunks from anchor windows, (b) best remaining chunks with 60th percentile threshold, relative score drops >0.6, position diversity gaps, and character budget limits, (c) min_k guarantee 
+        8. Language Detection & Translation: Detects non-Spanish content and translates to Spanish when needed.
+
+        Parameters
+        ----------
+        text : str
+            Raw document text from Spanish procurement documents
+
+        Returns
+        -------
+        str
+            Optimized context string with selected chunks joined by double newlines, ready for LLM prompting
+        """
+
+        # 1. Text cleaning
+        clean_text = re.sub(r'[\uf0b7]', '', text or '')  # weird bullets
+        clean_text = self._strip_toc_and_equipment(clean_text)
+        clean_text = re.sub(r'\s+', ' ', clean_text).strip()
+
+        # 2. Regex anchor detection
+        direct = self._find_object_snippet(clean_text)
+        regex_window_text = None
+        win_start = win_end = None
+        if direct:
+            pos = clean_text.lower().find(direct.lower())
+            if pos != -1:
+                # extract a window around the direct snippet
+                win_start = max(0, pos - self.window_anchor_start)
+                win_end = min(len(clean_text), pos +
+                              len(direct) + self.window_anchor_end)
+                regex_window_text = clean_text[win_start:win_end].strip()
+            self._logger.info(f"Direct snippet found by regex: {direct}")
+            self._logger.debug(
+                f"Context window around direct snippet: {regex_window_text}")
+        # direct = None
+        # regex_window_text = None
+        # win_start = win_end = None
+
+        # 3. Chunks y metadata
+        doc = Document(text=clean_text)
+        nodes = self.node_parser.get_nodes_from_documents([doc])
+        for i, n in enumerate(nodes):
+            n.metadata = dict(n.metadata or {})
+            n.metadata['idx'] = i
+
+        top_k = min(len(nodes), self.max_k)
+        if direct is not None:
+            # if we have a direct snippet, we can reduce top_k to save budget
+            top_k = max(self.min_k, min(top_k, 8))
+
+        # 4. Multi-retrieval
+        vector_index = VectorStoreIndex(nodes, embed_model=self.embed_model)
+        vector_retriever = vector_index.as_retriever(similarity_top_k=top_k)
+
+        bm25_retriever = None
+
+        def _init_bm25(capping=5):
+            nonlocal bm25_retriever
+            if bm25_retriever is None:
+                try:
+                    bm25_k = min(capping, top_k, len(nodes))  # cap
+                    bm25_retriever = CleanedBM25Retriever(
+                        nodes=nodes, similarity_top_k=bm25_k)
+                except ValueError as e:
+                    self._logger.warning(
+                        f"BM25Retriever could not be initialized: {e}")
+                    bm25_retriever = None
+
+        query = ("objeto del contrato objeto del pliego tiene por objeto definir las obras "
+                 "proyecto de ejecución servicio de suministro ejecución de obras mejora de vías urbanas suministro de obras")
+
+        dense_nodes = vector_retriever.retrieve(query)
+        combined_nodes = dense_nodes[:]
+
+        # save dense only top1 id
+        dense_only_top1_id = None
+        if dense_nodes:
+            try:
+                dense_only_top1_id = dense_nodes[0].node.node_id
+            except Exception:
+                dense_only_top1_id = getattr(dense_nodes[0], "node_id", None)
+
+        # 5. If Step 2 found an anchor, build a 2-context window and mark nearby chunks as required
+        required_ids = set()
+        anchor_idx = None  # Initialize for metadata tracking
+        # find which chunk contains the objective anchor
+        if regex_window_text is not None and win_start is not None:
+            for j, n in enumerate(nodes):
+                chunk_text = n.get_content() if hasattr(
+                    n, "get_content") else getattr(n, "text", "")
+                if not chunk_text:
+                    continue
+                probe = regex_window_text[:80]
+
+                if probe and probe.lower() in (chunk_text.lower()):
+                    anchor_idx = j
+                    break
+                if RE_ANCHOR.search(chunk_text):
+                    anchor_idx = j
+                    break
+
+            # Mark chunks around the found position as required
+            if anchor_idx is None:
+                anchor_idx = 0
+            for k in range(max(0, anchor_idx - 1), min(len(nodes), anchor_idx + 2)):
+                required_ids.add(nodes[k].node_id)
+
+        #  add context window around any anchor found in dense nodes
+        anchor_idx_retr = None
+        for n in combined_nodes:
+            if RE_ANCHOR.search(n.get_content() or ''):
+                try:
+                    anchor_idx_retr = n.node.metadata.get('idx', None)
+                    self._logger.info(
+                        f"Anchor found in retrieved node with idx={anchor_idx_retr}")
+                except Exception:
+                    anchor_idx_retr = (n.metadata or {}).get('idx', None)
+                break
+        window_nodes = []
+        if anchor_idx_retr is not None:
+            window_nodes = self._build_window_around_node(
+                nodes, anchor_idx_retr, radius=self.anchor_window_radius_wide)
+            for m in self._build_window_around_node(nodes, anchor_idx_retr, radius=self.anchor_window_radius_narrow):
+                required_ids.add(m.node_id)
+
+        # 6. RBF if needed (no direct anchor or low confidence)
+        # decide if we need BM25 and track the reason
+        dense_scores = [float(getattr(n, "score", 0.0) or 0.0)
+                        for n in dense_nodes] or [0.0]
+        top_dense = max(dense_scores) if dense_scores else 0.0
+
+        if not self.enable_bm25:
+            need_bm25 = False
+            bm25_reasons = ["disabled_in_config"]
+        else:
+            bm25_reasons = []
+            no_regex = (direct is None)
+            low_dense = (top_dense < self.dense_confidence_thr)
+            is_long = (len(nodes) > self.long_doc_chunk_thr)
+
+            # only use BM25 if no regex anchor and (low dense confidence or long document)
+            if no_regex and (low_dense or is_long):
+                need_bm25 = True
+                if low_dense:
+                    bm25_reasons.append(
+                        f"low_dense_confidence_{top_dense:.3f}")
+                if is_long:
+                    bm25_reasons.append(f"long_document_{len(nodes)}_chunks")
+
+            # if there is an anchor and the config says not to use BM25 with anchor, we disable it
+            if (not no_regex) and (not self.bm25_on_anchor):
+                need_bm25 = False
+
+        query_bm25 = " ".join(
+            w for w in query.split() if len(w) > 2 and w not in {"del", "de", "la", "el", "las", "los", "por"}
+        )
+        bm25_nodes = []
+        if need_bm25:
+            _init_bm25()
+            if bm25_retriever is not None:
+                bm25_nodes = bm25_retriever.retrieve(query_bm25)
+                if bm25_nodes:
+                    self._logger.info(
+                        f"Found {len(bm25_nodes)} BM25 nodes for fusion.")
+
+        # penalize BM25 nodes that look like TOC/machinery lines and do RRF
+        if bm25_nodes:
+            self._logger.info("Doing RRF fusion with BM25 nodes.")
+            for n in bm25_nodes:
+                s = n.score or 0.0
+                try:
+                    txt = n.get_content() or ""
+                except Exception:
+                    txt = getattr(n.node, "text", "") or ""
+                if RE_TOC_LINE.search(txt) or RE_MACHINERY_LINE.search(txt) or RE_DOT_LEADER.search(txt):
+                    n.score = s * self.bm25_noise_penalty
+
+            # Mapas de ranking
+            bm25_rank_map = {}
+            vec_rank_map = {}
+
+            for i, n in enumerate(sorted(bm25_nodes, key=lambda x: x.score or 0.0, reverse=True)):
+                bm25_rank_map[n.node.node_id] = i + 1
+            for i, n in enumerate(sorted(dense_nodes, key=lambda x: x.score or 0.0, reverse=True)):
+                vec_rank_map[n.node.node_id] = i + 1
+
+            # RRF
+            all_ids = set(bm25_rank_map) | set(vec_rank_map)
+            combined_by_rrf = {}
+            for nid in all_ids:
+                r1 = bm25_rank_map.get(nid, 10**6)
+                r2 = vec_rank_map.get(nid, 10**6)
+                rrf_score = 1.0 / (self.rrf_k + r1) + 1.0 / (self.rrf_k + r2)
+
+                pick = next((n for n in bm25_nodes if n.node.node_id == nid), None) or \
+                    next((n for n in dense_nodes if n.node.node_id == nid), None)
+                pick.score = rrf_score
+                combined_by_rrf[nid] = pick
+
+            # Pool tras RRF
+            combined_nodes = heapq.nlargest(
+                int(top_k * self.budget_on_top_k),
+                list(combined_by_rrf.values()),
+                key=lambda x: x.score or 0.0
+            )
+        else:
+            # without BM25, just use dense nodes
+            combined_nodes = dense_nodes[:]
+
+        # Rerank
+        # before rerank:
+        # keep raw combined list for telemetry
+        pre_rerank_nodes = combined_nodes[:]
+
+        def _nid_safe(n):
+            try:
+                return n.node.node_id
+            except Exception:
+                return getattr(n, "node_id", None)
+
+        pre_top1_id = _nid_safe(
+            pre_rerank_nodes[0]) if pre_rerank_nodes else None
+
+        # apply rerank only if enabled
+        if self.enable_rerank:
+            combined_nodes = self.rerank_nodes(
+                combined_nodes, total_count=len(nodes))
+            post_top1_id = _nid_safe(
+                combined_nodes[0]) if combined_nodes else None
+            rerank_applied = True
+            rerank_changed_top1 = (
+                pre_top1_id is not None and post_top1_id is not None and pre_top1_id != post_top1_id)
+        else:
+            post_top1_id = pre_top1_id
+            rerank_applied = False
+            rerank_changed_top1 = False
+
+        # does the top1 come from BM25 or dense?
+        top1_source = "none"
+        top1_id = None
+        if combined_nodes:
+            try:
+                top1_id = combined_nodes[0].node.node_id
+            except Exception:
+                top1_id = getattr(combined_nodes[0], "node_id", None)
+
+        if top1_id is not None and bm25_nodes:
+            bm25_ids = {n.node.node_id for n in bm25_nodes}
+            top1_source = "bm25" if top1_id in bm25_ids else "dense"
+        elif combined_nodes:
+            top1_source = "dense"
+
+        top1_changed_by_bm25 = (
+            True if (top1_source == "bm25" and dense_only_top1_id is not None and top1_id != dense_only_top1_id)
+            else False
+        )
+
+        # 8. Adaptive selection
+        pool = list(combined_nodes)
+        if window_nodes:
+            pool.extend(self._wrap_nodes_with_score(
+                window_nodes, base=self.window_nodes_base_score))
+        pool = self._wrap_nodes_with_score(
+            pool, base=self.pool_nodes_base_score)
+
+        best_by_id = {}
+        for n in pool:
+            nid = _nid(n)
+            sc = float(getattr(n, "score", 0.0) or 0.0)
+            cur = best_by_id.get(nid)
+            if cur is None or sc > float(getattr(cur, "score", 0.0) or 0.0):
+                best_by_id[nid] = n
+        pool = list(best_by_id.values())
+
+        selected_chunks = self._select_context_chunks(
+            pool,
+            required_ids=required_ids,
+            min_k=self.min_k,
+            max_k=self.max_k,
+            budget_chars=self.budget_chars,
+            max_per_chunk=self.max_per_chunk,
+            diversity_pos_gap=self.diversity_pos_gap,
+            rel_drop=self.rel_drop,
+            budget_soft=self.budget_soft,
+        )
+
+        # 9. Language detection & translation if needed
+        def _safe_detect(text):
+            try:
+                if text and text.strip():
+                    return detect(text)
+            except LangDetectException:
+                return None
+            return None
+
+        lang_per_chunk = [_safe_detect(fragment)
+                          for fragment in selected_chunks]
+        detected = [l for l in lang_per_chunk if l is not None]
+        non_es = sum(1 for l in detected if l != "es")
+
+        # Only translate if most detected chunks aren't Spanish
+        do_translate = (len(detected) > 0) and (
+            non_es / len(detected) >= self.translation_threshold)
+
+        if do_translate:
+            translated = []
+            for frag, lang in zip(selected_chunks, lang_per_chunk):
+                if lang in ("ca", "gl", "eu") and self.multi_translator.available(lang):
+                    translated.append(
+                        self.multi_translator.translate(frag, lang))
+                else:
+                    translated.append(frag)
+            selected_chunks = translated
+
+        # Prepare metadata about the context preparation process
+        context_metadata = {
+            'bm25_used': len(bm25_nodes) > 0,
+            'bm25_reasons': bm25_reasons,
+            'total_nodes': len(nodes),
+            'regex_anchor_found': direct is not None,
+            'regex_anchor_position': anchor_idx if regex_window_text is not None and win_start is not None else None,
+            'retriever_anchor_found': anchor_idx_retr is not None,
+            'retriever_anchor_position': anchor_idx_retr,
+            'top_dense_score': float(top_dense),
+            'top1_source': top1_source,
+            'top1_changed_by_bm25': bool(top1_changed_by_bm25),
+            'rerank_applied': bool(rerank_applied),
+            'rerank_changed_top1': bool(rerank_changed_top1),
+            'pre_rerank_top1_id': pre_top1_id,
+            'post_rerank_top1_id': post_top1_id,
+
+        }
+
+        self._logger.info(
+            "CTX meta: bm25_used=%s reasons=%s regex=%s dense_top=%.3f top1_source=%s changed_by_bm25=%s total_nodes=%d rerank_applied=%s rerank_changed_top1=%s pre_rerank_top1_id=%s post_rerank_top1_id=%s",
+            context_metadata['bm25_used'],
+            context_metadata['bm25_reasons'],
+            context_metadata['regex_anchor_found'],
+            context_metadata['top_dense_score'],
+            context_metadata['top1_source'],
+            context_metadata['top1_changed_by_bm25'],
+            context_metadata['total_nodes'],
+            context_metadata['rerank_applied'],
+            context_metadata['rerank_changed_top1'],
+            context_metadata['pre_rerank_top1_id'],
+            context_metadata['post_rerank_top1_id'],
+        )
+
+        return selected_chunks, context_metadata
+
+    def _prepare_both_contexts(self, text):
+        # rerank ON
+        self.enable_rerank = True
+        ctx_on, meta_on = self._prepare_context(text)
+        # rerank OFF
+        self.enable_rerank = False
+        ctx_off, meta_off = self._prepare_context(text)
+        # restore default ON
+        self.enable_rerank = True
+        return (ctx_on, meta_on), (ctx_off, meta_off)
+
+    def extract(
+        self,
+        text: str,
+        gold_objective: str = None,
+        option: str = "generative",
+        precomputed_context: tuple = None
+    ):
+        """
+        Extracts the objective from the given text using either generative or extractive prompting, and computes BERT score if a gold objective is provided.
+
+        Parameters
+        ----------
+        text : str
+            The input text from which to extract the objective.
+        gold_objective : str, optional
+            The ground truth objective for BERT score calculation, defaults to None.
+        option : str, optional
+            The extraction method to use: "generative" or "extractive", defaults to "generative".
+        precomputed_context : tuple, optional
+            Tuple of (context chunks, metadata) to use instead of preparing context from text, defaults to None.
+
+        Returns
+        -------
+        tuple
+            A tuple containing:
+            - extracted objective (str)
+            - context length (int)
+            - precision (float)
+            - recall (float)
+            - F1 score (float)
+            - context metadata (dict)
+        """
+
+        def _is_na(x):
+            try:
+                return pd.isna(x)
+            except Exception:
+                return x is None or (isinstance(x, float) and math.isnan(x))
+
+        try:
+            if precomputed_context is not None:
+                context, context_metadata = precomputed_context
+            else:
+                context, context_metadata = self._prepare_context(text)
+
+            context_joint = self.separator.join(context)
+            if option == "generative":
+                prompt = self.generative_prompt.format(context=context_joint)
+                prompter = self.prompter_gen
+            elif option == "extractive":
+                prompt = self.extractive_prompt.format(context=context_joint)
+                prompter = self.prompter_ex
+            else:
+                raise ValueError(
+                    "Invalid option. Use 'generative' or 'extractive'.")
+            result, _ = prompter.prompt(question=prompt, use_context=False)
+            result_str = "" if _is_na(result) else str(result).strip()
+
+            self._logger.info(f"Objective ({option}): {result_str}")
+
+            # calculate bertscore
+            P = R = F1 = None
+            if (
+                gold_objective is not None
+                and not _is_na(gold_objective)
+                and isinstance(gold_objective, str)
+                and gold_objective.strip()
+                and result_str
+                and result_str != '/'
+            ):
+                P, R, F1 = self.get_bert_score(pd.DataFrame({
+                    "PREDICTED": [result_str],
+                    "GROUND": [gold_objective]
+                }))
+                # Convert to regular Python floats for better serialization
+                P_val = float(P[0]) if P is not None else None
+                R_val = float(R[0]) if R is not None else None
+                F1_val = float(F1[0]) if F1 is not None else None
+                self._logger.info(
+                    f"BERT Score - P: {P_val:.4f}, R: {R_val:.4f}, F1: {F1_val:.4f}")
+            else:
+                self._logger.info(
+                    "No gold objective provided; skipping BERT score calculation.")
+                P_val = R_val = F1_val = None
+            return result_str, len(context), P_val, R_val, F1_val, context_metadata
+        except Exception as e:
+            print(f"EXCEPTION in extract(): {e}")
+            import pdb
+            pdb.set_trace()
+            return f"ERROR: {e}", 0, None, None, None, {}
+    
     def extract_extractive(self, text: str) -> str:
         """Return only the extractive objective as text."""
         context = self._prepare_context(text)
-        return self.extract(text, option="extractive", precomputed_context=context)
+        return self.extract(text, option="extractive", precomputed_context=context)[0]
 
     def extract_generative(self, text: str) -> str:
         """Return only the generative objective as text."""
         context = self._prepare_context(text)
-        return self.extract(text, option="generative", precomputed_context=context)
+        return self.extract(text, option="generative", precomputed_context=context)[0]
 
     def extract_both(self, text: str) -> dict:
         """
@@ -124,221 +1324,250 @@ class ObjectiveExtractor(object):
             "generated_objective": self.extract(text, option="generative", precomputed_context=context),
         }
 
-    def translate_ca_to_es(self, text: str) -> str:
-        tokenized = self.ct2_tokenizer.tokenize(text)
-        translated = self.ct2_translator.translate_batch([tokenized[0]])
-        return self.ct2_tokenizer.detokenize(translated[0][0]['tokens'])
+    def get_bert_score(self, df: pd.DataFrame):
+        """Calculate the BERT score of the predictions on the ground truth.
+        """
 
-    def get_adaptive_top_k_from_combined(self, combined_nodes, max_k=10, min_k=3):
+        P, R, F1 = score(df.PREDICTED.values.tolist(
+        ), df.GROUND.values.tolist(),
+            # lang='es',
+            model_type="xlm-roberta-large",
+        )  # , #model_type="microsoft/deberta-xlarge-mnli")#self.embedding_model_type)
 
-        if not combined_nodes:
-            return []
+        # Convert tensors to regular Python values to avoid serialization issues
+        P = P.cpu().numpy() if hasattr(P, 'cpu') else P
+        R = R.cpu().numpy() if hasattr(R, 'cpu') else R
+        F1 = F1.cpu().numpy() if hasattr(F1, 'cpu') else F1
 
-        # Sort by score descending
-        sorted_nodes = sorted(
-            combined_nodes, key=lambda n: n.score or 0, reverse=True)
+        return P, R, F1
 
-        scores = [n.score for n in sorted_nodes]
-        self._logger.debug(f"Retrieved scores: {scores}")
-
-        # Heuristic: stop adding if big drop in score (confidence decay)
-        drop_threshold = 0.75  # relative drop
-        top_nodes = [sorted_nodes[0]]
-
-        for i in range(1, min(len(sorted_nodes), max_k)):
-            prev_score = sorted_nodes[i - 1].score or 0
-            curr_score = sorted_nodes[i].score or 0
-
-            if prev_score == 0 or (curr_score / prev_score) < drop_threshold:
-                break
-            top_nodes.append(sorted_nodes[i])
-
-        # Enforce bounds
-        if len(top_nodes) < min_k:
-            top_nodes = sorted_nodes[:min(min_k, len(sorted_nodes))]
-
-        return top_nodes
-
-    def _prepare_context(self, text):
-        clean_text = re.sub(r'[\uf0b7]', '', text)
-        clean_text = re.sub(r'\s+', ' ', clean_text).strip()
-        doc = Document(text=clean_text)
-        nodes = self.node_parser.get_nodes_from_documents([doc])
-
-        top_k = min(self.top_k, len(nodes)) if nodes else 0
-        if top_k == 0:
-            return clean_text
-
-        vector_index = VectorStoreIndex(nodes, embed_model=self.embed_model)
-        vector_retriever = vector_index.as_retriever(similarity_top_k=top_k)
-        try:
-            bm25_retriever = CleanedBM25Retriever(
-                nodes=nodes, similarity_top_k=top_k)
-        except ValueError as e:
-            self._logger.warning(
-                f"BM25Retriever could not be initialized: {e}")
-            bm25_retriever = None
-
-        query = "objeto del contrato, objeto de la contratación, tiene por objeto, objetivos del contrato, objeto del pliego, objectivo"
-        combined_nodes = self._combine_retrievers(
-            [bm25_retriever, vector_retriever], query, top_k=top_k, fusion_alpha=self.fusion_alpha)
-        retrieved_nodes = self.get_adaptive_top_k_from_combined(
-            combined_nodes, max_k=self.max_k, min_k=self.min_k)
-
-        context = [n.get_content() for n in retrieved_nodes] or [clean_text]
-        detected_languages = [lang for fragment in context if (
-            lang := safe_detect(fragment)) is not None]
-
-        catalan_count = detected_languages.count('ca')
-        if context and detected_languages and (catalan_count / len(detected_languages) >= 0.75):
-            self._logger.info(
-                f"Detected {catalan_count} Catalan fragments out of {len(context)}. Translating to Spanish.")
-            context = [
-                self.translate_ca_to_es(fragment) if lang == 'ca' else fragment
-                for fragment, lang in zip(context, detected_languages)
-            ]
-
-        return "\n\n".join(context)
-
-    def extract(self, text, option="generative", precomputed_context=None):
-        try:
-            context_joint = precomputed_context or self._prepare_context(text)
-            if option == "generative":
-                prompt = self.generative_prompt.format(context=context_joint)
-                prompter = self.prompter_gen
-            elif option == "extractive":
-                prompt = self.extractive_prompt.format(context=context_joint)
-                prompter = self.prompter_ex
-            else:
-                raise ValueError(
-                    "Invalid option. Use 'generative' or 'extractive'.")
-            result, _ = prompter.prompt(question=prompt, use_context=False)
-            return result.strip()
-        except Exception as e:
-            print(f"EXCEPTION in extract(): {e}")
-            return f"ERROR: {e}"
-
-    def _combine_retrievers(self, retrievers, query, top_k=4, fusion_alpha=0.5):
-        all_nodes = []
-        bm25_nodes = []
-        other_nodes = []
-
-        for retriever in retrievers:
-            if retriever is None:
-                self._logger.warning("Skipping None retriever.")
-                continue
-
-            name = type(retriever).__name__.lower()
-            query_input = query.replace(",", " ") if "bm25" in name else query
-            try:
-                results = retriever.retrieve(query_input)
-            except Exception as e:
-                self._logger.warning(
-                    f"Retriever {name} failed with error: {e}")
-                continue
-
-            if "bm25" in name:
-                bm25_nodes.extend(results)
-            else:
-                other_nodes.extend(results)
-
-            all_nodes.extend(results)
-
-        # Normalize scores
-        def normalize(nodes):
-            if not nodes:
-                return
-            scores = [n.score or 0 for n in nodes]
-            min_s, max_s = min(scores), max(scores)
-            for n in nodes:
-                n.score = (n.score - min_s) / \
-                    (max_s - min_s + 1e-5) if max_s > min_s else 0
-
-        normalize(bm25_nodes)
-        normalize(other_nodes)
-
-        print(f"BM25 scores: {[n.score for n in bm25_nodes]}")
-        print(f"Other scores: {[n.score for n in other_nodes]}")
-
-        # Combine by node ID
-        combined = {}
-        for n in bm25_nodes + other_nodes:
-            nid = n.node.node_id
-            if nid not in combined:
-                combined[nid] = n
-            else:
-                existing = combined[nid]
-                if fusion_alpha is not None:
-                    combined_score = fusion_alpha * \
-                        (existing.score or 0) + \
-                        (1 - fusion_alpha) * (n.score or 0)
-                    existing.score = combined_score
-                else:
-                    if (n.score or 0) > (existing.score or 0):
-                        combined[nid] = n
-
-        final_nodes = list(combined.values())
-        final_nodes = heapq.nlargest(
-            top_k, final_nodes, key=lambda x: x.score or 0)
-
-        self._logger.info(f"Combined scores: {[n.score for n in final_nodes]}")
-        return final_nodes
-
-    def apply_to_dataframe(self, df, mode="both"):
+    def apply_to_dataframe(self, df: pd.DataFrame, mode="both"):
+        """Applies the objective extraction to a pandas DataFrame column."""
         tqdm.pandas()
 
         if not isinstance(df, pd.DataFrame):
             raise TypeError("Expected a pandas DataFrame as input.")
-
         if self.calculate_on not in df.columns:
             raise ValueError(
                 f"Column '{self.calculate_on}' not found in DataFrame.")
+        if self.evaluate_on and self.evaluate_on not in df.columns:
+            raise ValueError(
+                f"Gold objective column '{self.evaluate_on}' not found in DataFrame.")
 
         valid_modes = {"extractive", "generative", "both"}
         if mode not in valid_modes:
             raise ValueError(
                 f"Invalid mode '{mode}'. Choose from {valid_modes}.")
 
+        def extract_with_metrics(row, option):
+            """Helper function to extract and return all metrics as a Series"""
+            text = row[self.calculate_on]
+            gold = row[self.evaluate_on] if self.evaluate_on else None
+
+            start_time = pd.Timestamp.now()
+            obj, context_length, P, R, F1, context_metadata = self.extract(
+                text, gold_objective=gold, option=option)
+            end_time = pd.Timestamp.now()
+            extraction_time = (end_time - start_time).total_seconds()
+
+            result_dict = {
+                f"{option}_objective": obj,
+                f"{option}_context_length": context_length,
+                f"{option}_precision": P,
+                f"{option}_recall": R,
+                f"{option}_f1": F1,
+                f"{option}_time_seconds": extraction_time
+            }
+
+            # Add context metadata only once (for the first extraction type)
+            if option == "extractive" or (option == "generative" and mode != "both"):
+                result_dict.update({
+                    'bm25_used': context_metadata.get('bm25_used', False),
+                    'bm25_reasons': context_metadata.get('bm25_reasons', []),
+                    'total_nodes': context_metadata.get('total_nodes', 0),
+                    'regex_anchor_found': context_metadata.get('regex_anchor_found', False),
+                    'regex_anchor_position': context_metadata.get('regex_anchor_position', None),
+                    'retriever_anchor_found': context_metadata.get('retriever_anchor_found', False),
+                    'retriever_anchor_position': context_metadata.get('retriever_anchor_position', None)
+                })
+
+            return pd.Series(result_dict)
+
+        time_start = pd.Timestamp.now()
+
         if mode == "extractive":
-            time_start = pd.Timestamp.now()
             self._logger.info(
                 f"Applying extractive objective extraction to column '{self.calculate_on}'")
-            df["extracted_objective"] = df[self.calculate_on].progress_apply(
-                lambda text: self.extract(text, option="extractive")
-            )
-            time_end = pd.Timestamp.now()
-            self._logger.info("Extractive objective extraction completed in %.2f seconds",
-                              (time_end - time_start).total_seconds())
+            results = df.progress_apply(
+                lambda row: extract_with_metrics(row, "extractive"), axis=1)
 
         elif mode == "generative":
-            time_start = pd.Timestamp.now()
             self._logger.info(
                 f"Applying generative objective extraction to column '{self.calculate_on}'")
-            df["generated_objective"] = df[self.calculate_on].progress_apply(
-                lambda text: self.extract(text, option="generative")
-            )
-            time_end = pd.Timestamp.now()
-            self._logger.info("Generative objective extraction completed in %.2f seconds",
-                              (time_end - time_start).total_seconds())
+            results = df.progress_apply(
+                lambda row: extract_with_metrics(row, "generative"), axis=1)
 
         elif mode == "both":
-            def process_both(text):
-                context = self._prepare_context(text)
+            def process_both(row):
+                text = row[self.calculate_on]
+                gold = row[self.evaluate_on] if self.evaluate_on else None
+                context, context_metadata = self._prepare_context(text)
+
+                start_ext = pd.Timestamp.now()
+                obj_ext, ctx_len_ext, P_ext, R_ext, F1_ext, _ = self.extract(
+                    text, gold_objective=gold, option="extractive", precomputed_context=(context, context_metadata))
+                end_ext = pd.Timestamp.now()
+                ext_time = (end_ext - start_ext).total_seconds()
+
+                start_gen = pd.Timestamp.now()
+                obj_gen, ctx_len_gen, P_gen, R_gen, F1_gen, _ = self.extract(
+                    text, gold_objective=gold, option="generative", precomputed_context=(context, context_metadata))
+                end_gen = pd.Timestamp.now()
+                gen_time = (end_gen - start_gen).total_seconds()
+
                 return pd.Series({
-                    "extracted_objective": self.extract(text, option="extractive", precomputed_context=context),
-                    "generated_objective": self.extract(text, option="generative", precomputed_context=context),
+                    "extractive_objective": obj_ext,
+                    "extractive_precision": P_ext,
+                    "extractive_recall": R_ext,
+                    "extractive_f1": F1_ext,
+                    "extractive_time_seconds": ext_time,
+                    "generative_objective": obj_gen,
+                    "generative_precision": P_gen,
+                    "generative_recall": R_gen,
+                    "generative_f1": F1_gen,
+                    "generative_time_seconds": gen_time,
+                    # Context metadata (shared between both extraction types)
+                    "context_length": ctx_len_gen | ctx_len_ext,
+                    'bm25_used': context_metadata.get('bm25_used', False),
+                    'bm25_reasons': context_metadata.get('bm25_reasons', []),
+                    'total_nodes': context_metadata.get('total_nodes', 0),
+                    'regex_anchor_found': context_metadata.get('regex_anchor_found', False),
+                    'regex_anchor_position': context_metadata.get('regex_anchor_position', None),
+                    'retriever_anchor_found': context_metadata.get('retriever_anchor_found', False),
+                    'retriever_anchor_position': context_metadata.get('retriever_anchor_position', None)
                 })
 
             self._logger.info(
                 f"Applying both extractive and generative extraction to column '{self.calculate_on}'")
-            time_start = pd.Timestamp.now()
-            results = df[self.calculate_on].progress_apply(process_both)
-            df = pd.concat([df, results], axis=1)
-            time_end = pd.Timestamp.now()
-            self._logger.info("Both extractive and generative extraction completed in %.2f seconds",
-                              (time_end - time_start).total_seconds())
-        else:
-            raise ValueError(
-                f"Invalid mode '{mode}'. Choose from 'extractive', 'generative', or 'both'.")
+            results = df.progress_apply(process_both, axis=1)
+
+        # Combine with original df
+        df = pd.concat([df, results], axis=1)
+
+        time_end = pd.Timestamp.now()
+        self._logger.info(f"{mode.capitalize()} objective extraction completed in %.2f seconds",
+                          (time_end - time_start).total_seconds())
 
         return df
+
+
+def main():
+    argparser = argparse.ArgumentParser(description="Objective Extractor")
+    argparser.add_argument(
+        "--config", type=str,
+        default="src/rag/config/config.yaml",
+        help="Path to the configuration file"
+    )
+    argparser.add_argument(
+        "--path_to_parquet", type=str,
+        default="/export/data_ml4ds/NextProcurement/PLACE/temporal/filtrados.parquet",
+        help="Path to the input parquet file"
+    )
+    argparser.add_argument(
+        "--path_save", type=str,
+        default="/export/data_ml4ds/NextProcurement/Junio_2025/pliegosPlace_withExtracted",
+        help="Path to save the output parquet file"
+    )
+    argparser.add_argument(
+        "--calculate_on", type=str,
+        default="texto_tecnico",
+        help="Column to calculate the objective on"
+    )
+    argparser.add_argument(
+        "--evaluate_on", type=str,
+        default="title",
+        help="Column to evaluate the extracted objective against"
+    )
+    argparser.add_argument(
+        "--llm_model_type", type=str,
+        default="llama3.1:8b",
+        help="LLM model type to use if not specified"
+    )
+    argparser.add_argument(
+        "--llm_model_type_gen", type=str,
+        default="mixtral:8x22b",
+        help="LLM model type to use for generative extraction"
+    )
+    argparser.add_argument(
+        "--llm_model_type_ex", type=str,
+        default="falcon3:10b-instruct-fp16",
+        help="LLM model type to use for extractive extraction"
+    )
+    argparser.add_argument(
+        "--mode_extractive_generative", type=str,
+        default="both",
+        choices=["extractive", "generative", "both"],
+        help="Mode of extraction: 'extractive', 'generative', or 'both'")
+    argparser.add_argument(
+        "--ollama_host", type=str,
+        default="http://kumo01.tsc.uc3m.es:11434",
+        help="Ollama host URL for LLM requests"
+    )
+
+    args = argparser.parse_args()
+
+    if args.llm_model_type_gen is None:
+        llm_model_type_gen = args.llm_model_type
+        print(
+            f"Using default LLM model type for generative extraction: {llm_model_type_gen}")
+    else:
+        llm_model_type_gen = args.llm_model_type_gen
+        print(
+            f"Using LLM model type for generative extraction: {llm_model_type_gen}")
+
+    if args.llm_model_type_ex is None:
+        llm_model_type_ex = args.llm_model_type
+        print(
+            f"Using default LLM model type for extractive extraction: {llm_model_type_ex}")
+    else:
+        llm_model_type_ex = args.llm_model_type_ex
+        print(
+            f"Using LLM model type for extractive extraction: {llm_model_type_ex}")
+
+    extractor = ObjectiveExtractor(
+        config_path=pathlib.Path(args.config),
+        ollama_host=args.ollama_host,
+        calculate_on=args.calculate_on,
+        evaluate_on=args.evaluate_on,
+        llm_model_type_ex=llm_model_type_ex,
+        llm_model_type_gen=llm_model_type_gen,
+    )
+
+    # read parquet file
+    df = pd.read_parquet(args.path_to_parquet)
+
+    if args.calculate_on == "texto_administrativo":
+        df = df[df.resultado_administrativo == "Descargado correctamente"]
+        df = df[~df['texto_administrativo'].str.startswith('[ERROR:')]
+    elif args.calculate_on == "texto_tecnico":
+        df = df[df.resultado_tecnico == "Descargado correctamente"]
+        df = df[~df['texto_tecnico'].str.startswith('[ERROR:')]
+    extractor._logger.info("Loaded dataframe with %d rows", len(df))
+
+    extractor._logger.info(f"Creating save path: {args.path_save}")
+    path_save = pathlib.Path(args.path_save)
+    path_save = path_save / pathlib.Path(args.path_to_parquet).name
+    path_save.parent.mkdir(parents=True, exist_ok=True)
+
+    extractor._logger.info(
+        f"Extracting objectives from {len(df)} rows in column '{args.calculate_on}'")
+    df = extractor.apply_to_dataframe(
+        df, mode=args.mode_extractive_generative)
+
+    extractor._logger.info("Saving dataframe to %s", path_save)
+    df.to_parquet(path_save, index=False)
+    extractor._logger.info("Dataframe saved to %s", path_save)
+
+
+if __name__ == "__main__":
+    main()

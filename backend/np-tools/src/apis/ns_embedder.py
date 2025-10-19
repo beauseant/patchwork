@@ -69,7 +69,7 @@ class generate(Resource):
 
         if args['embedding_model'] == 'word2vec':
             # Get the path of the model (topic model) on the basis of which the embeddings will be generated
-            look_dir = pathlib.Path("/data/source/cpv_models")
+            look_dir = pathlib.Path("/data/source")
             tm_path = None
             for folder in os.listdir(look_dir):
                 if folder.lower() == args["model"].lower():
@@ -81,8 +81,9 @@ class generate(Resource):
                 
             else:
                 # use default model if available and the given model does not exist
-                if (look_dir / f"default_{args["model"].split("_")[-1]}" /("train_data") / ("model_w2v_corpus.model")).is_file():
-                    model_path = look_dir / f"default_{args["model"].split("_")[-1]}" /("train_data") / ("model_w2v_corpus.model")
+                model_suffix = args["model"].split("_")[-1]
+                if (look_dir / f"default_{model_suffix}" / "train_data" / "model_w2v_corpus.model").is_file():
+                    model_path = look_dir / f"default_{model_suffix}" / "train_data" / "model_w2v_corpus.model"
                     
                     logger.info(
                     f"-- -- Using embedding model of the default topic model: {model_path.as_posix()}"
