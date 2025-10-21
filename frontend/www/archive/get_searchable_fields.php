@@ -1,7 +1,12 @@
 <?php
 header('Content-Type: application/json');
+include ('includes/utils.php');
 
-$apiUrl = 'http://kumo01.tsc.uc3m.es:9083/corpora/getAllSearchableFileds/';
+$servidor =  getServer();
+
+
+
+$apiUrl = $servidor . 'corpora/getAllSearchableFileds/';
 
 $ch = curl_init();
 curl_setopt($ch, CURLOPT_URL, $apiUrl);

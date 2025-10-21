@@ -1,0 +1,23 @@
+/* style.css */
+
+/* Hace que el SVG del treemap sea responsive dentro de su contenedor */
+#treemap-container svg {
+    width: 100%;
+    height: auto;
+}
+
+/* Efecto hover sobre los nodos del treemap */
+#treemap-container g rect {
+    transition: fill-opacity 0.2s ease-in-out, stroke-width 0.2s ease;
+}
+
+#treemap-container g:hover rect {
+    fill-opacity: 1;      /* Hacer el color más sólido */
+    stroke-width: 2px;  /* Resaltar el borde */
+}
+
+/* Evita que el texto bloquee el evento de 'hover' o 'click' en el rectángulo */
+#treemap-container text {
+    pointer-events: none;
+    user-select: none; /* Evitar selección de texto */
+}

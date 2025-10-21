@@ -50,7 +50,7 @@
 
 
     <div>
-        Columnas a mostrar: <a class="toggle-vis" data-column="0">Title</a> - <a class="toggle-vis" data-column="1">CPV</a> - <a class="toggle-vis" data-column="2">Generated objective</a> - <a class="toggle-vis" data-column="3">Award criteria</a> - <a class="toggle-vis" data-column="4">Solvency criteria</a> - <a class="toggle-vis" data-column="5">Special conditions</a>
+        Columnas a mostrar:<a class="toggle-vis" data-column="0">Id</a> - <a class="toggle-vis" data-column="1">Title</a> - <a class="toggle-vis" data-column="2">CPV</a> - <a class="toggle-vis" data-column="3">Generated objective</a> - <a class="toggle-vis" data-column="4">Award criteria</a> - <a class="toggle-vis" data-column="5">Solvency criteria</a> - <a class="toggle-vis" data-column="6">Special conditions</a>
     </div>
 
     
@@ -58,7 +58,8 @@
 
             <thead>
                 <tr>
-                    <th>Title</th>
+                    <th>Id</th>                    
+                    <th>Title</th>                    
                     <th>CPV</th>
                     <th >Generated objective</th>
                     <th>Award criteria</th>
@@ -165,6 +166,7 @@
                         }
                     },
                     "columns": [ // MUY IMPORTANTE: el 'name' o 'data' debe coincidir con el de la API
+                        {"data":"id"},
                         { "data": "title" },
                         { "data": "cpv" },
                         { "data": "generated_objective" },
@@ -201,6 +203,7 @@
             $('#licitacionesTable tbody').on('click', '.btn-ver', function() {
                 const row = table.row($(this).parents('tr'));
                 const data = row.data();
+                //console.log (data); 
                 
                 // Verificamos que 'data' no sea undefined antes de usarlo
                 if (data) {
@@ -222,7 +225,7 @@
                         <p style="white-space: pre-wrap;">${data.condiciones_especiales}</p>
                     `;
 
-                    $('#modalTitle').text(data.title);
+                    $('#modalTitle').text(data.id);
                     $('#modalBody').html(modalContentHtml);
 
                     // 3. Simplemente mostramos el modal que ya teníamos preparado.

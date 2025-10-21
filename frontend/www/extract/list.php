@@ -209,7 +209,7 @@
             const data = $(this).data(); // jQuery extrae todos los atributos data-* en un objeto.
 
             const dataprueba = $(this).data('originalName');
-            console.log(dataprueba);
+            //console.log(dataprueba);
 
             // Rellenar el modal de "Ver" con los datos del botón.
             $('#modal-original-name').text(data.originalName);

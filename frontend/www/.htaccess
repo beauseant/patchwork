@@ -2,4 +2,6 @@ AddDefaultCharset UTF-8
 AuthUserFile /var/www/html/.httpasswd
 AuthName Licitaciones
 AUthType Basic
-require user mollete
+# Require user admin user1 #users separated by space or "Require valid-user" if all users
+Require valid-user
+# Require user mollete

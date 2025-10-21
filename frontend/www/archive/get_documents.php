@@ -1,6 +1,11 @@
 <?php
 header('Content-Type: application/json');
 
+include ('includes/utils.php');
+
+$servidor =  getServer();
+
+
 // --- 1. Recoger todos los parámetros ---
 $start = $_GET['start'] ?? 0;
 $rows = $_GET['length'] ?? 10;
@@ -14,13 +19,15 @@ $sortBy = $_GET['sort_by_order'] ?? 'date:desc';
 $keyword = !empty($searchValue) ? $searchValue : '*';
 
 // --- 2. Construir la URL para la API ---
-$apiBaseUrl = 'http://kumo01.tsc.uc3m.es:9083/queries/getDocsByYearAugmented/';
+$apiBaseUrl = $servidor . '/queries/getDocsByYearAugmented/';
 $queryParams = [
     'corpus_collection' => $corpus, 'start' => $start, 'rows' => $rows,
     'sort_by_order' => $sortBy, 'start_year' => $year, 'keyword' => $keyword,
     'searchable_field' => $searchableField
 ];
 $apiUrl = $apiBaseUrl . '?' . http_build_query($queryParams);
+
+
 
 // --- 3. Llamar a la API ---
 $ch = curl_init($apiUrl);
@@ -59,6 +66,7 @@ foreach ($data as $doc) {
     // -----------------------------------------------------------------
     if (isset($doc['title'])) {
         $normalizedData[] = [
+            'id' => $doc['id'], #el id existe siempre, espero
             'title' => $doc['title'], // Ya no necesitamos '?? NA' aquí porque sabemos que existe
             'cpv' => isset($doc['cpv'][0]) ? str_replace(["['", "']", "' '"], ['', '', ', '], $doc['cpv'][0]) : 'NA',
             'generated_objective' => $doc['generated_objective'] ?? 'NA',
