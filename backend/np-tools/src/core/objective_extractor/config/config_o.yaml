@@ -93,8 +93,8 @@ extractor:
   
   # Template files
   templates:
-    extractive: /np-tools/src/core/objective_extractor/templates/extractive.txt
-    generative: /np-tools/src/core/objective_extractor/templates/generative.txt
+    extractive: backend/np-tools/src/core/objective_extractor/templates/extractive.txt
+    generative: backend/np-tools/src/core/objective_extractor/templates/generative.txt
 
 ################################
 #   LLM CONFIGURATION      #

@@ -60,7 +60,7 @@ class Extract(Resource):
             if not input_text:
                 return {"error": "Invalid input. Please provide non-empty text."}, 400
 
-            extracted_objectives = {"generated_objective": extractor.extract_generative(input_text)}
+            extracted_objectives = {"generative_objective": extractor.extract_generative(input_text)}
 
             end_time = time.time() - start_time
             response = {

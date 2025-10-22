@@ -54,12 +54,12 @@ RUN python -m spacy download es_dep_news_trf
 RUN python -m spacy download en_core_web_trf
 
 # Download and install Mallet (removing unnecessary files to save space)
-#RUN wget $MALLET_URL -O /tmp/mallet.tar.gz && \
-#    tar -xvzf /tmp/mallet.tar.gz -C /opt && \
-#    mv /opt/Mallet-${MALLET_VERSION} /opt/mallet && \
-#    rm /tmp/mallet.tar.gz && \
-#    rm -rf /opt/mallet/sample-data  # Remove sample data to reduce image size
-COPY mallet-2.0.8/ /opt/mallet/
+RUN wget $MALLET_URL -O /tmp/mallet.tar.gz && \
+    tar -xvzf /tmp/mallet.tar.gz -C /opt && \
+    mv /opt/Mallet-${MALLET_VERSION} /opt/mallet && \
+    rm /tmp/mallet.tar.gz && \
+    rm -rf /opt/mallet/sample-data  # Remove sample data to reduce image size
+#COPY mallet-2.0.8/ /opt/mallet/
 
 # Download and cache the sentence transformer model
 ARG MODEL_NAME=sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2
