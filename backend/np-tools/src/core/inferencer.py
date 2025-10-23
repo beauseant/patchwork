@@ -16,7 +16,7 @@ import numpy as np
 import pandas as pd # type: ignore
 from sklearn.preprocessing import normalize # type: ignore
 sys.path.append('../')
-from src.TopicModeling.BaseModel import BaseModel
+from src.TopicModeling.MalletLDA import MalletLDAModel
 
 MALLET_HOME = "/opt/mallet"
 JAVA_HOME="/usr/lib/jvm/java-8-openjdk-amd64"
@@ -148,9 +148,11 @@ class Inferencer(object):
 
         # Load model
         path_pickle = model_for_infer_path / 'model_data/model.pickle'
-        model = BaseModel.load_model(
-            path=path_pickle.as_posix()
-        )
+        model = MalletLDAModel(model_dir=model_for_infer_path)
+        model.num_topics = int(model_for_infer_path.name.split('_')[-2])
+        #.load_model(
+        #    path=path_pickle.as_posix()
+        
 
         self._logger.info(
             f'-- -- Model loaded from {model_for_infer_path}')

@@ -328,8 +328,11 @@ class MalletLDAModel(BaseModel):
         )
         self.logger.info(f"Running command to infer topics: {cmd}")
         check_output(args=cmd, shell=True)
+        
         if save_temp:
             shutil.copy(temp_mallet_dir,predicted_doctopic)
+            
+        self.logger.info("Finished topic inference")
 
         pred = np.loadtxt(predicted_doctopic,
                           usecols=range(2, self.num_topics + 2))
