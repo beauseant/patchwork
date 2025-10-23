@@ -26,7 +26,7 @@
                             }    
             ?>    
            
-        <h1 class="mb-4">Documentos de Licitaciones</h1>
+        <h2 class="mb-4">Pre-Enriched Tender Documents<button type="button" class="btn btn-text" data-bs-toggle="modal" data-bs-target="#infoModal"> [+]</button> </h2>
 
         <div class="row mb-3">
             <div class="col-md-6">
@@ -73,7 +73,27 @@
     </div>
 
 
+                 <!-- Modal -->
+                    <div class="modal fade modal-lg" id="infoModal" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
+                    <div class="modal-dialog">
+                        <div class="modal-content">
+                        <div class="modal-header">
+                            <h5 class="modal-title" id="exampleModalLabel">Pre-Enriched Tender Documents</h5>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                        </div>
+                        <div class="modal-body">
+                            <i style="font-size:30px;"class="bi bi-tools"></i><br>
+                            This page contains procurement documents that have been pre-processed and enriched in advance. <br>
+                            These tenders form part of the reference corpus used for topic modeling and semantic similarity search.</br>
+                            The displayed metadata includes contract objectives, CPV codes, award criteria, solvency requirements, and special conditions.
 
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                        </div>
+                        </div>
+                    </div>
+                    </div>
 
     <script src="https://code.jquery.com/jquery-3.7.0.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>

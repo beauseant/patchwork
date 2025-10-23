@@ -1,9 +1,10 @@
 <?php
 
-function pingHost (){    
+function pingHost ($serverfile = 'servidor.cnf'){   
+    
     try {
-        $contenido = @file_get_contents( 'servidor.cnf' );
-        $url = $contenido . 'ping';
+        $contenido = @file_get_contents($serverfile );        
+        $url = $contenido . '/ping';
         $curl = curl_init($url);
         curl_setopt($curl, CURLOPT_RETURNTRANSFER, 1);
         $data = curl_exec($curl);

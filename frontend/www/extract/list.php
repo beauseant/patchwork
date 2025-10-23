@@ -5,7 +5,7 @@
 <main class="main-content p-4">
     <div class="container-fluid mt-5">
         <div class="d-flex justify-content-between align-items-center mb-4">
-            <h1 class="mb-0">Uploaded Documents (Enriched)</h1>
+            <h2 class="mb-0">Uploaded Documents (Enriched) <button type="button" class="btn btn-text" data-bs-toggle="modal" data-bs-target="#infoModal"> [+]</button></h2>
             <a href="load.php" class="btn btn-success">Upload archive</a>
         </div>
 
@@ -71,7 +71,7 @@
       <div class="modal-dialog modal-xl">
         <div class="modal-content">
           <div class="modal-header">
-            <h5 class="modal-title" id="viewModalLabel">Detalles del Documento</h5>
+            <h5 class="modal-title" id="viewModalLabel">Document details</h5>
             <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
           </div>
           <div class="modal-body">
@@ -99,7 +99,7 @@
       <div class="modal-dialog">
         <div class="modal-content">
           <div class="modal-header">
-            <h5 class="modal-title" id="deleteModalLabel">Confirmar Borrado</h5>
+            <h5 class="modal-title" id="deleteModalLabel">Confirm delete</h5>
             <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
           </div>
           <div class="modal-body">
@@ -119,7 +119,7 @@
       <div class="modal-dialog modal-xl">
         <div class="modal-content">
           <div class="modal-header">
-            <h5 class="modal-title" id="viewModalLabel">Texto extraído</h5>
+            <h5 class="modal-title" id="viewModalLabel">Extracted text</h5>
             <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
           </div>
           <div class="modal-body">      
@@ -132,7 +132,7 @@
             
           
         <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Salir</button>
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Exit</button>
         </div>
         
         </div>
@@ -142,7 +142,28 @@
     </div>
 
 
-
+         <!-- Modal -->
+                    <div class="modal fade modal-lg" id="infoModal" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
+                    <div class="modal-dialog">
+                        <div class="modal-content">
+                        <div class="modal-header">
+                            <h5 class="modal-title" id="exampleModalLabel">Uploaded Documents (Enriched) </h5>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                        </div>
+                        <div class="modal-body">
+                            <i style="font-size:30px;"class="bi bi-file-earmark-check"></i><br>
+                        This page displays the documents you have uploaded and their extracted metadata.The available metadata fields depend on the document type:<br>
+                        <ul>
+                            <li>Administrative documents: award criteria, tie-breaking rules, solvency requirements, and special execution conditions.</li>
+                            <li>Technical documents: contract objectives and CPV codes.</li>
+                        </ul>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                        </div>
+                        </div>
+                    </div>
+                    </div>
 
 
 </main>

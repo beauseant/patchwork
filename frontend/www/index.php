@@ -48,8 +48,8 @@
                 <div class="col-md-6 col-lg-3 mb-3">
                     <div class="p-4 shadow-sm rounded bg-light h-100">
                         <i class="bi bi-filter-square fs-1 text-secondary"></i>
-                        <h3 class="mt-3 h5">OECD Procurement Indicators</h3>
-                        <p class="text-muted small">Visualize and analyze procurement metrics aligned with OECD indicators for transparency and performance assessment.</p>
+                        <h3 class="mt-3 h5">Semantic & Thematic Similarity Search</h3>
+                        <p class="text-muted small">Retrieve tenders with high semantic similarity or shared topics from our catalog.</p>
                     </div>                        
                 </div>
             </div>

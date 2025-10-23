@@ -65,7 +65,7 @@ while true; do
             else
                 echo "No se encontró el error en '$OBJFILE'. El archivo no ha sido modificado."
                 touch "${OBJ}/finalizado"                
-                cat   $OBJFILE   | jq -r '.response.extracted_objective' > "${OBJFILE}.tmp" && mv "${OBJFILE}.tmp" "$OBJFILE"
+                cat   $OBJFILE   | jq -r '.response.generative_objective' > "${OBJFILE}.tmp" && mv "${OBJFILE}.tmp" "$OBJFILE"
 
             fi
         else
