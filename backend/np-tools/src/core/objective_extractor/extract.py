@@ -7,6 +7,7 @@ import logging
 import math
 import pathlib
 import re
+import faulthandler; faulthandler.enable()
 
 import pandas as pd  # type: ignore
 from bert_score import score  # type: ignore
@@ -244,15 +245,20 @@ class MultiToSpanishTranslator:
         max_length: int = 512,
     ):
         self._pipes: Dict[str, any] = {}
+        self._enc_max_len = 512                   # NEW: encoder cap
+        self._gen_max_len = max_length            # NEW: decoder/output cap
 
         def _load(lang: str, repo: Optional[str]):
             if not repo:
                 return
             tok = AutoTokenizer.from_pretrained(repo)
             mdl = AutoModelForSeq2SeqLM.from_pretrained(repo)
-            max_pos = getattr(
-                mdl.config, "max_position_embeddings", max_length)
-            
+
+            # NEW: make sure encoder never sees >512 tokens
+            tok.model_max_length = self._enc_max_len
+            tok.truncation_side = "right"
+            tok.padding_side = "right"
+
             def get_free_gpu():
                 if not torch.cuda.is_available():
                     return -1
@@ -265,7 +271,8 @@ class MultiToSpanishTranslator:
                 model=mdl,
                 tokenizer=tok,
                 device=get_free_gpu(),
-                model_kwargs={"max_length": min(max_length, max_pos)}
+                # Decoder max length; encoder is handled by tokenizer truncation
+                model_kwargs={"max_length": self._gen_max_len}
             )
 
         _load("ca", ca_repo)
@@ -281,9 +288,23 @@ class MultiToSpanishTranslator:
         If the lang isn't loaded, returns the input text unchanged.
         """
         pipe = self._pipes.get(lang)
-        if not pipe:
+        if not pipe or not text:
             return text
-        return pipe(text)[0]["translation_text"]
+        # NEW: pass truncation=True so inputs are clipped to 512 tokens on encoder
+        return pipe(text, truncation=True, max_length=self._gen_max_len)[0]["translation_text"]
+
+    def translate_all(self, text: str, lang: str, chunk_chars: int = 1600) -> str:
+        """
+        Very small helper: splits long text into ~chunk_chars pieces, translates each, joins.
+        Not token-accurate but simple & fast; keeps GPU and avoids losing content.
+        """
+        if not text or len(text) <= chunk_chars:
+            return self.translate(text, lang)
+        parts = [text[i:i+chunk_chars] for i in range(0, len(text), chunk_chars)]
+        out = []
+        for p in parts:
+            out.append(self.translate(p, lang))
+        return " ".join(s.strip() for s in out)
 
 
 class ObjectiveExtractor:
@@ -1338,8 +1359,7 @@ class ObjectiveExtractor:
             translated = []
             for frag, lang in zip(selected_chunks, lang_per_chunk):
                 if lang in ("ca", "gl", "eu") and self.multi_translator.available(lang):
-                    translated.append(
-                        self.multi_translator.translate(frag, lang))
+                    translated.append(self.multi_translator.translate_all(frag, lang))
                 else:
                     translated.append(frag)
             selected_chunks = translated
@@ -1498,8 +1518,6 @@ class ObjectiveExtractor:
             return result_str, len(context), bert_P_val, bert_R_val, bert_F1_val, token_P_val, token_R_val, token_F1_val, context_metadata
         except Exception as e:
             print(f"EXCEPTION in extract(): {e}")
-            import pdb
-            pdb.set_trace()
             return f"ERROR: {e}", 0, None, None, None, None, None, None, {}
     
     def extract_extractive(self, text: str) -> str:
@@ -1929,40 +1947,45 @@ def main():
         llm_model_type_gen=llm_model_type_gen,
     )
 
-    # read parquet file
-    df = pd.read_parquet(args.path_to_parquet)
-    extractor._logger.info("Loaded dataframe with %d rows", len(df))
+    try:
+        # read parquet file
+        df = pd.read_parquet(args.path_to_parquet)
+        extractor._logger.info("Loaded dataframe with %d rows", len(df))
 
-    extractor._logger.info(f"Creating save path: {args.path_save}")
-    path_save = pathlib.Path(args.path_save)
+        extractor._logger.info(f"Creating save path: {args.path_save}")
+        path_save = pathlib.Path(args.path_save)
 
-    extractor._logger.info(
-        f"Extracting objectives from {len(df)} rows in column '{args.calculate_on}'")
-    
-    # Set up checkpoint file if enabled
-    checkpoint_file = None
-    if args.enable_checkpoints:
-        checkpoint_file = str(path_save)
-        extractor._logger.info(f"Checkpoints enabled. Progress will be saved to: {checkpoint_file}")
-        extractor._logger.info(f"Checkpoint frequency: every {args.checkpoint_every} rows")
-    else:
-        extractor._logger.info("Checkpoints disabled. Processing all rows at once.")
-    
-    df = extractor.apply_to_dataframe(
-        df, 
-        mode=args.mode_extractive_generative,
-        checkpoint_file=checkpoint_file,
-        checkpoint_every=args.checkpoint_every
-    )
+        extractor._logger.info(
+            f"Extracting objectives from {len(df)} rows in column '{args.calculate_on}'")
+        
+        # Set up checkpoint file if enabled
+        checkpoint_file = None
+        if args.enable_checkpoints:
+            checkpoint_file = str(path_save)
+            extractor._logger.info(f"Checkpoints enabled. Progress will be saved to: {checkpoint_file}")
+            extractor._logger.info(f"Checkpoint frequency: every {args.checkpoint_every} rows")
+        else:
+            extractor._logger.info("Checkpoints disabled. Processing all rows at once.")
+        
+        df = extractor.apply_to_dataframe(
+            df, 
+            mode=args.mode_extractive_generative,
+            checkpoint_file=checkpoint_file,
+            checkpoint_every=args.checkpoint_every
+        )
 
-    # Save final result (if checkpoints were disabled or as final confirmation)
-    if not args.enable_checkpoints:
-        extractor._logger.info("Saving final dataframe to %s", path_save)
-        df.to_parquet(path_save, index=False)
-    else:
-        extractor._logger.info("Final result already saved via checkpoints to %s", path_save)
-    extractor._logger.info("Dataframe saved to %s", path_save)
-
+        # Save final result (if checkpoints were disabled or as final confirmation)
+        if not args.enable_checkpoints:
+            extractor._logger.info("Saving final dataframe to %s", path_save)
+            df.to_parquet(path_save, index=False)
+        else:
+            extractor._logger.info("Final result already saved via checkpoints to %s", path_save)
+        extractor._logger.info("Dataframe saved to %s", path_save)
+        
+    except Exception:
+        import traceback, sys
+        traceback.print_exc()
+        sys.exit(2)
 
 if __name__ == "__main__":
     main()
