@@ -961,13 +961,13 @@ class NPSolrClient(SolrClient):
             return
 
         # 2. Get meta fields
-        meta_fields_dict, sc = self.do_Q2(corpus_col)
-        meta_fields = ','.join(meta_fields_dict['metadata_fields'])
+        #meta_fields_dict, sc = self.do_Q2(corpus_col)
+        #meta_fields = ','.join(meta_fields_dict['metadata_fields'])
 
-        self.logger.info("-- -- These are the meta fields: " + meta_fields)
+        #self.logger.info("-- -- These are the meta fields: " + meta_fields)
 
         # 3. Execute query
-        q6 = self.querier.customize_Q6(id=doc_id, meta_fields=meta_fields)
+        q6 = self.querier.customize_Q6(id=doc_id, meta_fields=self.searchable_fields)
         params = {k: v for k, v in q6.items() if k != 'q'}
 
         sc, results = self.execute_query(
