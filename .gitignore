@@ -31,3 +31,4 @@ data
 .venv
 .venv_sparse
 .env
+experiments/objective_extractor/potato/tasks/phase1/annotation_output

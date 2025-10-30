@@ -1,0 +1,54 @@
+port: 9001
+server_name: "potato annotator"
+annotation_task_name: "Objective Extraction & Generation Pairwise Evaluation"
+
+output_annotation_dir: "annotation_output/"
+output_annotation_format: "tsv" 
+annotation_codebook_url: ""
+
+data_files:
+  - "data_files/Selected_Comparisons.csv"
+
+item_properties:
+  id_key: "id"
+  text_key: "text" 
+  context_key: "reference_text" 
+  custom_context_key: "source_document_context"
+  link_key: "link_pdf" 
+
+list_as_text:
+  text_list_prefix_type: "alphabet"
+  horizontal: false
+  #randomization: "value" 
+  text_list_names:
+    - "A"
+    - "B"
+
+user_config:
+  allow_all_users: true
+  users: [ ]
+
+alert_time_each_instance: 10000000
+horizontal_key_bindings: true
+
+annotation_schemes:
+  - annotation_type: "radio"
+    name: "selected_model"
+    description: "¿Qué objeto es más preciso y útil en relación al objetivo del contrato que puede extraer del documento?"
+    labels:
+      - "A es mejor"
+      - "B es mejor"
+      #- "Son iguales"
+      #- "Ambos son malos"
+    label_requirement:
+      required: true
+    has_free_response:
+      instruction: 'Comentarios (opcional):'
+    sequential_key_binding: true
+
+# LAYOUT HTML
+html_layout: "fixed_keybinding" 
+#surveyflow_html_layout: "fixed_keybinding"
+base_html_template: "default" #"templates/base_template.html"
+header_file: "default"
+site_dir: "default"

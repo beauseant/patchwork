@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <style>
+    /* Balanced container size */
+    .instance {
+      max-width: 1300px; /* Limit the width to avoid being too wide */
+      max-height: 600px; /* Limit the height to prevent excessive length */
+      padding: 20px; /* Add inner spacing */
+      margin: 20px auto; /* Center the container horizontally */
+      border: 1px solid #ccc; /* Optional: Border for visibility */
+      overflow-y: scroll; /* Always show vertical scrollbar */
+      overflow-x: hidden; /* Prevent horizontal scrolling */
+      box-sizing: border-box; /* Ensure padding is included in the dimensions */
+    }
+
+  </style>
+</head>
+<body>
+  <div class="row">
+    <div class="col-md-12">
+      <div class="row">
+        <div class="col-md-12">
+          <div name="context_text" class="instance" style="font-size: 16px;">
+            <div name="instance_text">
+              {{instance | safe}}
+            </div>
+          </div>
+        </div>
+      </div>
+      <div style="height: 2px; width: 3000px;"></div>
+    </div>
+    <div class="col-md-12">
+      <div class="annotation_schema" style="font-size: 14px; font-family: 'Open Sans', sans-serif">
+        {{annotation_schematic}}
+      </div>
+    </div>
+  </div>
+</body>
+</html>
