@@ -39,7 +39,7 @@ annotation_schemes:
       - "A es mejor"
       - "B es mejor"
       #- "Son iguales"
-      #- "Ambos son malos"
+      - "Ambos son malos"
     label_requirement:
       required: true
     has_free_response:
