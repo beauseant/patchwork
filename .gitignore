@@ -35,3 +35,4 @@ data
 node_modules/
 public/
 frontend/.env
+experiments/objective_extractor/potato/tasks/phase1/annotation_output

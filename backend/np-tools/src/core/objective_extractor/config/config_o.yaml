@@ -137,6 +137,7 @@ llm:
       "falcon3:10b-instruct-fp16",
       "qwen3:8b",
       "qwen:32b",
+      "qwen3:32b",
       "llama3.2",
       "llama3.1:8b-instruct-q8_0",
       "llama3.3:70b",
