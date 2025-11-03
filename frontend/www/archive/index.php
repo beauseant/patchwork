@@ -228,20 +228,20 @@
                 // Verificamos que 'data' no sea undefined antes de usarlo
                 if (data) {
                     const modalContentHtml = `
-                        <p><strong>Título:</strong> ${data.title}</p>
+                        <p><strong>Title:</strong> ${data.title}</p>
                         <hr>
                         <p><strong>CPV:</strong> ${data.cpv}</p>
                         <hr>
-                        <p><strong>Objetivo Generado:</strong></p>
+                        <p><strong>Generated objective:</strong></p>
                         <p>${data.generated_objective}</p>
                         <hr>
-                        <p><strong>Criterios de Adjudicación:</strong></p>
+                        <p><strong>Award criteria:</strong></p>
                         <p style="white-space: pre-wrap;">${data.criterios_adjudicacion}</p>
                         <hr>
-                        <p><strong>Criterios de Solvencia:</strong></p>
+                        <p><strong>Solvency criteria:</strong></p>
                         <p style="white-space: pre-wrap;">${data.criterios_solvencia}</p>
                         <hr>
-                        <p><strong>Condiciones Especiales:</strong></p>
+                        <p><strong>Special conditions:</strong></p>
                         <p style="white-space: pre-wrap;">${data.condiciones_especiales}</p>
                     `;
 

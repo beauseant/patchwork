@@ -151,6 +151,54 @@ Cabecera página principal:
     width: 3rem;
     height: 3rem;
 }
+
+
+
 /*********************************************************************************/
 /*********************************************************************************/
+/* Estilos para la parte de semantic */
 /*********************************************************************************/
+
+
+
+        .card {
+            border-radius: 12px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+            overflow: hidden; /* Para que el card-header redondeado funcione */
+        }
+        .card-header {
+            
+            color: rgb(61, 59, 59);
+            font-weight: 600;
+            border-radius: 12px 12px 0 0;
+            padding: 1.25rem;
+        }
+        #donut_chart svg {
+            display: block;
+            margin: auto;
+            max-width: 100%;
+            height: auto;
+        }
+        .loader {
+            border: 5px solid #f3f3f3;
+            border-top: 5px solid #0d6efd;
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            animation: spin 1s linear infinite;
+            margin: 20px auto;
+            display: none; /* Oculto por defecto */
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        /* Ajustes para DataTables */
+        .dataTables_wrapper {
+            padding-top: 1rem;
+        }
+
+
+/*********************************************************************************/
+/*********************************************************************************/
+/*********************************************************************************/        

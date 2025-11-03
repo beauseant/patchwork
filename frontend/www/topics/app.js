@@ -343,7 +343,7 @@ cargarArchivo().then(text => {
                                 <div class="accordion-item">
                                     <h2 class="accordion-header" id="heading-${accordionId}">
                                         <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapse-${accordionId}" aria-expanded="false" aria-controls="collapse-${accordionId}">
-                                            Documento #${index + 1} (Relevancia: ${doc.topic_relevance})
+                                            Document #${index + 1} (Relevance: ${doc.topic_relevance},num #words:${doc.num_words_per_doc} )
                                         </button>
                                     </h2>
                                     <div id="collapse-${accordionId}" class="accordion-collapse collapse" aria-labelledby="heading-${accordionId}" data-bs-parent="#topic-docs-accordion">

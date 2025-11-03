@@ -11,7 +11,7 @@
                 <span class="text">Home</span>
             </a>
             <a class="nav-link d-flex align-items-center linkcolor" href="/extract/load.php">
-                <i class="bi bi-upload icon fs-5"></i>
+                <i class="bi bi-cloud-upload icon fs-5"></i>
                 <span class="text">Upload Documents</span>
             </a>
             <a class="nav-link d-flex align-items-center linkcolor" href="/extract/list.php">
@@ -19,13 +19,17 @@
                 <span class="text">View uploads</span>
             </a>
             <a class="nav-link d-flex align-items-center linkcolor" href="/archive/index.php">
-                <i class="bi bi-archive icon fs-5"></i>
+                <i class="bi bi-file-earmark-bar-graph icon fs-5"></i>
                 <span class="text">Explore Documents </span>
             </a>            
             <a class="nav-link d-flex align-items-center linkcolor" href="/topics/index.php">
-                <i class="bi bi-file-earmark-bar-graph icon fs-5"></i>
+                <i class="bi bi-columns icon fs-5"></i>
                 <span class="text">Discover Topics</span>
             </a>                 
+                        <a class="nav-link d-flex align-items-center linkcolor" href="/semantic/index.php">
+                <i class="bi bi-intersect icon fs-5"></i>
+                <span class="text">Semantic & thematic similarity search</span>
+            </a>        
         </nav>
 
     </aside>

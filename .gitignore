@@ -31,3 +31,7 @@ data
 .venv
 .venv_sparse
 .env
+#no subo npm ni librerías ajenas
+node_modules/
+public/
+frontend/.env

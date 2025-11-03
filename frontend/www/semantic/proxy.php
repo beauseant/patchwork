@@ -4,7 +4,9 @@ header('Content-Type: application/json');
 
 // --- CONFIGURACIÓN ---
 // URL base de tu API.
-$api_base_url = 'http://kumo01.tsc.uc3m.es:9083';
+$api_base_url  =(file_get_contents( 'servidor.cnf' ));
+
+#$api_base_url = 'http://kumo01.tsc.uc3m.es:9083';
 
 // --- LÓGICA DEL PROXY ---
 

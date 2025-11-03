@@ -28,7 +28,7 @@
                 <div class="col-md-6 col-lg-3 mb-3">
                         <a href="/archive/index.php" class="text-decoration-none">
                             <div class="p-4 shadow-sm rounded bg-light h-100">
-                                <i class="bi bi-zoom-in fs-1 text-success"></i>
+                                <i class="bi bi-file-earmark-bar-graph fs-1 text-success"></i>
                                 <h3 class="mt-3 h5">Explore Pre-Enriched Documents </h3>
                                 <p class="text-muted small">Access already processed procurement files enriched with structured metadata for deeper analysis and retrieval.</p>
                             </div>
@@ -38,7 +38,7 @@
                 <div class="col-md-6 col-lg-3 mb-3">
                     <a href="/topics/index.php" class="text-decoration-none">
                         <div class="p-4 shadow-sm rounded bg-light h-100">
-                            <i class="bi bi-file-earmark-bar-graph fs-1 text-info"></i>
+                            <i class="bi bi-columns fs-1 text-info"></i>
                             <h3 class="mt-3 h5">Discover Topics & Semantic Links</h3>
                             <p class="text-muted small">Explore topic models and semantic graphs to identify similar tenders and uncover thematic patterns across procurement data.</p>
                         </div>
@@ -46,11 +46,13 @@
                 </div>
 
                 <div class="col-md-6 col-lg-3 mb-3">
-                    <div class="p-4 shadow-sm rounded bg-light h-100">
-                        <i class="bi bi-filter-square fs-1 text-secondary"></i>
-                        <h3 class="mt-3 h5">Semantic & Thematic Similarity Search</h3>
-                        <p class="text-muted small">Retrieve tenders with high semantic similarity or shared topics from our catalog.</p>
-                    </div>                        
+                    <a href="/semantic/index.php" class="text-decoration-none">
+                        <div class="p-4 shadow-sm rounded bg-light h-100">
+                            <i class="bi bi-intersect fs-1 text-secondary"></i>
+                            <h3 class="mt-3 h5">Semantic & Thematic Similarity Search</h3>
+                            <p class="text-muted small">Retrieve tenders with high semantic similarity or shared topics from our catalog.</p>
+                        </div>                        
+                    </a>
                 </div>
             </div>
             

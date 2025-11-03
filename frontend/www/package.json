@@ -1,0 +1,23 @@
+{
+  "name": "patchwork",
+  "version": "1.0.0",
+  "description": "Proyecto patchwork",
+  "main": "index.js",
+  "scripts": {
+    "build": "npm run copy-assets",
+    "copy-assets": "npm run copy-js && npm run copy-css && npm run copy-fonts",
+    "copy-js": "mkdir -p public/assets/js && cp node_modules/jquery/dist/jquery.min.js public/assets/js/jquery.min.js && cp node_modules/datatables.net/js/dataTables.min.js public/assets/js/dataTables.min.js && cp  node_modules/d3/dist/d3.min.js public/assets/js/d3.min.js && cp ./node_modules/bootstrap/dist/js/bootstrap.bundle.min.js public/assets/js/bootstrap.bundle.min.js && cp ./node_modules/datatables.net-bs5/js/dataTables.bootstrap5.min.js public/assets/js/dataTables.bootstrap5.min.js",
+    "copy-css": "mkdir -p public/assets/css && cp node_modules/datatables.net-bs5/css/dataTables.bootstrap5.min.css public/assets/css/dataTables.bootstrap5.min.css && cp node_modules/bootstrap/dist/css/bootstrap.min.css public/assets/css/bootstrap.min.css && cp node_modules/bootstrap-icons/font/bootstrap-icons.min.css public/assets/css/bootstrap-icons.min.css && cp ./node_modules/bootstrap/dist/css/bootstrap.min.css.map public/assets/css/bootstrap.min.css.map",
+    "copy-fonts":"mkdir -p public/assets/css/fonts && cp node_modules/bootstrap-icons/font/fonts/* public/assets/css/fonts/ "
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "bootstrap": "^5.3.8",
+    "bootstrap-icons": "^1.11.1",
+    "d3": "^7.9.0",
+    "datatables.net-bs5": "^2.3.4",
+    "jquery": "^3.7.1"
+  }
+}

@@ -462,11 +462,8 @@ function drawDonutChart(topicsString) {
             dtInstance = $('#results_table').DataTable({
                 data: data,
                 columns: columns,
-                responsive: true,
-                language: {
-                    url: "//cdn.datatables.net/plug-ins/1.13.7/i18n/es-ES.json"
-                },
-                paging: true, // Usamos la paginación de DataTables
+                responsive: true,                
+                paging: false, // Usamos la paginación de DataTables
                 pageLength: 5, // Mostrar 5 por página
                 lengthMenu: [5, 10, 25],
                 searching: false, // Deshabilitamos la búsqueda de DataTables

@@ -1,63 +1,33 @@
-<!DOCTYPE html>
-<html lang="es">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale-1.0">
-    <title>Buscador de Corpus</title>
-    <!-- Bootstrap CSS -->
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
-    <!-- DataTables CSS -->
-    <link href="https://cdn.datatables.net/1.13.7/css/dataTables.bootstrap5.min.css" rel="stylesheet">
-    <!-- Estilos personalizados -->
-    <style>
-        body {
-            font-family: 'Inter', sans-serif;
-            background-color: #f8f9fa;
-        }
-        .container {
-            max-width: 1200px;
-        }
-        .card {
-            border-radius: 12px;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.05);
-            overflow: hidden; /* Para que el card-header redondeado funcione */
-        }
-        .card-header {
-            background-color: #0d6efd;
-            color: white;
-            font-weight: 600;
-            border-radius: 12px 12px 0 0;
-            padding: 1.25rem;
-        }
-        #donut_chart svg {
-            display: block;
-            margin: auto;
-            max-width: 100%;
-            height: auto;
-        }
-        .loader {
-            border: 5px solid #f3f3f3;
-            border-top: 5px solid #0d6efd;
-            border-radius: 50%;
-            width: 50px;
-            height: 50px;
-            animation: spin 1s linear infinite;
-            margin: 20px auto;
-            display: none; /* Oculto por defecto */
-        }
-        @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
-        }
-        /* Ajustes para DataTables */
-        .dataTables_wrapper {
-            padding-top: 1rem;
-        }
-    </style>
-</head>
-<body>
+<?php include '../includes/header.php'; ?>
+<?php include '../includes/sidebar.php'; ?>
+<?php include '../includes/utils.php'; ?>
 
-    <div class="container my-5">
+
+    <div class="container mt-4">
+
+        <?php 
+
+                $salida =  pingHost(getcwd(). '/servidor.cnf' );                            
+                if (array_key_exists('NOOK', $salida)) {
+                    echo '
+                        <div class="alert alert-danger" role="alert">
+                            <p>Error en servidor: '. $salida['NOOK'] . ' No es posible subir archivos</p>' .
+                        '</div></div>
+                    ';
+                    include '../includes/footer.php';
+                    exit();
+                }
+                if (array_key_exists('OK', $salida)) {      
+                    echo '
+                        <div class="alert alert-success" role="alert">
+                            <p>Conexión correcta con el servidor: '. $salida['OK']['service'] . '/'. $salida['OK']['timestamp']  . '</p>' .
+                        '</div>
+                    ';                                    
+
+                }
+
+        ?>
+
         <div class="card">
             <h5 class="card-header">Herramienta de Búsqueda de Corpus</h5>
             <div class="card-body p-4 p-md-5">
@@ -164,18 +134,7 @@
             </div>
         </div>
     </div>
-
-    <!-- jQuery -->
-    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
-    <!-- Bootstrap JS Bundle -->
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
-    <!-- D3.js v5 (Cambiado a CDNJS) -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.9.0/d3.min.js"></script>
-    <!-- DataTables JS -->
-    <script src="https://cdn.datatables.net/1.13.7/js/jquery.dataTables.min.js"></script>
-    <script src="https://cdn.datatables.net/1.13.7/js/dataTables.bootstrap5.min.js"></script>
+</div>
+  <script src="https://d3js.org/d3.v7.min.js"></script>
     <script src="app.js"></script>
-</body>
-</html>
-
-
+<?php include '../includes/footer.php'; ?>

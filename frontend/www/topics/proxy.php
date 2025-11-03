@@ -18,10 +18,11 @@ if (!$targetUrl) {
 // -----------------------------------------------------------------
 // Para evitar que tu proxy sea usado para atacar otros sitios,
 // valida que la URL solo apunte al host permitido.
-$allowedHost = 'kumo01.tsc.uc3m.es';
+$allowedHost = parse_url (file_get_contents( 'servidor.cnf' ));
 $parsedUrl = parse_url($targetUrl);
 
-if ($parsedUrl === false || !isset($parsedUrl['host']) || $parsedUrl['host'] !== $allowedHost) {
+
+if ($parsedUrl === false || !isset($parsedUrl['host']) || $parsedUrl['host'] !== $allowedHost['host']) {
     http_response_code(403); // Forbidden
     echo json_encode(['error' => 'Host no permitido.']);
     exit;

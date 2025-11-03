@@ -29,21 +29,13 @@
                             
                          ?>
                 </div>
-                <div class="card">
+                <div class="card" >
                     <div class="card-header">
                         <div class="row mb-1">
                             <div class="col-md-5">
                                 <h2>Upload Document for Data Extraction <button type="button" class="btn btn-text" data-bs-toggle="modal" data-bs-target="#infoModal"> [+]</button></h2>
-                                     <!-- <button type="button" class="btn btn-text" data-bs-toggle="modal" data-bs-target="#infoModal">
-                                    <h2><i style="color:#6f42c1;font-size: medium;margin-left:-20px;    display: flex;margin-top: -25px;" class="alert-success bi bi-info-circle"></i>
-                                </h2>
-                                </button>   
-                                </h2>-->
                             </div>
-                            <div class="col-md-1">
-                                <!-- Button trigger modal -->
-                                                         
-                            </div>
+
                         </div>
                     <div class="card-body">
                         <form id="upload-form" enctype="multipart/form-data">
