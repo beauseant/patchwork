@@ -70,7 +70,7 @@ cargarArchivo().then(text => {
             $.getJSON('proxy.php?action=listCorpus')
                 .done(function(data) {
                     const $select = $('#corpus_select');
-                    $select.empty().append('<option value="">Seleccione un corpus...</option>');
+                    $select.empty().append('<option value="">Select a corpus...</option>');
                     // data es un array de strings, ej: ["combined_data_..."]
                     data.forEach(function(corpusName) {
                         $select.append($('<option>', {
@@ -81,7 +81,7 @@ cargarArchivo().then(text => {
                 })
                 .fail(function(jqXHR, textStatus, errorThrown) {
                     console.error("Error al cargar corpus:", textStatus, errorThrown, jqXHR.responseJSON);
-                    alert("Error al cargar la lista de corpus. Revise la consola.");
+                    alert("Error loading the corpus list. Check the console.");
                 });
         }
 
@@ -108,7 +108,7 @@ cargarArchivo().then(text => {
                     // data es un objeto, ej: {"45": [{"high": 12}, {"low": 6}]}
                     corpusModelsData = data; // Guardar globalmente
                     
-                    $cpvSelect.empty().append('<option value="">Seleccione un CPV...</option>');
+                    $cpvSelect.empty().append('<option value="">Select a CPV...</option>');
                     
                     // Las claves del objeto son los CPV
                     const cpvKeys = Object.keys(corpusModelsData);
@@ -121,9 +121,9 @@ cargarArchivo().then(text => {
                     $cpvSelect.prop('disabled', false);
                 })
                 .fail(function(jqXHR, textStatus, errorThrown) {
-                    console.error("Error al cargar modelos:", textStatus, errorThrown, jqXHR.responseJSON);
+                    console.error("Error loading models:", textStatus, errorThrown, jqXHR.responseJSON);
                     $cpvSelect.empty().append('<option value="">Error al cargar</option>');
-                    alert("Error al cargar los modelos CPV. Revise la consola.");
+                    alert("Error loading CPV models. Check the console.");
                 });
         }
 
@@ -155,7 +155,7 @@ cargarArchivo().then(text => {
                 // corpusModelsData[selectedCpv] es un array, ej: [{"high": 12}, {"low": 6}]
                 const granularities = corpusModelsData[selectedCpv];
                 
-                $granularitySelect.append('<option value="">Seleccione granularidad...</option>');
+                $granularitySelect.append('<option value="">Select granularity...</option>');
                 
                 granularities.forEach(function(granularityObj) {
                     // El key del objeto es el nombre, ej: "high"
@@ -166,7 +166,7 @@ cargarArchivo().then(text => {
                     }));
                 });
             } else {
-                $granularitySelect.append('<option value="">Seleccione un CPV primero...</option>');
+                $granularitySelect.append('<option value="">First, Select a CPV...</option>');
             }
         }
         // --- LÓGICA DE BÚSQUEDA Y RESULTADOS ---
@@ -177,7 +177,7 @@ cargarArchivo().then(text => {
             // Común para ambos:
             const text = $('#text_input').val();
             if (!text) {
-                alert("Por favor, complete el campo de texto principal.");
+                alert("Please complete the main text field.");
                 return;
             }
 
@@ -196,7 +196,7 @@ cargarArchivo().then(text => {
                 const granularity = $('#granularity_select').val();
 
                 if (!cpv || !granularity) {
-                    alert("Por favor, complete todos los campos: CPV y granularidad.");
+                    alert("Please complete all fields: CPV and granularity.");
                     showLoader(false); // Ocultar loader si hay error
                     return;
                 }
@@ -232,7 +232,7 @@ cargarArchivo().then(text => {
                 })
                 .fail(function(jqXHR, textStatus, errorThrown) {
                     console.error("Error en getSimilarDocs:", textStatus, errorThrown, jqXHR.responseJSON);
-                    alert("Error al realizar la búsqueda. Revise la consola.");
+                    alert("Error while searching. Check the console.");
                     showLoader(false);
                 });
                 
