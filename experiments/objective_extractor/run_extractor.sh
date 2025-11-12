@@ -3,7 +3,7 @@ set -euo pipefail
 
 #MODELS=("llama3.1:8b" "mixtral:8x22b" "falcon3:10b-instruct-fp16" "qwen3:8b" "qwen3:32b"  "gemma2:9b" "deepseek-r1:8b" "gemma3:4b" "llama4:16x17b" "mistral:7b" "llama3.3:70b" "gpt-5-mini")
 
-MODELS=("llama3.3:70b" )
+MODELS=("qwen3:32b" )
 
 if [ "$#" -ne 3 ]; then
   echo "Usage: $0 <source_directory> <destination_directory> <ollama_host>"
@@ -82,23 +82,31 @@ for model in "${MODELS[@]}"; do
       continue
     fi
 
-    # Clean any stale checkpoint for a fresh attempt
     rm -f "$checkpoint_file"
 
-    # Run: write only to checkpoint, capture full Python logs
-    # FAULTHANDLER + unbuffered so tracebacks flush immediately
+    echo "[INFO] $(timestamp) about to run:"
+    echo "PYTHONUNBUFFERED=1 PYTHONFAULTHANDLER=1 python3 -m src.core.objective_extractor.extract \\"
+    echo "  --config \"$REPO_ROOT/backend/np-tools/src/core/objective_extractor/config/config_o.yaml\" \\"
+    echo "  --ollama_host \"$ollama_host\" \\"
+    echo "  --path_to_parquet \"$infile\" \\"
+    echo "  --path_save \"$checkpoint_file\" \\"
+    echo "  --llm_model_type_gen \"$model\" \\"
+    echo "  --mode_extractive_generative generative \\"
+    echo "  --enable_checkpoints"
+    echo "[INFO] $(timestamp) logs -> $run_log"
+
     if PYTHONUNBUFFERED=1 PYTHONFAULTHANDLER=1 \
       python3 -m src.core.objective_extractor.extract \
         --config "$REPO_ROOT/backend/np-tools/src/core/objective_extractor/config/config_o.yaml" \
         --ollama_host "$ollama_host" \
         --path_to_parquet "$infile" \
         --path_save "$checkpoint_file" \
-        --llm_model_type_ex "$model" \
         --llm_model_type_gen "$model" \
-        --mode_extractive_generative both \ 
-        #--mode_extractive_generative generative \ 
-        --enable_checkpoints >"$run_log" 2>&1; then
+        --mode_extractive_generative generative \
+        --enable_checkpoints \
+        >"$run_log" 2>&1; then
 
+        
       if [ ! -f "$checkpoint_file" ]; then
         echo "[FAIL ] $(timestamp) model=${model} file=${fname} reason='missing checkpoint after success'" | tee -a "$RUN_LOG"
         echo "---- Tail of $run_log ----"
@@ -116,7 +124,6 @@ for model in "${MODELS[@]}"; do
         continue
       fi
 
-      # Atomic publish to final
       mv -f "$checkpoint_file" "$final_file"
       echo "$entry_key" >> "$DONE_LOG"
       echo "[END  ] $(timestamp) model=${model} file=${fname} status=SUCCESS rows=${out_rows} saved=$(basename "$final_file")" | tee -a "$RUN_LOG"
