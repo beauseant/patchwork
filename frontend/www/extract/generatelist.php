@@ -46,7 +46,7 @@ try {
     $data_administrativos = [];
     $data_tecnicos = [];
 
-
+    
     $estado = array ('SOLICITADO','PENDIENTE','PROCESANDO' );
 
     foreach ($documents as $doc) {
@@ -60,14 +60,16 @@ try {
             $metadata_html .= '<ul class="list-unstyled mb-0">';
             foreach ($doc['metadata'] as $meta) {
                 #Actualizamos el objeto del contrato si es la primera vez que se solicita.
-                #para las siguientes ya s ha grabado en la base de datos:           
-                #error_log ( in_array ('color' , $estado), 3, '/tmp/log');     
+                #para las siguientes ya s ha grabado en la base de datos:                           
                 if (  ( $meta['key'] == 'Objeto del contrato') && ( in_array ($meta['value'] , $estado) ))    {        
-                    $objetoC = checkMetadato ($doc['stored_name'], 'OBJ'); 
-                    #$data = implode(",", $objetoC);
+                    $objetoC = checkMetadato ($doc['stored_name'], 'OBJ');
+                    //$data = implode(",", $objetoC);
                     $meta['value'] = $objetoC;
-                    #error_log ($data, 3, '/tmp/log');                    
+                    //$query ='UPDATE metadatos SET metadata_value="' . $objetoC . '" WHERE document_id='. $doc['document_id'] .'AND metadata_key="Objeto del contrato"';
+                    //error_log ($query, 3, '/tmp/log');
                     $rst = $pdo->query('UPDATE metadatos SET metadata_value="' . $objetoC . '" WHERE document_id='. $doc['document_id'] .' AND metadata_key="Objeto del contrato"');
+                    //error_log ('objeto', 3, '/tmp/log');              
+
                 }
                 if (( $meta['key'] == 'CPV') && ( in_array ($meta['value'] , $estado))) {                    
                     $objetoCPV = checkMetadato ($doc['stored_name'], 'CPV');                                        
@@ -76,7 +78,7 @@ try {
                     $meta['value'] = $objetoCPV;
                     $rst = $pdo->query('UPDATE metadatos SET metadata_value="' . $objetoCPV . '" WHERE document_id='. $doc['document_id'] .' AND metadata_key="CPV"');
                 }
-                
+                    
                 if (( $meta['key'] == 'Criterios de adjudicación' ) && ( in_array ($meta['value'] , $estado))){                    
                     $criterio = checkMetadato ($doc['stored_name'], 'CRITADJ');
                     $meta['value'] = $criterio;   
@@ -121,6 +123,7 @@ try {
                          </button>';
 
         // Construir el objeto de la fila para DataTables
+        
         $rowData = [
             "original_name" => htmlspecialchars($doc['original_name'], ENT_QUOTES, 'UTF-8'),
             "md5"           => substr ($doc['stored_name'],0,12) . '...',
@@ -130,6 +133,8 @@ try {
             "actions"       => $actions_html
         ];
 
+        
+        
         // Añadir la fila al array del tipo de documento correspondiente
         if ($doc['doc_type'] === 'administrativo') {
             $data_administrativos[] = $rowData;

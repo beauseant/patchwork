@@ -148,7 +148,7 @@ function checkMetadato ( $doc, $tipo  ){
     if ($salida==''){
         $salida = '-';
     }
-    return $salida;
+    return str_replace ('"', '\'',$salida);
 }
 
 

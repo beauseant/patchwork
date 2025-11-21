@@ -19,6 +19,7 @@
 /fuel/app/logs/*/*/*
 /fuel/app/cache/*/*
 /fuel/app/config/crypt.php
+.httpasswd
 
 # backend
 backend/solr-plugins/NP-solr-dist-plugin/NP-solr-dist-plugin.jar
