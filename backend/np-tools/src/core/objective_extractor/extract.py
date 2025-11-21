@@ -35,6 +35,7 @@ ES_HEADS = r"""
   | informaci[oó]n\s+sobre\s+el\s+procedimiento\s+de\s+contrataci[oó]n
   | objetivos?\s+del\s+contrato
   | objeto\s+del\s+pliego
+  | proyecto\s+b[aá]sico\s+y(?:\s+de)?\s+ejecuci[oó]n
 """
 
 CA_HEADS = r"""
@@ -135,6 +136,8 @@ PATTERNS_ANCHOR = [
     after(r"el\s+objeto\s+es"),
     after(r"el\s+objetivo\s+es"),
     after(r"definir\s+las\s+obras\s+de"),
+    after(r"proyecto\s+b[aá]sico\s+y(?:\s+de)?\s+ejecuci[oó]n"),
+    after(r"proyecto\s+b[aá]sico\s+y(?:\s+de)?\s+ejecuci[oó]n\s+de"),
     after(r"suministro\s+de"),
 
     # --- Català ---
@@ -245,8 +248,8 @@ class MultiToSpanishTranslator:
         max_length: int = 512,
     ):
         self._pipes: Dict[str, any] = {}
-        self._enc_max_len = 512                   # NEW: encoder cap
-        self._gen_max_len = max_length            # NEW: decoder/output cap
+        self._enc_max_len = 512                  
+        self._gen_max_len = max_length            
 
         def _load(lang: str, repo: Optional[str]):
             if not repo:
@@ -254,7 +257,6 @@ class MultiToSpanishTranslator:
             tok = AutoTokenizer.from_pretrained(repo)
             mdl = AutoModelForSeq2SeqLM.from_pretrained(repo)
 
-            # NEW: make sure encoder never sees >512 tokens
             tok.model_max_length = self._enc_max_len
             tok.truncation_side = "right"
             tok.padding_side = "right"
@@ -290,7 +292,6 @@ class MultiToSpanishTranslator:
         pipe = self._pipes.get(lang)
         if not pipe or not text:
             return text
-        # NEW: pass truncation=True so inputs are clipped to 512 tokens on encoder
         return pipe(text, truncation=True, max_length=self._gen_max_len)[0]["translation_text"]
 
     def translate_all(self, text: str, lang: str, chunk_chars: int = 1600) -> str:
@@ -842,7 +843,8 @@ class ObjectiveExtractor:
             txt = (n.get_content() or "").strip()
             if not txt:
                 continue
-            chunk = self._clip_to_sentence_boundaries(txt, max_per_chunk)
+            #chunk = self._clip_to_sentence_boundaries(txt, max_per_chunk)
+            chunk = txt.strip()
             if not chunk:
                 continue
 
@@ -1194,17 +1196,11 @@ class ObjectiveExtractor:
                 need_bm25 = False
                 
         tokens = {
-            # purpose / object
             "objeto", "objecte", "obxecto", "xede",
-            # contract / pliego
             "contrato", "contracte", "plec", "pliego", "prego",
-            # execution / project
             "ejecución", "execució", "execución", "exekuzio", "proyecto", "projecte", "proxecto", "proiektua",
-            # service / supply
             "servicio", "servei", "servizo", "zerbitzu", "suministro", "subministrament", "subministración", "hornidura",
-            # works
             "obras", "obres", "obrak",
-            # improvement / roads
             "mejora", "millora", "mellora", "hobekuntza",
             "vías", "vies", "viais", "bideak", "viales", "urbanas", "urbanes", "urbanos", "hiritar",
         }
@@ -1402,13 +1398,10 @@ class ObjectiveExtractor:
         return selected_chunks, context_metadata
 
     def _prepare_both_contexts(self, text):
-        # rerank ON
         self.enable_rerank = True
         ctx_on, meta_on = self._prepare_context(text)
-        # rerank OFF
         self.enable_rerank = False
         ctx_off, meta_off = self._prepare_context(text)
-        # restore default ON
         self.enable_rerank = True
         return (ctx_on, meta_on), (ctx_off, meta_off)
 
@@ -1473,13 +1466,35 @@ class ObjectiveExtractor:
             result, _ = prompter.prompt(question=prompt, use_context=False)
             
             def _parse_result(result):
-                if "objeto del contrato no aparece de forma explícita en el contexto proporcionado" in result:
+                text = result.lower()
+
+                invalid_phrases = [
+                    "no se ha proporcionado",
+                    "no aplicable",
+                    "no se ha proporcionado información suficiente",
+                    "no incluye información específica",
+                    "no se puede redactar una descripción detallada",
+                    "mensaje de error de la plataforma de contratación",
+                    "no aparece de forma explícita en el contexto proporcionado",
+                    "descripción detallada, precisa y fiel de la actividad contratada",
+                    "mix of catalan",
+                    "the text you provided appears to be a mix",
+                    "unclear objective",
+                ]
+
+                if any(phrase in text for phrase in invalid_phrases) or result.startswith("<think>"): # if missing objective sentences or thinking mode did not end (otherwise it would have been parsed)
                     return "/"
-                return result
 
-            result_str = "" if _is_na(_parse_result(result)) else str(result).strip()
-
+                return result.strip()
+            
+            result_str = _parse_result(result)
+            
+            if result_str == "/" and "ha producido un error de acceso" not in result and "Para obtener la mejor experiencia, abra esta cartera PDF" not in result:
+                import pdb; pdb.set_trace()
+            
             self._logger.info(f"Objective ({option}): {result_str}")
+            if gold_objective is not None:
+                self._logger.info(f"Gold Objective: {gold_objective}")            
             
             bert_P = bert_R = bert_F1 = None
             
@@ -1492,7 +1507,7 @@ class ObjectiveExtractor:
                 and result_str
                 and result_str != '/'
             ):
-                # Calculate BERT Score
+                # bertscore
                 bert_P, bert_R, bert_F1 = self.get_bert_score(pd.DataFrame({
                     "PREDICTED": [result_str],
                     "GROUND": [gold_objective]
@@ -1502,7 +1517,7 @@ class ObjectiveExtractor:
                 bert_R_val = float(bert_R[0]) if bert_R is not None else None
                 bert_F1_val = float(bert_F1[0]) if bert_F1 is not None else None
                 
-                # token overlap metrics
+                # token overlap
                 token_P_val, token_R_val, token_F1_val = self.get_token_overlap_metrics(result_str, gold_objective)
                 
                 self._logger.info(
@@ -1580,7 +1595,6 @@ class ObjectiveExtractor:
             - recall = correct_tokens / ground_truth_tokens  
             - f1 = 2 * precision * recall / (precision + recall)
         """
-        import re
         
         def tokenize_spanish(text):
             """Simple tokenization for Spanish text"""
