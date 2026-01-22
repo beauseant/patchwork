@@ -11,6 +11,7 @@ import os
 from flask_restx import Namespace, Resource, reqparse
 from werkzeug.datastructures import FileStorage
 from src.core.pdf_extractor.src.pdf_parser import PDFParser
+from src.core.pdf_extractor.processPDFn import PDFTextExtractor
 
 logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger("PDFExtractor")
@@ -31,11 +32,13 @@ file_upload_parser.add_argument(
 # ======================================================
 # Create PDF Parser object (once)
 # ======================================================
-pdf_parser = PDFParser(
-    extract_header_footer=False,
-    generate_img_desc=False,
-    generate_table_desc=False,
-)
+#pdf_parser = PDFParser(
+#    extract_header_footer=False,
+#    generate_img_desc=False,
+#    generate_table_desc=False,
+#)
+
+pdf_parser = PDFTextExtractor()
 
 @api.route("/extract_text/")
 class extract_text(Resource):
@@ -63,7 +66,8 @@ class extract_text(Resource):
             uploaded_file.save(temp_pdf_path)
 
             # Extract text
-            raw_text = pdf_parser.extract_raw_text(temp_pdf_path, base_output_dir=temp_dir)
+            #raw_text = pdf_parser.extract_raw_text(temp_pdf_path, base_output_dir=temp_dir)
+            raw_text = pdf_parser.extraerTexto(temp_pdf_path)
 
             elapsed = time.time() - start_time
             response = {

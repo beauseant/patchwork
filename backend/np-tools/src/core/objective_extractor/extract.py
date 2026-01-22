@@ -1489,8 +1489,8 @@ class ObjectiveExtractor:
             
             result_str = _parse_result(result)
             
-            if result_str == "/" and "ha producido un error de acceso" not in result and "Para obtener la mejor experiencia, abra esta cartera PDF" not in result:
-                import pdb; pdb.set_trace()
+            #if result_str == "/" and "ha producido un error de acceso" not in result and "Para obtener la mejor experiencia, abra esta cartera PDF" not in result:
+            #    import pdb; pdb.set_trace()
             
             self._logger.info(f"Objective ({option}): {result_str}")
             if gold_objective is not None:
