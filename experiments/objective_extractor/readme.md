@@ -44,3 +44,18 @@ Add openai key!!
 ./experiments/objective_extractor/run_extractor.sh /export/data_ml4ds/NextProcurement/Junio_2025/pliegosPlace/red_data_insiders_2024_conTitleCPVLink_chunks/part_01/ /export/data_ml4ds/NextProcurement/pruebas_oct_2025/objective_extractor/results_all_insiders_2024/part_01/ http://kumo01.tsc.uc3m.es:11434
 
 ./experiments/objective_extractor/run_extractor.sh /export/data_ml4ds/NextProcurement/Junio_2025/pliegosPlace/red_data_insiders_2024_conTitleCPVLink_chunks/part_02/ /export/data_ml4ds/NextProcurement/pruebas_oct_2025/objective_extractor/results_all_insiders_2024/part_02/ http://kumo01.tsc.uc3m.es:11434
+
+
+# outputs
+
+se guarda en la columna "generative_objective"
+
+### outsiders
+
+/export/data_ml4ds/NextProcurement/pruebas_oct_2025/objective_extractor/results_all_outsiders_2024/final
+
+### insiders
+
+/export/data_ml4ds/NextProcurement/pruebas_oct_2025/objective_extractor/results_all_insiders_2024/part_00/final
+/export/data_ml4ds/NextProcurement/pruebas_oct_2025/objective_extractor/results_all_insiders_2024/part_01/final
+/export/data_ml4ds/NextProcurement/pruebas_oct_2025/objective_extractor/results_all_insiders_2024/part_02/final
