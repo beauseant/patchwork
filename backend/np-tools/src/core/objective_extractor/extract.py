@@ -322,7 +322,10 @@ class ObjectiveExtractor:
 
         # embedding model
         self.embed_model = HuggingFaceEmbedding(
-            model_name=config.get("embedding_model"))
+            model_name=config.get("embedding_model"),
+            #query_instruction="Represent this sentence for searching relevant passages",
+            #text_instruction="Represent this passage for retrieval"
+            )
         self.embedding_model_type = config.get("embedding_model")
 
         # sentence splitter
@@ -1577,8 +1580,7 @@ class ObjectiveExtractor:
         """
         Calculate token-level precision, recall, and F1 based on literal token overlap.
         
-        This metric measures the proportion of tokens from the ground truth that the model
-        has managed to extract literally in its prediction.
+        This metric measures the proportion of tokens from the ground truth that the model has managed to extract literally in its prediction.
         
         Parameters
         ----------

@@ -477,7 +477,7 @@ def _parse_args() -> argparse.Namespace:
     )
     parser.add_argument(
         "--model-name",
-        default="sentence-transformers/all-MiniLM-L6-v2",
+        default="sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2",
         help="SentenceTransformer model name or local path.",
     )
     parser.add_argument(
