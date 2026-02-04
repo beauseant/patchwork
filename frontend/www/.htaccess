@@ -4,4 +4,4 @@ AuthName Licitaciones
 AUthType Basic
 # Require user admin user1 #users separated by space or "Require valid-user" if all users
 Require valid-user
-Require user mollete
+#Require user mollete

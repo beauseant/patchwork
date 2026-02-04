@@ -1,0 +1,11 @@
+[ "ContractFolderStatus.ProcurementProject.PlannedPeriod.StartDate", "ContractFolderStatus.LocatedContractingParty.Party.PostalAddress.PostalZone",
+  "ContractFolderStatus.LocatedContractingParty.Party.PostalAddress.CityName" ,
+  "ContractFolderStatus.LocatedContractingParty.Party.PartyIdentification.ID",
+  "ContractFolderStatus.LocatedContractingParty.BuyerProfileURIID",
+  "ContractFolderStatus.LocatedContractingParty.ContractingPartyTypeCode",
+  "ContractFolderStatus.TenderResult.AwardDate",
+  "ContractFolderStatus.TenderResult.StartDate",
+  "link",
+  "ContractFolderStatus.ProcurementProjectLot.ProcurementProject.RequiredCommodityClassification.ItemClassificationCode",
+  "title"
+]
