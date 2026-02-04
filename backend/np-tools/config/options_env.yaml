@@ -1,0 +1,61 @@
+# Logger
+dir_logger: /export/usuarios_ml4ds/lbartolome/NextProcurement/NP-Search-Tool/sample_data/app.log # Directory for logs
+console_log: true
+file_log: true
+log_level: INFO  # CRITICAL FATAL ERROR WARN WARNING INFO DEBUG NOTSET
+logger_name: app-log
+
+# Preprocess Options
+use_dask: false  # Whether to use Dask for distributed computing. Set to 'true' if you have a Dask cluster.
+#subsample: 10000  # The number of random samples to take from the dataset. If you want to use all data, you can comment out this line.
+
+pipe:  # The steps to be taken in the pipeline. Order matters!
+  - merge_data      # Merges data from different sources
+  - lang_id         # Identifies the language of the text
+  #- normalization   # Normalizes the text (lowercase, some punctuation, urls, etc.)
+  #- preprocess      # Preprocesses the data for further analysis
+  #- embeddings      # Generates BERT embeddings
+
+merge_dfs:  # DataFrames to be merged in the 'merge_data' step.
+  - minors
+  - insiders
+  - outsiders
+
+lang:  # Languages to consider in 'lang_id' step. Can be multiple.
+  - es
+
+# Define directories
+# Modify these paths to fit your directory structure
+# This is the default configuration for docker image
+dir_data: /export/usuarios_ml4ds/lbartolome/NextProcurement/NP-Search-Tool/sample_data  # Root data directory
+dir_text_processed: /export/usuarios_ml4ds/lbartolome/NextProcurement/NP-Search-Tool/sample_data/processed  # Path to output processed text metadata parquet file
+dir_logical: /export/usuarios_ml4ds/lbartolome/NextProcurement/NP-Search-Tool/sample_data/logical_dtsets
+dir_output_models: /export/usuarios_ml4ds/lbartolome/NextProcurement/NP-Search-Tool/sample_data/cpv_models_iter_cpvs_ok # Path to output topic models
+dir_mallet: /export/usuarios_ml4ds/lbartolome/NextProcurement/NP-Search-Tool/sample_data/models/mallet-2.0.8/bin/mallet # This path shouldn't be changed when using docker
+
+# List loading options
+# Modify these values to choose which vocabulary, stopwords and ngrams to use.
+# If "all", every file in the directory will be used.
+# If false, the default settings will be used
+use_vocabulary: false  # Which vocabulary to use
+  # - vocabulary
+  # - vocabulary_extended
+use_stopwords: all  # Which stopwords to use
+  # - administración
+  # - common_stopwords
+  # - municipios
+use_equivalences: all  # Which stopwords to use
+use_ngrams: all  # Which ngrams to use
+  # - expresiones_ngrams
+  # - ngrams
+  # - proposed_ngrams
+
+training_params:
+  num_topics: 10 #,20,25,30,50,75,100,150 #15,30,50,75 #5,10,15,20,25,30,50,75,100,150 # Number of training topics
+  word_min_length: 3  # Minimum length of words to consider
+  min_lemmas: 3
+  Mallet_params:  # Parameters for the Mallet LDA model
+    alpha: 5  
+    optimize_interval: 10
+    num_threads: 4  
+    num_iterations: 1000  

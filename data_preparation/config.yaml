@@ -1,0 +1,10 @@
+################################
+#     LOGGING CONFIGURATION    #
+################################
+logger:
+  dir_logger: data/logs
+  console_log: True
+  file_log: True
+  log_level: INFO
+  logger_name: tova
+  N_log_keep: 5 #maximum number of log files to keep
