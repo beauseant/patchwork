@@ -1,10 +1,10 @@
 #!/bin/bash
 
 PATHS=(
-    /export/data_ml4ds/NextProcurement/pruebas_oct_2025/objective_extractor/results_all_insiders_2024/to_preproc.parquet
+    /export/data_ml4ds/NextProcurement/Junio_2025/pliegosPlace/df_cpv5_to_lemmatize.parquet
 )
 
-DESTINATION_DIR="/export/data_ml4ds/NextProcurement/pruebas_oct_2025/objective_extractor/results_all_insiders_2024"
+DESTINATION_DIR="/export/data_ml4ds/NextProcurement/Junio_2025/pliegosPlace/"
 
 echo "Starting batch preprocessing..."
 

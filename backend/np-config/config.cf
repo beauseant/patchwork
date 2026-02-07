@@ -79,3 +79,10 @@ title_field=title
 date_field=date
 MetadataDisplayed=id,generated_objective,link
 SearcheableField=id,generated_objective
+
+[cpv_5_2024-config]
+id_field=place_id
+title_field=title
+date_field=date
+MetadataDisplayed=id,generated_objective,link
+SearcheableField=id,generated_objective

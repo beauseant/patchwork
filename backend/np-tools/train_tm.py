@@ -1,461 +1,346 @@
-import os
-import pathlib
-import shutil
+"""
+Train Mallet LDA topic models per CPV.
 
-from matplotlib import pyplot as plt
-import numpy as np
-from src.TopicModeling.solr_backend_utils.utils import create_trainconfig
-from src.Utils.utils import set_logger, train_test_split
+Expected folder structure for --data_path:
+    data_path/
+    ├── cpv_45000000/
+    │   ├── stops.txt              # one stopword per line
+    │   ├── equivalences.txt       # format  original:replacement
+    │   └── corpus.parquet         # must contain columns: place_id, lemmas
+    ├── cpv_72000000/
+    │   ├── stops.txt
+    │   ├── equivalences.txt
+    │   └── corpus.parquet
+    └── ...
+"""
+
 import argparse
-import yaml
-from pathlib import Path
-import pandas as pd
-from gensim import corpora
+import shutil
 import sys
 import time
-from src.TopicModeling import (
-    BERTopicModel,
-    GensimLDAModel,
-    MalletLDAModel,
-    NMFModel,
-    TomotopyCTModel,
-    TomotopyLDAModel,
-)
+from datetime import datetime
+import logging
+from pathlib import Path
+from typing import Dict, List, Optional, Union
 
-########################
-# AUXILIARY FUNCTIONS  #
-########################
-def create_model(model_name, **kwargs):
-    # Map model names to corresponding classes
-    model_mapping = {
-        'BERTtopic': BERTopicModel,
-        'Gensim': GensimLDAModel,
-        'Mallet': MalletLDAModel,
-        'NMF': NMFModel,
-        'TomotopyCTModel': TomotopyCTModel,
-        'TomotopyLDAModel': TomotopyLDAModel,
-    }
-
-    # Retrieve the class based on the model name
-    model_class = model_mapping.get(model_name)
-
-    # Check if the model name is valid
-    if model_class is None:
-        raise ValueError(f"Invalid model name: {model_name}")
-
-    # Create an instance of the model class
-    model_instance = model_class(**kwargs)
-
-    return model_instance
+import matplotlib.pyplot as plt
+import numpy as np
+import pandas as pd
+from gensim import corpora
 
 
-if __name__ == "__main__":
+from src.TopicModeling import MalletLDAModel
 
-    # Set logger
-    logger = set_logger(console_log=True, file_log=True)
 
-    # Parse args
-    parser = argparse.ArgumentParser(
-        description="Train options for topic modeling")
-    parser.add_argument(
-        "--options",
-        default="config/options_env.yaml",
-        help="Path to options YAML file"
-    )
-    parser.add_argument(
-        "--trainer",
-        default="Mallet",
-        help="Trainer to use for topic modeling"
-    )
-    parser.add_argument(
-        "--test_split",
-        default=0.0,
-        type=float,
-        help="Size of test split for training the model. If set to 0.0, the model will be trained on the entire dataset and no test set will be created."
-    )
+def load_stopwords(path: Union[str, Path]) -> set:
+    """
+    Load stopwords from a single .txt file (one word per line).
+
+    Parameters
+    ----------
+    path : str or Path
+        Path to the stopwords file.
+
+    Returns
+    -------
+    set
+        Set of stopwords.
+    """
+    path = Path(path)
+    if not path.is_file():
+        raise FileNotFoundError(f"Stopwords file not found: {path}")
+    with path.open("r", encoding="utf-8") as f:
+        words = {line.strip() for line in f if line.strip()}
+    # Add lowercase variants
+    words.update({w.lower() for w in words})
+    return words
+
+
+def load_equivalences(path: Union[str, Path]) -> Dict[str, str]:
+    """
+    Load equivalences from a single .txt file.
+    Format per line: ``original:replacement``
+
+    Parameters
+    ----------
+    path : str or Path
+        Path to the equivalences file.
+
+    Returns
+    -------
+    dict
+        Mapping original → replacement.
+    """
+    path = Path(path)
+    if not path.is_file():
+        raise FileNotFoundError(f"Equivalences file not found: {path}")
+    equivalences = {}
+    with path.open("r", encoding="utf-8") as f:
+        for line in f:
+            line = line.strip()
+            parts = line.split(":")
+            if len(parts) == 2:
+                equivalences[parts[0]] = parts[1]
+    return equivalences
+
+
+def train_test_split(df: pd.DataFrame, frac: float = 0.2):
+    """Split a DataFrame into train and test."""
+    if frac <= 0:
+        return df, df.iloc[0:0]  # empty test set
+    test = df.sample(frac=frac, axis=0, random_state=42)
+    train = df.drop(index=test.index)
+    return train, test
+
+
+def set_logger(
+    name: str = "tm-logger",
+    log_level: str = "INFO",
+    log_dir: Union[str, Path] = "logs",
+    console: bool = True,
+    file: bool = True,
+) -> logging.Logger:
+    """Create a logger with console and/or file handlers."""
+    logger = logging.getLogger(name)
+    logger.setLevel(log_level)
+    if logger.hasHandlers():
+        logger.handlers.clear()
+
+    fmt = logging.Formatter(
+        "%(asctime)s - %(name)s - %(levelname)s - %(message)s")
+
+    if console:
+        ch = logging.StreamHandler()
+        ch.setFormatter(fmt)
+        logger.addHandler(ch)
+
+    if file:
+        log_dir = Path(log_dir)
+        log_dir.mkdir(parents=True, exist_ok=True)
+        ts = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
+        fh = logging.FileHandler(
+            log_dir / f"{name}_{ts}.log", encoding="utf-8")
+        fh.setFormatter(fmt)
+        logger.addHandler(fh)
+
+    return logger
+
+# ── Text preprocessing ────────────────────────────────────────────
+
+
+def tkz_clean_str(
+    rawtext: str, stopwords: set, equivalents: dict
+) -> str:
+    """Lowercase, remove stopwords, apply equivalences."""
+    if not rawtext:
+        return ""
+    tokens = rawtext.lower().split()
+    tokens = [equivalents.get(w, w) for w in tokens if w not in stopwords]
+    # Second pass in case equivalences introduced new stopwords
+    tokens = [w for w in tokens if w not in stopwords]
+    return " ".join(tokens)
+
+
+def build_vocabulary(
+    data_col: pd.Series,
+    min_lemas: int = 3,
+    no_below: int = 5,  #10
+    no_above: float = 0.90, #0.6
+    keep_n: int = 100_000,
+) -> set:
+    """Build a filtered vocabulary using Gensim Dictionary."""
+    data_col = data_col[data_col.apply(lambda x: len(x.split())) >= min_lemas]
+    tokens = [doc.split() for doc in data_col.values.tolist()]
+    gensim_dict = corpora.Dictionary(tokens)
+    gensim_dict.filter_extremes(
+        no_below=no_below, no_above=no_above, keep_n=keep_n)
+    return {gensim_dict[idx] for idx in range(len(gensim_dict))}
+
+
+def main():
+    parser = argparse.ArgumentParser(description="Train Mallet LDA per CPV")
     parser.add_argument(
         "--data_path",
-        default="/export/usuarios_ml4ds/lbartolome/NextProcurement/NP-Text_Object/data/train_data/training_dfs_per_cpv",
-        help="Path to data"
+        required=True,
+        help="Root folder with one subfolder per CPV (each with stops.txt, equivalences.txt, corpus.parquet)",
+    )
+    parser.add_argument(
+        "--output_dir",
+        required=True,
+        help="Directory where trained models will be saved",
+    )
+    parser.add_argument(
+        "--mallet_path",
+        default="/export/usuarios_ml4ds/lbartolome/mallet-2.0.8/bin/mallet",
+        help="Path to Mallet binary",
     )
     parser.add_argument(
         "--num_topics",
-        default="5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,25,30,35,40,45,50",
-        help="Number of topics to train the model on"
+        default="5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,25,30,40,50",
+        help="Comma-separated list of topic numbers to try",
     )
     parser.add_argument(
-        "--path_stops",
-        default="/export/usuarios_ml4ds/lbartolome/NextProcurement/NP-Search-Tool/sample_data/stopwords",
-        help="Path to stopwords file"
+        "--test_split",
+        type=float,
+        default=0.0,
+        help="Fraction for test split (0 = no test set)",
     )
     parser.add_argument(
-        "--path_eq",
-        default="/export/usuarios_ml4ds/lbartolome/NextProcurement/NP-Search-Tool/sample_data/equivalences/manual_equivalences.txt",
-        help="Path to equivalence dictionary file"
-    )
-
-    parser.add_argument(
-        "--extra",
-        type=bool,
-        default=False,
-        help="Extra parameter for the model"
+        "--min_lemmas",
+        type=int,
+        default=3,
+        help="Minimum number of lemmas per document",
     )
     parser.add_argument(
-        "--path_data",
-        default="/export/usuarios_ml4ds/lbartolome/NextProcurement/NP-Text_Object/data/train_data/processed_objectives_with_lemmas_emb_label.parquet",
-        help="Path to data"
+        "--word_min_len",
+        type=int,
+        default=2,
+        help="Minimum word length",
     )
-    
     parser.add_argument(
-        "--final_models",
-        default="/export/usuarios_ml4ds/lbartolome/NextProcurement/NP-Search-Tool/sample_data/zaragoza_models_more_stops",
-        help="Path to final models"
+        "--log_dir",
+        default="/export/usuarios_ml4ds/lbartolome/Repos/patchwork/data/logs",
+        help="Directory where logs will be written",
     )
-    
     parser.add_argument(
-        "--corpus_seggregate",
-        default="zaragoza",
+        "--cpvs",
+        type=str,
+        default="79,45",
+        help="Comma-separated list of CPV codes to process (e.g. '79,45') or 'all' for all subfolders",
     )
-    
     args = parser.parse_args()
 
-    with open(args.options, "r") as f:
-        options = dict(yaml.safe_load(f))
+    logger = set_logger(name="train_tm", log_dir=args.log_dir)
+    num_topics = [int(k) for k in args.num_topics.split(",")]
+    data_root = Path(args.data_path)
+    output_root = Path(args.output_dir)
 
-    # Set logger
-    dir_logger = Path(options.get("dir_logger", "app.log"))
-    console_log = options.get("console_log", True)
-    file_log = options.get("file_log", True)
-    logger = set_logger(
-        console_log=console_log,
-        file_log=file_log,
-        file_loc=dir_logger
-    )
-
-    ##########
-    # Config #
-    ##########
-    # Number of topics for training the model and word min len
-    num_topics = options.get('training_params', {}).get('num_topics', '50')
-    try:
-        num_topics = [int(k) for k in args.num_topics.split(",")]
-    except:
-        num_topics = [int(num_topics)]
-    word_min_len = options.get('training_params', {}).get('word_min_len', 4)
-    min_lemmas = 3#options.get('training_params', {}).get('min_lemmas', 5)
-    
-    # File directories
-    dir_output_models = Path(args.final_models)
-    dir_mallet = Path(options.get("dir_mallet"))
-    
-    ##########
-    # Train  #
-    ##########
-    # Get training parameters
-    tr_params = options.get('training_params', {}).get(
-        f"{args.trainer}_params", {})
-    if not bool(tr_params):
-        logger.error(
-            "--- Training parameters not found in options.yaml. Quitting script....")
+    # Iterate over CPV subfolders
+    cpv_dirs = sorted([d for d in data_root.iterdir() if d.is_dir()])
+    if not cpv_dirs:
+        logger.error(f"No CPV subdirectories found in {data_root}")
         sys.exit(1)
-    model_init_params = {
-        "word_min_len": word_min_len,
-        "logger": logger,
-    }
-    if args.trainer == "Mallet":
-        model_init_params["mallet_path"] = dir_mallet
 
-    
-    #####################
-    # Load stops /eqs #
-    #####################
-    print(f"Loading stopwords")
-    start_time = time.time()
-    stopwords = set()
-    for file in os.listdir(args.path_stops):
-        if args.corpus_seggregate == "cpv":
-            condition = file.endswith('.txt')
-        else:
-            condition = file.endswith('.txt') and not "stops_cpv_final" in file
-        if condition:
-            with open(os.path.join(args.path_stops, file), 'r', encoding='utf-8') as f:
-                stopwords.update(f.read().splitlines())            
-    print(f"-- -- {len(stopwords)} stopwords load in {time.time() - start_time:.2f} seconds")
-
-    print(f"Loading equivalences")
-    start_time = time.time()
-    equivalents = {}
-    with open(args.path_eq, 'r', encoding='utf-8') as f:
-        for line in f:
-            line = line.strip()
-            words = line.split(':')
-            if len(words) < 2:
-                print(f"Skipped or incomplete line: '{line}'")
+    for cpv_dir in cpv_dirs:
+        cpv_name = cpv_dir.name
+        if args.cpvs.lower() != "all":
+            cpv_code = cpv_name.split("_")[-1]
+            if cpv_code not in args.cpvs.split(","):
+                logger.info(f"Skipping CPV {cpv_name} (not in selected list)")
                 continue
-            equivalents[words[0]] = words[1]
-    print(f"-- -- {len(equivalents)} equivalence loaded in: {time.time() - start_time:.2f} seconds")
-
-    ##########################################
-    # Carry out specific preprocessing steps #
-    ##########################################
-    def tkz_clean_str(rawtext, stopwords, equivalents):
-        if not rawtext:
-            return ''
-        
-        # Lowercasing and tokenization
-        cleantext = rawtext.lower().split()
-
-        # Remove stopwords and apply equivalences in one pass
-        cleantext = [equivalents.get(word, word) for word in cleantext if word not in stopwords]
-
-        # Second stopword removal (in case equivalences introduced new stopwords)
-        cleantext = [word for word in cleantext if word not in stopwords]
-        
-        return ' '.join(cleantext)
-
-    def preprocBOW(data_col, min_lemas=15, no_below=10, no_above=0.6, keep_n=100000):
-
-        # filter out documents (rows) with less than minimum number of lemmas
-        data_col = data_col[data_col.apply(lambda x: len(x.split())) >= min_lemas]
-        
-        final_tokens = [doc.split() for doc in data_col.values.tolist()]
-        gensimDict = corpora.Dictionary(final_tokens)
-
-        # Remove words that appear in less than no_below documents, or in more than no_above, and keep at most keep_n most frequent terms
-        gensimDict.filter_extremes(no_below=no_below, no_above=no_above, keep_n=keep_n)
-        
-        # Remove words not in dictionary, and return a string
-        vocabulary = set([gensimDict[idx] for idx in range(len(gensimDict))])
-        
-        return vocabulary
-    
-    if args.corpus_seggregate == "cpv":    
-        cpv_files = os.listdir(args.data_path)
-        # the files are defined as {id}_{cpv}.parquet
-        # sort the files by id from 0 to n
-        cpv_files = sorted(cpv_files, key=lambda x: int(x.split("_")[0]))
-        cpv_files = cpv_files[:-1]
-        print(f"CPV files: {cpv_files}")
-        # extract the cpv from the file name
-        cpvs = [cpv.split(".")[0] for cpv in cpv_files]
-        cpvs = cpvs[:-1]
-        print(f"CPVs: {cpvs}")
-        for cpv_data, cpv in zip(cpv_files, cpvs):
             
-            df = pd.read_parquet(os.path.join(args.data_path, cpv_data))
-            # drop duplicates based on place_id
-            df = df.drop_duplicates(subset=['place_id'])
-            data_path = Path(cpv_data).name
-            print(f"Processing data for CPV: {data_path}")
-            print(f"Data shape: {df.shape}")
-            print(f"Average lemmas per document (before processing): {df['lemmas'].apply(lambda x: len(x.split())).mean()}")
-            
-            # Clean text
-            start_time = time.time()
-            df['lemmas'] = df['lemmas'].apply(lambda x: tkz_clean_str(x, stopwords, equivalents))
-            print(f"-- -- Text cleaned in {time.time() - start_time:.2f} seconds")
-            # create vocabulary
-            start_time = time.time()
-            vocabulary = preprocBOW(df['lemmas'], min_lemas=min_lemmas)
-            print(f"-- -- Vocabulary created in {time.time() - start_time:.2f} seconds")
-            # remove words that are not in the vocabulary
-            df['lemmas'] = df['lemmas'].apply(lambda x: ' '.join([word for word in x.split() if word in vocabulary]))
-            # remove rows with less than min_lemmas lemmas
-            df = df[df['lemmas'].apply(lambda x: len(x.split())) >= min_lemmas]
-            print(f"Data shape after filtering: {df.shape}")
-            print(f"Average lemmas per document (after processing): {df['lemmas'].apply(lambda x: len(x.split())).mean()}")
-            
-            # Train models
-            cohrs = []
-            for k in num_topics:
-                logger.info(f"{'='*10} Training model with {k} topics. {'='*10}")
+        logger.info(f"{'=' * 40}")
+        logger.info(f"Processing CPV: {cpv_name}")
+        logger.info(f"{'=' * 40}")
 
-                texts_train, texts_test = train_test_split(df, args.test_split)
-                logger.info("Data loaded.")
-                logger.info(
-                    f"Train: {len(texts_train)} docs. Test: {len(texts_test)}.")
+        # ── Validate required files ──
+        stops_file = cpv_dir / "stops.txt"
+        eq_file = cpv_dir / "equivalences.txt"
+        parquet_files = list(cpv_dir.glob("*.parquet"))
 
-                # Update model parameters            
-                model_path = dir_output_models / cpv
-                model_path.mkdir(parents=True, exist_ok=True)
-                model_path = model_path / f"{k}_topics"
-                model_init_params["model_dir"] = model_path
+        if not parquet_files:
+            logger.warning(f"No .parquet files in {cpv_dir}, skipping.")
+            continue
 
-                # Create model
-                model = create_model(args.trainer, **model_init_params)
-                
-                start = time.time()
+        # ── Load stops / equivalences ──
+        t0 = time.time()
+        if stops_file.is_file():
+            stopwords = load_stopwords(stops_file)
+            logger.info(f"  {len(stopwords)} stopwords loaded ({time.time() - t0:.2f}s)")
+        else:
+            stopwords = set()
+            logger.warning(f"  No stops.txt found in {cpv_dir}, using empty stopwords.")
 
-                path_data = args.path_data if args.extra else None
-                
-                #import pdb; pdb.set_trace()
-                # Train model
-                model.train(
-                    texts_train.lemmas,
-                    texts_train.place_id,
-                    num_topics=k,
-                    **tr_params,
-                    texts_test=texts_test.lemmas,
-                    ids_test=texts_test.place_id, 
-                    extra=args.extra,
-                    path_data=path_data
-                )
+        t0 = time.time()
+        if eq_file.is_file():
+            equivalents = load_equivalences(eq_file)
+            logger.info(f"  {len(equivalents)} equivalences loaded ({time.time() - t0:.2f}s)")
+        else:
+            equivalents = {}
+            logger.info(f"  No equivalences.txt found in {cpv_dir}, using empty equivalences.")
 
-                model.save_model(
-                    path=model_init_params["model_dir"] /
-                    "model_data" / "model.pickle"
-                )
-                
-                print("-- -- Model trained in:", time.time() - start)
+        # ── Load corpus ──
+        df = pd.read_parquet(parquet_files[0])
+        df = df.drop_duplicates(subset=["place_id"])
+        logger.info(f"  Corpus: {len(df)} docs (after dedup)")
 
-                print(f"-- -- Model saved in {model_init_params['model_dir']}")
-                
-                create_trainconfig(
-                    modeldir=model_init_params["model_dir"],
-                    model_name=pathlib.Path(model_init_params["model_dir"]).name,
-                    model_desc=pathlib.Path(model_init_params["model_dir"]).name,
-                    trainer=args.trainer,
-                    TrDtSet=data_path,
-                    TMparam=tr_params
-                )
-                
-                cohr = np.load(model_init_params["model_dir"] / "model_data" / "TMmodel/topic_coherence.npy").mean()
-                cohrs.append({
-                    "num_topics": k,
-                    "coherence": cohr
-                })
-                
-            df_cohrs = pd.DataFrame(cohrs)
-            # Plot coherence graph
+        # ── Preprocess ──
+        df["lemmas"] = df["lemmas"].apply(
+            lambda x: tkz_clean_str(x, stopwords, equivalents)
+        )
+        vocabulary = build_vocabulary(df["lemmas"], min_lemas=args.min_lemmas)
+        df["lemmas"] = df["lemmas"].apply(
+            lambda x: " ".join(w for w in x.split() if w in vocabulary)
+        )
+        df = df[df["lemmas"].apply(lambda x: len(x.split())) >= args.min_lemmas]
+        logger.info(
+            f"  After filtering: {len(df)} docs, "
+            f"avg {df['lemmas'].apply(lambda x: len(x.split())).mean():.1f} lemmas/doc"
+        )
+
+        if df.empty:
+            logger.warning(f"  No documents left after filtering for {cpv_name}, skipping.")
+            continue
+
+        # ── Train models for each k ──
+        coherences = []
+        for k in num_topics:
+            logger.info(f"  Training with {k} topics...")
+            texts_train, texts_test = train_test_split(df, args.test_split)
+
+            model_path = output_root / cpv_name / f"{k}_topics"
+            model = MalletLDAModel(
+                model_dir=model_path,
+                stop_words=list(stopwords),
+                word_min_len=args.word_min_len,
+                mallet_path=args.mallet_path,
+                logger=logger,
+            )
+
+            t0 = time.time()
+            train_kwargs = dict(
+                num_topics=k,
+                texts_test=texts_test["lemmas"].tolist() if len(texts_test) > 0 else None,
+                ids_test=texts_test["place_id"].tolist() if len(texts_test) > 0 else None,
+            )
+            model.train(
+                texts_train["lemmas"].tolist(),
+                texts_train["place_id"].tolist(),
+                **train_kwargs,
+            )
+            model.save_model(model_path / "model_data" / "model.pickle")
+            logger.info(f"  Trained in {time.time() - t0:.1f}s → {model_path}")
+
+            # Read coherence from TMmodel if available
+            coh_path = model_path / "model_data" / "TMmodel" / "topic_coherence.npy"
+            if coh_path.exists():
+                cohr = float(np.load(coh_path).mean())
+                coherences.append({"num_topics": k, "coherence": cohr})
+                logger.info(f"  Coherence (k={k}): {cohr:.4f}")
+
+        # ── Plot coherence and pick best models ──
+        if coherences:
+            df_c = pd.DataFrame(coherences)
             plt.figure(figsize=(10, 6))
-            plt.plot(df_cohrs['num_topics'], df_cohrs['coherence'], marker='o', linestyle='-')
+            plt.plot(df_c["num_topics"], df_c["coherence"], marker="o")
             plt.xlabel("Number of Topics")
             plt.ylabel("Coherence Score")
-            plt.title("Coherence Score vs. Number of Topics")
+            plt.title(f"Coherence – {cpv_name}")
             plt.grid(True)
-            plot_path = dir_output_models / cpv / "coherence_plot.png"        
-            plt.savefig(plot_path)
-            plt.show()
-            
-            # find the first local maximum in the first half of the graph and the second maximum in the second half
-            half = len(df_cohrs) // 2
-            df_cohrs_first_half = df_cohrs.iloc[:half]
-            df_cohrs_second_half = df_cohrs.iloc[half:]
-            
-            max_cohr_idx = df_cohrs_first_half['coherence'].idxmax()
-            max_cohr = df_cohrs_first_half.loc[max_cohr_idx]
-            print(f"First best coherence: {max_cohr['coherence']} with {max_cohr['num_topics']} topics")
-            # copy the best model to the best_models directory
-            final_model_path = Path(args.final_models) / cpv / f"{int(max_cohr['num_topics'])}_topics"
-            final_model_path.mkdir(parents=True, exist_ok=True)
-            # copy model_path of best model to final_model_path
-            best_model_path = dir_output_models / cpv / f"{int(max_cohr['num_topics'])}_topics"
-            shutil.copytree(best_model_path, final_model_path, dirs_exist_ok=True)
-        
-            # second maximum
-            max_cohr_idx = df_cohrs_second_half['coherence'].idxmax()
-            max_cohr = df_cohrs_second_half.loc[max_cohr_idx]
-            print(f"Second best coherence: {max_cohr['coherence']} with {max_cohr['num_topics']} topics")
-            # copy the best model to the best_models directory
-            final_model_path = Path(args.final_models) / cpv / f"{int(max_cohr['num_topics'])}_topics"
-            final_model_path.mkdir(parents=True, exist_ok=True)
-            # copy model_path of best model to final_model_path
-            best_model_path = dir_output_models / cpv / f"{int(max_cohr['num_topics'])}_topics"
-            shutil.copytree(best_model_path, final_model_path, dirs_exist_ok=True)
-    else:
-        
-        df = pd.read_parquet(args.data_path)
-        
-        # drop duplicates based on place_id
-        df = df.drop_duplicates(subset=['place_id'])
-        print(f"Data shape: {df.shape}")
-        print(f"Average lemmas per document (before processing): {df['lemmas'].apply(lambda x: len(x.split())).mean()}")
-        
-        # Clean text
-        start_time = time.time()
-        df['lemmas'] = df['lemmas'].apply(lambda x: tkz_clean_str(x, stopwords, equivalents))
-        print(f"-- -- Text cleaned in {time.time() - start_time:.2f} seconds")
-        # create vocabulary
-        start_time = time.time()
-        vocabulary = preprocBOW(df['lemmas'], min_lemas=min_lemmas)
-        print(f"-- -- Vocabulary created in {time.time() - start_time:.2f} seconds")
-        # remove words that are not in the vocabulary
-        df['lemmas'] = df['lemmas'].apply(lambda x: ' '.join([word for word in x.split() if word in vocabulary]))
-        # remove rows with less than min_lemmas lemmas
-        df = df[df['lemmas'].apply(lambda x: len(x.split())) >= min_lemmas]
-        print(f"Data shape after filtering: {df.shape}")
-        print(f"Average lemmas per document (after processing): {df['lemmas'].apply(lambda x: len(x.split())).mean()}")
-        
-        # check that there is no empty lemmas
-        print(f"Empty lemmas: {df['lemmas'].apply(lambda x: len(x)).sum() == 0}")
-        
-        # Train models
-        cohrs = []
-        for k in num_topics:
-            logger.info(f"{'='*10} Training model with {k} topics. {'='*10}")
+            plt.savefig(output_root / cpv_name / "coherence_plot.png")
+            plt.close()
 
-            texts_train, texts_test = train_test_split(df, args.test_split)
-            logger.info("Data loaded.")
+            # Best overall
+            best = df_c.loc[df_c["coherence"].idxmax()]
             logger.info(
-                f"Train: {len(texts_train)} docs. Test: {len(texts_test)}.")
-
-            # Update model parameters            
-            model_path = dir_output_models
-            model_path.mkdir(parents=True, exist_ok=True)
-            model_path = model_path / f"{k}_topics"
-            model_init_params["model_dir"] = model_path
-
-            # Create model
-            model = create_model(args.trainer, **model_init_params)
-            
-            start = time.time()
-
-            path_data = args.path_data if args.extra else None
-                
-            # Train model
-            model.train(
-                texts_train.lemmas,
-                texts_train.place_id,
-                num_topics=k,
-                **tr_params,
-                texts_test=texts_test.lemmas,
-                ids_test=texts_test.place_id, 
-                extra=args.extra,
-                path_data=path_data
+                f"  Best coherence: {best['coherence']:.4f} "
+                f"with {int(best['num_topics'])} topics"
             )
 
-            model.save_model(
-                path=model_init_params["model_dir"] /
-                "model_data" / "model.pickle"
-            )
-            
-            print("-- -- Model trained in:", time.time() - start)
+    logger.info("All done.")
 
-            print(f"-- -- Model saved in {model_init_params['model_dir']}")
-            
-            create_trainconfig(
-                modeldir=model_init_params["model_dir"],
-                model_name=pathlib.Path(model_init_params["model_dir"]).name,
-                model_desc=pathlib.Path(model_init_params["model_dir"]).name,
-                trainer=args.trainer,
-                TrDtSet=args.data_path,
-                TMparam=tr_params
-            )
-            
-            cohr = np.load(model_init_params["model_dir"] / "model_data" / "TMmodel/topic_coherence.npy").mean()
-            cohrs.append({
-                "num_topics": k,
-                "coherence": cohr
-            })
-            
-        df_cohrs = pd.DataFrame(cohrs)
-        # Plot coherence graph
-        plt.figure(figsize=(10, 6))
-        plt.plot(df_cohrs['num_topics'], df_cohrs['coherence'], marker='o', linestyle='-')
-        plt.xlabel("Number of Topics")
-        plt.ylabel("Coherence Score")
-        plt.title("Coherence Score vs. Number of Topics")
-        plt.grid(True)
-        plot_path = dir_output_models / "coherence_plot.png"        
-        plt.savefig(plot_path)
-        plt.show()
+
+if __name__ == "__main__":
+    main()
+
+# python3 train_tm.py --data_path /export/usuarios_ml4ds/lbartolome/Repos/patchwork/data/models_paper/tr_data --output_dir /export/usuarios_ml4ds/lbartolome/Repos/patchwork/data/models_paper/models
