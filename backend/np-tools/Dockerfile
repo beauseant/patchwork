@@ -10,14 +10,14 @@ ENV MALLET_VERSION=202108
 ENV MALLET_URL="https://github.com/mimno/Mallet/releases/download/v${MALLET_VERSION}/Mallet-${MALLET_VERSION}-bin.tar.gz"
 ENV MALLET_HOME=/opt/mallet
 ENV PATH="$MALLET_HOME/bin:$PATH"
-ENV JAVA_HOME="/usr/lib/jvm/java-8-openjdk-amd64"
+ENV JAVA_HOME="/usr/lib/jvm/java-21-openjdk-amd64"
 
-# Install system dependencies and ensure Java 8 compatibility
+# Install system dependencies and ensure Java 21 compatibility
 RUN apt-get update && apt-get install -y --no-install-recommends \
     software-properties-common && \
     add-apt-repository -y ppa:deadsnakes/ppa && \
     apt-get update && apt-get install -y --no-install-recommends \
-    openjdk-8-jdk \
+    openjdk-21-jdk \
     poppler-utils \
     python3.10 python3.10-dev python3.10-venv python3-pip \
     git ant wget curl \
@@ -26,10 +26,10 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     tzdata zlib1g-dev libgl1-mesa-glx libgl1-mesa-dev libpython3-dev && \
     apt-get clean && rm -rf /var/lib/apt/lists/* /tmp/* /root/.cache/*
 
-# Set Java 8 as the default
-RUN update-alternatives --set java /usr/lib/jvm/java-8-openjdk-amd64/jre/bin/java
+# Set Java 21 as the default
+RUN update-alternatives --set java /usr/lib/jvm/java-21-openjdk-amd64/bin/java
 
-# Verify Java version (should be Java 8)
+# Verify Java version (should be Java 21)
 RUN java -version
 
 # Create and activate a Python virtual environment
@@ -54,12 +54,12 @@ RUN python -m spacy download es_dep_news_trf
 RUN python -m spacy download en_core_web_trf
 
 # Download and install Mallet (removing unnecessary files to save space)
-RUN wget $MALLET_URL -O /tmp/mallet.tar.gz && \
-    tar -xvzf /tmp/mallet.tar.gz -C /opt && \
-    mv /opt/Mallet-${MALLET_VERSION} /opt/mallet && \
-    rm /tmp/mallet.tar.gz && \
-    rm -rf /opt/mallet/sample-data  # Remove sample data to reduce image size
-#COPY mallet-2.0.8/ /opt/mallet/
+#RUN wget $MALLET_URL -O /tmp/mallet.tar.gz && \
+#    tar -xvzf /tmp/mallet.tar.gz -C /opt && \
+#    mv /opt/Mallet-${MALLET_VERSION} /opt/mallet && \
+#    rm /tmp/mallet.tar.gz && \
+#    rm -rf /opt/mallet/sample-data  # Remove sample data to reduce image size
+COPY mallet-2.0.8/ /opt/mallet/
 
 # Download and cache the sentence transformer model
 ARG MODEL_NAME=sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2

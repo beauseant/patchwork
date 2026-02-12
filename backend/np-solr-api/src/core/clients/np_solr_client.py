@@ -1551,7 +1551,7 @@ class NPSolrClient(SolrClient):
                 f"-- -- Error executing query Q21. Aborting operation...")
             return
 
-        return results.docs, sc
+        return {'topics': '', 'mostSimilar': results.docs}, sc
     
     def do_Q22( # this is not a predefined query, but a wrapper over the inferencer that gets the information for the predicted topic
         self,

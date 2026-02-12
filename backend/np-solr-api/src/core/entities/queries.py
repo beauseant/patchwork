@@ -127,7 +127,7 @@ class Queries(object):
         self.Q9 = {
             'q': '*:*',
             'sort': 'payload(doctpc_{},t{}) desc, nwords_per_doc desc',
-            'fl': 'payload(doctpc_{},t{}), generated_objective, nwords_per_doc, id',
+            'fl': 'payload(doctpc_{},t{}), generated_objective, nwords_per_doc, id, link',
             'fq': [
                 'doctpc_{}:[* TO *]',           
                 'generated_objective:[* TO *]',      
