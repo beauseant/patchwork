@@ -57,9 +57,9 @@
   <field name="condiciones_especiales" type="text_general" indexed="true" stored="true" multiValued="false" />
 
   <!-- Clasificación CPV -->
-  <field name="cpv" type="string" indexed="true" stored="true" multiValued="true" />
-  <field name="two_cpv" type="string" indexed="true" stored="true" multiValued="true" />
-  <field name="cpv_predicted" type="string" indexed="true" stored="true" multiValued="false" />
+  <field name="cpv" type="text_general" indexed="true" stored="true" multiValued="true" />
+  <field name="two_cpv" type="text_general" indexed="true" stored="true" multiValued="true" />
+  <field name="cpv_predicted" type="text_general" indexed="true" stored="true" multiValued="false" />
 
   <!-- Información del organismo contratante -->
   <field name="contracting_party_city" type="string" indexed="true" stored="true" multiValued="false" />

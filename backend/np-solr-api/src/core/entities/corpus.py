@@ -21,6 +21,7 @@ import dask.dataframe as dd
 import numpy as np
 from dask.diagnostics import ProgressBar
 from src.core.entities.utils import (convert_datetime_to_strftime,parseTimeINSTANT)
+#from datetime import datetime
               
 
 # def is_valid_xml_char_ordinal(i):
@@ -111,7 +112,7 @@ class Corpus(object):
         self.name = path_to_raw.stem.lower()
         self.fields = None
 
-
+        
         # Read configuration from config file
         cf = configparser.ConfigParser()
         cf.read(config_file)
@@ -140,6 +141,7 @@ class Corpus(object):
         self.MetadataDisplayed = ["id", "title", "date"]
         self.SearcheableField = ["id", "title", "date"]
         """
+
 
         return
 
@@ -391,18 +393,17 @@ class Corpus(object):
             else:
                 self._logger.warning(f"[PARTITION] Campo 'lotes' NO existe en el DataFrame")
 
-            # ===== APLICAR LITERAL EVAL (puede convertir strings a dicts/listas) =====
             for col in partition.columns:
                 partition[col] = partition[col].apply(_maybe_literal_eval)
 
-            # ===== VERIFICAR LOTES DESPUÉS DE LITERAL EVAL =====
+            # verify lotes
             if has_lotes:
                 sample_lotes = partition['lotes'].head(3)
                 self._logger.info(f"[PARTITION] Lotes AFTER literal_eval:")
                 for i, val in enumerate(sample_lotes):
                     self._logger.info(f"[PARTITION]   Row {i}: type={type(val)}, value={str(val)[:200]}")
 
-            # ===== VERIFICAR GENERATIVE_OBJECTIVE =====
+            # verify objective
             if 'generative_objective' in partition.columns:
                 sample_obj = partition['generative_objective'].head(3)
                 self._logger.info(f"[PARTITION] generative_objective sample (first 3):")
@@ -427,6 +428,7 @@ class Corpus(object):
             partition['bow'] = partition['bow'].apply(
                 lambda x: ' '.join([f'{word}|{count}' for word, count in x]) if x else None
             )
+            
 
             partition = partition.drop(['lemmas_'], axis=1)
 
@@ -453,6 +455,7 @@ class Corpus(object):
                 partition[col] = partition[col].apply(
                     lambda x: x.tolist() if isinstance(x, np.ndarray) else x
                 )
+                
 
             # Convertir fechas
             partition, cols = convert_datetime_to_strftime(partition)
@@ -499,8 +502,39 @@ class Corpus(object):
             def _parse_array_field(x):
                 if x is None or (isinstance(x, float) and np.isnan(x)):
                     return []
+                
                 if isinstance(x, list):
-                    return [str(item).strip() for item in x if item and str(item).strip()]
+                    out = []
+                    for item in x:
+                        # FLATTEN nested lists (e.g. [["90921000","90911200"]])
+                        if isinstance(item, list):
+                            out.extend([str(v).strip() for v in item if v and str(v).strip()])
+                            continue
+
+                        # UNWRAP list encoded as a string inside a list (e.g. ["['90921000','90911200']"])
+                        if isinstance(item, str):
+                            s = item.strip()
+                            if s.startswith('['):
+                                try:
+                                    parsed = ast.literal_eval(s)
+                                    if isinstance(parsed, list):
+                                        out.extend([str(v).strip() for v in parsed if v and str(v).strip()])
+                                        continue
+                                except Exception:
+                                    pass
+
+                            if s:
+                                out.append(s)
+                            continue
+
+                        # Any other scalar
+                        if item is not None:
+                            s = str(item).strip()
+                            if s:
+                                out.append(s)
+
+                    return out
+                
                 if isinstance(x, str):
                     if x.strip().lower() in ['[]', '[[]]', 'nan', 'none', '']:
                         return []
@@ -518,7 +552,7 @@ class Corpus(object):
             for field in array_fields:
                 if field in partition.columns:
                     partition[field] = partition[field].apply(_parse_array_field)
-
+            
             # Create SearcheableField
             def _create_searcheable_field(row):
                 values = []
@@ -564,8 +598,7 @@ class Corpus(object):
                 if isinstance(val, (datetime, date)):
                     return val.isoformat() + 'Z'
                 return val
-
-            # ===== PROCESAR CADA RECORD =====
+            
             record_count = 0
             records_with_lotes = 0
             records_with_child_docs = 0
@@ -583,7 +616,7 @@ class Corpus(object):
                 if "url" in record and isinstance(record["url"], dict):
                     record["url"] = json.dumps(record["url"])
 
-                # ===== PROCESAR LOTES INMEDIATAMENTE, ANTES DE CUALQUIER LIMPIEZA =====
+                ## LOTES
                 child_documents = None
                 lotes_json_value = None
                 
@@ -613,16 +646,15 @@ class Corpus(object):
                             if record_count <= 5:
                                 self._logger.warning(f"[RECORD {record_count}]   ✗ No child documents created")
                     
-                    # Guardar JSON original para lotes_json
+                    # serialize lotes to JSON for lotes_json field                    
                     if isinstance(lotes_raw, dict):
                         lotes_json_value = json.dumps(lotes_raw)
                     elif lotes_raw:
                         lotes_json_value = str(lotes_raw)
                     
-                    # ELIMINAR lotes del record ANTES de la limpieza
+                    # delete original lotes field to avoid confusion and because we have the info in child docs and lotes_json                    
                     del record["lotes"]
                 
-                # ===== AHORA SÍ, HACER LA LIMPIEZA =====
                 cleaned_record = {}
                 for k, v in record.items():
                     v_serializable = _ensure_json_serializable(v)
@@ -647,8 +679,7 @@ class Corpus(object):
                     record["lotes_json"] = lotes_json_value
 
                 yield record
-
-            # Log resumen de la partición
+            
             self._logger.info(f"[PARTITION] Summary:")
             self._logger.info(f"[PARTITION]   Total records processed: {record_count}")
             self._logger.info(f"[PARTITION]   Records with 'lotes' field: {records_with_lotes}")
@@ -746,14 +777,13 @@ class Corpus(object):
 
         return new_list, new_SearcheableFields
 
-"""
-if __name__ == "__main__":
-    import argparse
-    parser = argparse.ArgumentParser(description="Test Corpus class")
+
+# if __name__ == "__main__":
+#     import argparse
+#     parser = argparse.ArgumentParser(description="Test Corpus class")
     
 
-    corpus = Corpus(path_to_raw=pathlib.Path("/export/usuarios_ml4ds/lbartolome/Repos/patchwork/data/cpv_5_2024.parquet"))
-    for doc in corpus.get_docs_raw_info():
-        print(doc)
-        import pdb; pdb.set_trace()
-"""
+#     corpus = Corpus(path_to_raw=pathlib.Path("/export/usuarios_ml4ds/lbartolome/Repos/patchwork/data/cpv_5_2024.parquet"))
+#     for doc in corpus.get_docs_raw_info():
+#         print(doc)
+#         import pdb; pdb.set_trace()

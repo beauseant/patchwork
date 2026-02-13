@@ -1,8 +1,10 @@
 import logging
+import os
 import time
-from flask import request # type: ignore
-from flask_restx import Namespace, Resource, fields # type: ignore
-from src.core.objective_extractor.extract import ObjectiveExtractor 
+from flask import request  # type: ignore
+from werkzeug.datastructures import FileStorage
+from flask_restx import Namespace, Resource, fields, reqparse  # type: ignore
+from src.core.objective_extractor.extract import ObjectiveExtractor
 
 # ======================================================
 # Logging Configuration
@@ -23,6 +25,14 @@ objective_extractor_model = api.model("ObjectiveExtractor", {
 })
 
 # ======================================================
+# Define parser to accept file uploads
+# ======================================================
+file_upload_parser = reqparse.RequestParser()
+file_upload_parser.add_argument(
+    "file", type=FileStorage, location="files", required=True, help="PDF file to extract text from."
+)
+
+# ======================================================
 # Create Objective Extractor Object (heavy init once)
 # ======================================================
 extractor = ObjectiveExtractor(
@@ -30,7 +40,59 @@ extractor = ObjectiveExtractor(
     config_path="/np-tools/src/core/objective_extractor/config/config.yaml"
 )
 
-@api.route("/extract/")
+
+@api.route("/extract/fromFile/")
+class ExtractFromFile(Resource):
+    @api.doc(
+        parser=file_upload_parser,
+        responses={
+            200: "Success: Objectives extracted successfully",
+            400: "Bad Request: Invalid input",
+            500: "Server Error: Failed to process the file",
+        },
+    )
+    def post(self):
+        start_time = time.time()
+        args = file_upload_parser.parse_args()
+        uploaded_file = args["file"]
+
+        if not uploaded_file:# or not uploaded_file.filename.lower().endswith(".pdf"):
+            return {"error": "Invalid file. Please upload a valid PDF."}, 400
+
+        logger.info("Received TEXT file for objective extraction")
+
+        try:
+            # read data from file
+            input_text = uploaded_file.read().decode("utf-8")
+
+            if not input_text:
+                return {"error": "Invalid input text."}, 400
+
+            logger.debug(
+                f"Input text (preview): {input_text[:500]}{'...' if len(input_text) > 500 else ''}")
+
+            if not input_text:
+                return {"error": "Invalid input. Please provide non-empty text."}, 400
+
+            extracted_objectives = {
+                "generative_objective": extractor.extract_generative(input_text)}
+
+            end_time = time.time() - start_time
+            response = {
+                "responseHeader": {"status": 200, "time": end_time},
+                "response": extracted_objectives,
+            }
+            logger.info("Objectives extracted successfully")
+
+            return response, 200
+
+        except Exception as e:
+            logger.error(
+                f"Error extracting objectives: {str(e)}", exc_info=True)
+            return {"error": "Failed to process the text", "details": str(e)}, 500
+
+
+@api.route("/extract/fromText/")
 class Extract(Resource):
     @api.expect(objective_extractor_model)
     @api.doc(
@@ -55,12 +117,14 @@ class Extract(Resource):
             input_text = (data["text"] or "").strip()
 
             # avoid logging entire long payloads
-            logger.debug(f"Input text (preview): {input_text[:500]}{'...' if len(input_text) > 500 else ''}")
+            logger.debug(
+                f"Input text (preview): {input_text[:500]}{'...' if len(input_text) > 500 else ''}")
 
             if not input_text:
                 return {"error": "Invalid input. Please provide non-empty text."}, 400
 
-            extracted_objectives = {"generative_objective": extractor.extract_generative(input_text)}
+            extracted_objectives = {
+                "generative_objective": extractor.extract_generative(input_text)}
 
             end_time = time.time() - start_time
             response = {
@@ -72,5 +136,6 @@ class Extract(Resource):
             return response, 200
 
         except Exception as e:
-            logger.error(f"Error extracting objectives: {str(e)}", exc_info=True)
+            logger.error(
+                f"Error extracting objectives: {str(e)}", exc_info=True)
             return {"error": "Failed to process the text", "details": str(e)}, 500
