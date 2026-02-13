@@ -351,7 +351,9 @@ cargarArchivo().then(text => {
                                             <p><strong>Objetivo Generado:</strong></p>
                                             <p class="text-muted" style="font-size: 0.9rem; white-space: pre-wrap;">${doc.generated_objective}</p>
                                             <hr>
-                                            <p class="mb-0 small"><strong>ID:</strong> <a href="${doc.id}" target="_blank" rel="noopener noreferrer">${doc.id}</a></p>
+                                            <p class="mb-0 small"><strong>ID:</strong> ${doc.id}</p>
+                                            <p class="mb-0 small"><strong>Link:</strong> <a href="${doc.link}" target="_blank" rel="noopener noreferrer">${doc.id}</a></p>
+
                                             <p class="mb-0 small"><strong>Nº Palabras:</strong> ${doc.num_words_per_doc}</p>
                                         </div>
                                     </div>

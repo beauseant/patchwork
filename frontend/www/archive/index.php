@@ -43,7 +43,6 @@
              <div class="col-md-6">
                 <label for="searchFieldSelector" class="form-label"><strong>Buscar en campo:</strong></label>
                 <select id="searchFieldSelector" class="form-select">
-                    <option value="*">Todos los campos</option>
                 </select>
             </div>
         </div>

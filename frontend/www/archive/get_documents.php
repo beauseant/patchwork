@@ -49,7 +49,7 @@ $data = json_decode($apiResponse, true);
 // Comprobación de seguridad final
 if ($data === null) {
     $jsonError = json_last_error_msg();
-    echo json_encode(["draw" => $draw, "recordsTotal" => 0, "recordsFiltered" => 0, "data" => [], "error" => "FATAL: JSON Decode failed. Error: " . $jsonError]);
+    echo json_encode(["draw" => $draw, "recordsTotal" => 0, "recordsFiltered" => 0, "data" => [], "error" => "FATAL: JSON Decode failed. Error: " . $jsonError,"url"=>$apiUrl]);
     exit;
 }
 
@@ -77,12 +77,13 @@ foreach ($data as $doc) {
     }
 }
 
-// --- 6. Enviar la respuesta final ---
+// --- 6. Enviar la respuesta final mollete es por debug---
 $response = [
     "draw" => intval($draw),
     "recordsTotal" => intval($totalRecords),
     "recordsFiltered" => intval($totalRecords),
-    "data" => $normalizedData
+    "data" => $normalizedData,
+   "mollete" => $apiUrl
 ];
 
 echo json_encode($response);

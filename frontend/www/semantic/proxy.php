@@ -79,6 +79,20 @@ switch ($action) {
         $target_url = $api_base_url . '/queries/getMetadataDocById/';
         break;
 
+    case 'getTopicsLabels':
+         // Validar parámetros requeridos
+         $required_params = ['cpv', 'granularity'];
+         foreach ($required_params as $param) {
+             if (!isset($_GET[$param])) {
+                 echo json_encode(['error' => "Missing $param parameter"]);
+                 exit;
+             }
+             $query_params[$param] = $_GET[$param];
+         }
+         $target_url = $api_base_url . '/queries/getTopicsLabels/';
+         break;
+
+
     default:
         echo json_encode(['error' => 'Invalid action specified']);
         exit;

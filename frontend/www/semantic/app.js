@@ -171,11 +171,10 @@ cargarArchivo().then(text => {
         }
         // --- LÓGICA DE BÚSQUEDA Y RESULTADOS ---
 
-        function handleSubmit() {
+        async function handleSubmit() {
             const queryType = $('#query_type').val();
-            
-            // Común para ambos:
             const text = $('#text_input').val();
+            
             if (!text) {
                 alert("Please complete the main text field.");
                 return;
@@ -189,33 +188,67 @@ cargarArchivo().then(text => {
             $('#prev_page').prop('disabled', currentPage === 0);
             const start = currentPage * rowsPerPage;
 
-
             if (queryType === 'topic-based') {
-                // Lógica para Topic-Based
                 const cpv = $('#cpv_select').val();
                 const granularity = $('#granularity_select').val();
 
                 if (!cpv || !granularity) {
                     alert("Please complete all fields: CPV and granularity.");
-                    showLoader(false); // Ocultar loader si hay error
+                    showLoader(false);
                     return;
                 }
                 
-                $('#topic_chart_row').show(); // Asegurarse de que el gráfico se muestra
+                $('#topic_chart_row').show();
 
-                $.getJSON('proxy.php?action=getSimilarDocs', {
-                    corpus_collection: selectedCorpus,
-                    cpv: cpv,
-                    granularity: granularity,
-                    text_to_infer: text,
-                    start: start,
-                    rows: rowsPerPage
-                })
-                .done(function(data) {
+                try {
+                    // Hacer ambas peticiones en paralelo
+                    const [data, topicsMap] = await Promise.all([
+                        $.getJSON('proxy.php?action=getSimilarDocs', {
+                            corpus_collection: selectedCorpus,
+                            cpv: cpv,
+                            granularity: granularity,
+                            text_to_infer: text,
+                            start: start,
+                            rows: rowsPerPage
+                        }),
+                        $.getJSON('proxy.php?action=getTopicsLabels', {
+                            cpv: cpv,
+                            granularity: granularity,
+                        })
+                    ]);
+
+		    const diccionario = {};
+		    topicsMap.forEach(item => {
+			    diccionario[item.id] = item.tpc_labels;
+		    });
+
+		    //console.log(diccionario);
+		    const resultado = data.topics.split(' ').map(item => {
+		    // Separamos el "tX" del valor numérico
+		   const [id, valor] = item.split('|');
+
+		   // Verificamos si ese ID existe en tus datos
+		    if (diccionario[id]) {
+		        // Obtenemos el label y reemplazamos espacios por guiones bajos
+		        // Usamos una expresión regular / /g para reemplazar TODOS los espacios
+		        const labelLimpia = diccionario[id].replace(/ /g, '_');
+		        // Retornamos el formato solicitado: tX (label)|valor
+		        return `${id}_(${labelLimpia})|${valor}`;
+		    }
+
+		    // Si no tenemos info para ese ID (ej: t0, t1), devolvemos el original
+			    return item;
+		     }).join(' '); // Unimos todo de nuevo con espacios
+
+	             // Resultado
+		    console.log(resultado);
+
+		    data.topics=resultado;
                     // data = { topics: "...", mostSimilar: [...] }
                     
                     if (currentPage === 0) {
                         drawDonutChart(data.topics);
+			            console.log (data.topics);
                     }
                     
                     if (data.mostSimilar && data.mostSimilar.length > 0) {
@@ -229,13 +262,13 @@ cargarArchivo().then(text => {
                         }
                         showLoader(false);
                     }
-                })
-                .fail(function(jqXHR, textStatus, errorThrown) {
-                    console.error("Error en getSimilarDocs:", textStatus, errorThrown, jqXHR.responseJSON);
-                    alert("Error while searching. Check the console.");
-                    showLoader(false);
-                });
-                
+                    
+                    } catch (error) {
+                        console.error("Error:", error);
+                        alert("Error while searching. Check the console.");
+                        showLoader(false);
+                    }
+            
             } else if (queryType === 'semantic-similarity') {
                 // Lógica para Semantic Similarity
                 const keyword = $('#keyword_input').val(); // Es opcional, puede ir vacío
@@ -252,6 +285,9 @@ cargarArchivo().then(text => {
                 .done(function(data) {
                     // data = { mostSimilar: [...] }
                     // NO hay 'topics' aquí
+                    
+                    console.log(data);
+		    
                     
                     if (data.mostSimilar && data.mostSimilar.length > 0) {
                         fetchAndDisplayDocuments(data.mostSimilar);
@@ -354,8 +390,9 @@ function drawDonutChart(topicsString) {
                 .attr("stroke", "white")
                 .style("stroke-width", "2px")
                 .style("opacity", 0.8)
-                .on("mouseover", function(d) {
+                /*.on("mouseover", function(d) {
                     d3.select(this).style("opacity", 1);
+		    
                     return tooltip.style("visibility", "visible").text(`${d.data.label}: ${d.data.value} (de 1000)`);
                 })
                 .on("mousemove", function() {
@@ -364,7 +401,7 @@ function drawDonutChart(topicsString) {
                 .on("mouseout", function() {
                     d3.select(this).style("opacity", 0.8);
                     return tooltip.style("visibility", "hidden");
-                });
+                });*/
             
             // 9. Añadir texto de porcentaje
             svg.selectAll('text.percentage')
