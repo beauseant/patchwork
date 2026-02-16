@@ -10,7 +10,6 @@ import time
 import os
 from flask_restx import Namespace, Resource, reqparse
 from werkzeug.datastructures import FileStorage
-from src.core.pdf_extractor.src.pdf_parser import PDFParser
 from src.core.pdf_extractor.processPDFn import PDFTextExtractor
 
 logging.basicConfig(level=logging.DEBUG)
