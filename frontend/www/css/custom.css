@@ -202,3 +202,186 @@ Cabecera página principal:
 /*********************************************************************************/
 /*********************************************************************************/
 /*********************************************************************************/        
+
+
+/*********************************************************************************/
+/******************************INDICADORES****************************************/
+/*********************************************************************************/    
+
+
+ /* ── Panel selector ─────────────────────────────────────────── */
+    .panel-selector {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 1.25rem 1.5rem;
+      margin-bottom: 2rem;
+    }
+    .panel-selector-title {
+      font-size: .72rem;
+      text-transform: uppercase;
+      letter-spacing: .12em;
+      color: var(--text-muted);
+      margin-bottom: .9rem;
+    }
+    .panel-pills {
+      display: flex; flex-wrap: wrap; gap: .5rem;
+    }
+    .panel-pill {
+      display: inline-flex; align-items: center; gap: .45rem;
+      padding: .35rem .9rem;
+      border-radius: 20px;
+      font-size: .8rem; font-weight: 500;
+      border: 1px solid var(--border);
+      background: transparent;
+      color: var(--text-muted);
+      cursor: pointer;
+      transition: all .2s;
+    }
+    .panel-pill:hover { border-color: rgba(255,255,255,.2); color: var(--text); }
+    .panel-pill.active {
+      background: rgba(59,130,246,.15);
+      border-color: rgba(59,130,246,.5);
+      color: var(--accent);
+    }
+    .panel-pill .pill-dot {
+      width: 7px; height: 7px; border-radius: 50%;
+      background: currentColor;
+    }
+
+     /* ── Grid ───────────────────────────────────────────────────── */
+    #panels-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(520px, 1fr));
+      gap: 1.5rem;
+    }
+    /* ── SVG / chart housekeeping ───────────────────────────────── */
+
+   .chart-area { width: 100%; }
+    .chart-area svg { overflow: visible; }
+
+    /* Axis labels */
+    .axis-label { fill: var(--text-muted); font-family: var(--font-body); font-size: 11px; }
+    .axis-line  { stroke: var(--border); }
+    .grid-line  { stroke: var(--border); stroke-dasharray: 3,3; }
+
+    /* Tooltip */
+    .d3-tooltip {
+      position: fixed;
+      pointer-events: none;
+      background: #a8bde0;
+      border: 1px solid rgba(255,255,255,.12);
+      border-radius: 8px;
+      padding: .5rem .8rem;
+      font-size: .78rem;
+      color: var(--text);
+      box-shadow: 0 8px 24px rgba(0,0,0,.5);
+      z-index: 9999;
+      transition: opacity .1s;
+      opacity: 0;
+    }
+    .d3-tooltip.visible { opacity: 1; }
+    .d3-tooltip strong  { color: var(--accent); }
+
+    /* Loading / error states */
+    .state-overlay {
+      display: flex; align-items: center; justify-content: center;
+      min-height: 220px;
+      color: var(--text-muted);
+      font-size: .9rem;
+      gap: .6rem;
+    }    
+
+    /* Loading / error states */
+    .state-overlay {
+      display: flex; align-items: center; justify-content: center;
+      min-height: 220px;
+      color: var(--text-muted);
+      font-size: .9rem;
+      gap: .6rem;
+    }
+    .spinner {
+      width: 22px; height: 22px;
+      border: 2px solid var(--border);
+      border-top-color: var(--accent);
+      border-radius: 50%;
+      animation: spin .7s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+/* ── Card ───────────────────────────────────────────────────── */
+    .ind-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      overflow: hidden;
+      display: flex; flex-direction: column;
+      animation: cardIn .4s ease both;
+    }
+    @keyframes cardIn {
+      from { opacity:0; transform: translateY(16px); }
+      to   { opacity:1; transform: translateY(0); }
+    }
+
+    .card-header-custom {
+      padding: 1.25rem 1.5rem .9rem;
+      border-bottom: 1px solid var(--border);
+      display: flex; align-items: flex-start; justify-content: space-between;
+    }
+    .card-index {
+      font-family: var(--font-display);
+      font-size: .65rem;
+      letter-spacing: .14em;
+      text-transform: uppercase;
+      color: var(--text-muted);
+      margin-bottom: .25rem;
+    }
+    .card-title {
+      font-family: var(--font-display);
+      font-size: 1.05rem; font-weight: 700;
+      line-height: 1.2;
+    }
+    .card-subtitle {
+      font-size: .78rem;
+      color: var(--text-muted);
+      margin-top: .2rem;
+      line-height: 1.4;
+    }
+    .card-kpi {
+      text-align: right;
+      white-space: nowrap;
+    }
+    .kpi-value {
+      font-family: var(--font-display);
+      font-size: 2rem; font-weight: 800;
+      line-height: 1;
+    }
+    .kpi-unit  { font-size: .75rem; color: var(--text-muted); margin-top: .15rem; }
+
+    .card-body-custom {
+      padding: 1.25rem 1.5rem 1.5rem;
+      flex: 1;
+    }
+
+        /* ── Toggle (lots/budget) ───────────────────────────────────── */
+    .view-toggle {
+      display: inline-flex;
+      background: var(--bg-card2);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      overflow: hidden;
+      margin-bottom: 1rem;
+    }
+    .view-toggle button {
+      background: transparent;
+      border: none;
+      color: var(--text-muted);
+      padding: .3rem .75rem;
+      font-size: .75rem; font-weight: 500;
+      cursor: pointer;
+      transition: all .15s;
+    }
+    .view-toggle button.active {
+      background: rgba(59,130,246,.2);
+      color: var(--accent);
+    }

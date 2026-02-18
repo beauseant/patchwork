@@ -1,4 +1,6 @@
 <?php
+
+
 // --- CONFIGURACIÓN ---
 $uploadDir = 'uploads/';
 $dbFile = $uploadDir. 'database.sqlite';
