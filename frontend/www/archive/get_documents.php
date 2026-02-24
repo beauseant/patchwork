@@ -67,8 +67,11 @@ foreach ($data as $doc) {
     if (isset($doc['title'])) {
         $normalizedData[] = [
             'id' => $doc['id'], #el id existe siempre, espero
+	    'link' => '<a target="_blank" href="'. $doc['link'] .'">'. $doc['link'] .'</a>',
             'title' => $doc['title'], // Ya no necesitamos '?? NA' aquí porque sabemos que existe
-            'cpv' => isset($doc['cpv'][0]) ? str_replace(["['", "']", "' '"], ['', '', ', '], $doc['cpv'][0]) : 'NA',
+            //'cpv' => isset($doc['cpv'][0]) ? str_replace(["['", "']", "' '"], ['', '', ', '], $doc['cpv'][0]) : 'NA',
+	    'cpv' =>  isset($doc['cpv'][0]) ? implode(', ',$doc['cpv']):'NA',
+            //'cpv_predicted' =>  isset($doc['cpv_predicted'][0]) ? implode(', ',$doc['cpv_predicted']):'NA',
             'generated_objective' => $doc['generated_objective'] ?? 'NA',
             'criterios_adjudicacion' => $doc['criterios_adjudicacion'] ?? 'NA',
             'criterios_solvencia' => $doc['criterios_solvencia'] ?? 'NA',

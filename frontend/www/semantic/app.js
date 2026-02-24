@@ -459,7 +459,8 @@ function drawDonutChart(topicsString) {
                     // con los nuevos metadatos (title, cpv, etc.)
                     return {
                         ...metadata, // id, cpv, title, generated_objective, cpv_predicted...
-                        score: doc.score // Añadimos el score de la búsqueda
+                        score: doc.score, // Añadimos el score de la búsqueda
+                        link: doc.link
                         // El 'generated_objective' de metadata sobrescribirá el de 'doc',
                         // pero según tu API, parecen ser el mismo.
                     };
@@ -488,7 +489,7 @@ function drawDonutChart(topicsString) {
 
             // Definir las columnas
             const columns = [
-                { title: "ID", data: "id", render: (d) => `<a href="${d}" target="_blank" title="${d}">${d.substring(0, 50)}...</a>` },
+                { title: "Enlace", data: "link", render: (d) => `<a href="${d}" target="_blank" title="${d}">${d.substring(0, 50)}...</a>` },
                 { title: "Título", data: "title" },
                 { title: "CPV (Predicho)", data: "cpv_predicted" },
                 { title: "Score", data: "score", render: (d) => d.toFixed(2) }, // Formatear score

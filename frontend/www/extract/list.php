@@ -5,7 +5,7 @@
 <main class="main-content p-4">
     <div class="container-fluid mt-5">
         <div class="d-flex justify-content-between align-items-center mb-4">
-            <h2 class="mb-0">Uploaded Documents (Enriched) <button type="button" class="btn btn-text" data-bs-toggle="modal" data-bs-target="#infoModal"> [+]</button></h2>
+            <h4 class="">Uploaded Documents (Enriched) <button type="button" class="btn btn-text" data-bs-toggle="modal" data-bs-target="#infoModal"> [+]</button></h2>
             <a href="load.php" class="btn btn-success">Upload archive</a>
         </div>
 
@@ -15,7 +15,7 @@
         <div class="accordion-item">
             <h2 class="accordion-header" id="headingOne">
             <button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#collapseOne" aria-expanded="true" aria-controls="collapseOne">
-                <h2 class="mt-2">📑 Administrative Documents (PCAP)</h2>
+                <h2 >📑 Administrative Documents (PCAP)</h2>
             </button>
             </h2>
             <div id="collapseOne" class="accordion-collapse collapse show" aria-labelledby="headingOne" data-bs-parent="#accordionExample">
@@ -38,7 +38,7 @@
             </div>
         </div>
         <div class="accordion-item">
-            <h2 class="accordion-header" id="headingTwo">
+            <h2 id="headingTwo">
             <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseTwo" aria-expanded="false" aria-controls="collapseTwo">
                 <h2 class="mt-2"> 🛠️ Technical Documents (PCPT)</h2>
             </button>

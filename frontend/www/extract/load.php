@@ -33,15 +33,14 @@
                     <div class="card-header">
                         <div class="row mb-1">
                             <div class="col-md-5">
-                                <h2>Upload Document for Data Extraction <button type="button" class="btn btn-text" data-bs-toggle="modal" data-bs-target="#infoModal"> [+]</button></h2>
+                                <h4>Upload Document for Data Extraction <button type="button" class="btn btn-text" data-bs-toggle="modal" data-bs-target="#infoModal"> [+]</button></h4>
                             </div>
 
                         </div>
                     <div class="card-body">
                         <form id="upload-form" enctype="multipart/form-data">
-
                             <div class="mb-3">
-                                <label class="form-label"><b>1. Drag and drop a PDF here or click to select one::</b></label>
+                                <label class="card-title"><b>1. Drag and drop a PDF here or click to select one::</b></label>
                                 <div id="drop-area">
                                     <i class="bi bi-filetype-pdf icon-100" ></i>
                                     <p>Drag and drop a PDF here</p>
@@ -52,7 +51,7 @@
                             </div>
 
                             <div class="mb-3">
-                                <label class="form-label"><b>2. Indicate the document type:</b></label>
+                                <label class="card-label"><b>2. Indicate the document type:</b></label>
                                 <div>
                                     <div class="form-check form-check-inline">
                                         <input class="form-check-input" type="radio" name="docType" id="tipoAdministrativo" value="administrativo" required>

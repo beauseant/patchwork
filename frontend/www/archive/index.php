@@ -57,7 +57,7 @@
 
             <thead>
                 <tr>
-                    <th>Id</th>                    
+                    <th>Link</th>                    
                     <th>Title</th>                    
                     <th>CPV</th>
                     <th >Generated objective</th>
@@ -132,7 +132,9 @@
                     success: function(years) {
                         const yearSelector = $('#yearSelector');
                         yearSelector.empty();
-                        years.sort((a, b) => b.year - a.year).forEach(item => {
+                        //years.sort((a, b) => b.year - a.year).forEach(item => {
+                        years.sort((a, b) => b.count - a.count).forEach(item => {
+
                             // Guardamos el total de documentos en un atributo de datos
                             yearSelector.append(`<option value="${item.year}" data-count="${item.count}">${item.year} (${item.count} docs)</option>`);
                         });
@@ -185,9 +187,10 @@
                         }
                     },
                     "columns": [ // MUY IMPORTANTE: el 'name' o 'data' debe coincidir con el de la API
-                        {"data":"id"},
+                        {"data":"link"},
                         { "data": "title" },
                         { "data": "cpv" },
+			//{ "data": "cpv_predicted"},
                         { "data": "generated_objective" },
                         { "data": "criterios_adjudicacion" },
                         { "data": "criterios_solvencia" },

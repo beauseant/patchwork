@@ -13,10 +13,9 @@
 
             
 
-            <div class="row text-center g-4">
-
-                <div class="col-md-6 col-lg-3 mb-3">
-                    <a href="/extract/load.php" class="text-decoration-none">
+            <div class="row text-center g-4 justify-content-center">
+                <div class="col-md-6 col-lg mb-3 card-title">                    
+                        <a href="/extract/load.php" class="text-decoration-none">
                         <div class="p-4 shadow-sm rounded bg-light h-100">                        
                             <i class="bi bi-cloud-upload fs-1 text-primary"></i>
                             <h3 class="mt-3 h5">Upload Procurement Documents</h3>
@@ -25,8 +24,7 @@
                     </a>
                 </div>
 
-                <div class="col-md-6 col-lg-3 mb-3">
-                        <a href="/archive/index.php" class="text-decoration-none">
+                <div class="col-md-6 col-lg mb-3 card-title">                        <a href="/archive/index.php" class="text-decoration-none">
                             <div class="p-4 shadow-sm rounded bg-light h-100">
                                 <i class="bi bi-file-earmark-bar-graph fs-1 text-success"></i>
                                 <h3 class="mt-3 h5">Explore Pre-Enriched Documents </h3>
@@ -35,8 +33,7 @@
                         </a>
                 </div>
 
-                <div class="col-md-6 col-lg-3 mb-3">
-                    <a href="/topics/index.php" class="text-decoration-none">
+                <div class="col-md-6 col-lg mb-3 card-title">                    <a href="/topics/index.php" class="text-decoration-none">
                         <div class="p-4 shadow-sm rounded bg-light h-100">
                             <i class="bi bi-columns fs-1 text-info"></i>
                             <h3 class="mt-3 h5">Discover Topics & Semantic Links</h3>
@@ -45,8 +42,7 @@
                     </a>
                 </div>
 
-                <div class="col-md-6 col-lg-3 mb-3">
-                    <a href="/semantic/index.php" class="text-decoration-none">
+                <div class="col-md-6 col-lg mb-3 card-title">                    <a href="/semantic/index.php" class="text-decoration-none">
                         <div class="p-4 shadow-sm rounded bg-light h-100">
                             <i class="bi bi-intersect fs-1 text-secondary"></i>
                             <h3 class="mt-3 h5">Semantic & Thematic Similarity Search</h3>
@@ -54,10 +50,20 @@
                         </div>                        
                     </a>
                 </div>
+
+                <div class="col-md-6 col-lg mb-3 card-title">                     <a href="/indicators/index.php" class="text-decoration-none">
+                         <div class="p-4 shadow-sm rounded bg-light h-100">
+                             <i class="bi bi-app-indicator fs-1 text-warning"></i>
+                             <h3 class="mt-3 h5">Procurement Indicators</h3>
+                             <p class="text-muted small">Visualize and analyze procurement metrics aligned with indicators for transparency and performance assessment.</p>
+                         </div>
+                     </a>
+                 </div>
+
             </div>
             
-            <div class="mt-5">
-                <h4>About Us</h4>
+            <div class="mt-5 text-muted ">
+                <h4 class="" >About Us</h4>
                 <p>We are researchers from Universidad Carlos III de Madrid, Universidad Politécnica de Madrid, and the City Council of Zaragoza working to make public procurement more transparent and efficient.</p>
                 <p>pAtChWoRK builds on components developed in the NextProcurement Project (Open Harmonized and Enriched Public Procurement Platform, European Commission).  It uses NLP and large language models to extract, enrich, and explore procurement data, supporting administrators, auditors, and bidders to find and analyze information through semantic search, contract classification, and policy insights.</p>
                 <p>Built for Spanish procurement data, pAtChWoRK’s modular design can easily adapt to other countries and contexts.</p>

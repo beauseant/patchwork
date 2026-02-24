@@ -1,4 +1,33 @@
 
+.text-muted {
+
+  font-family: var(--font-body) !important;
+}
+
+h4 {
+      font-family: var(--font-display) !important;
+      line-height: 1.2 !important;
+    }
+
+
+.row {
+
+  font-family: var(--font-body) !important;
+}
+.dt-column-header   {
+    font-family: var(--font-body);
+
+}
+
+table.dataTable td  {
+        font-family: var(--font-body) !important;
+}
+
+h2 {
+      font-family: var(--font-display);
+      font-size: 1.25rem; font-weight: bold !important;
+      line-height: 1.2;    
+}
 /*arrastrar archivos y visualizar PDF*/
 
 .dropzone {
