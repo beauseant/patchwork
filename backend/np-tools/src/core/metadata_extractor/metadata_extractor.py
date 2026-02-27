@@ -197,9 +197,7 @@ Extrae y organiza el contenido en los tres bloques anteriores, respetando encabe
         retriever = vector_storage.as_retriever(
             search_kwargs={"k": self.retriever_k})
 
-        # ---- RAG real: query corta y contexto = top-k chunks formateados ----
         def build_query(_: str) -> str:
-            # Consulta fija y breve que guía la recuperación
             return "criterios adjudicación solvencia condiciones especiales ejecución contratación pública"
 
         build_context = (

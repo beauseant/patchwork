@@ -56,8 +56,8 @@ class ExtractFromFile(Resource):
         args = file_upload_parser.parse_args()
         uploaded_file = args["file"]
 
-        if not uploaded_file:# or not uploaded_file.filename.lower().endswith(".pdf"):
-            return {"error": "Invalid file. Please upload a valid PDF."}, 400
+        if not uploaded_file:
+            return {"error": "Invalid file."}, 400
 
         logger.info("Received TEXT file for objective extraction")
 
@@ -70,10 +70,7 @@ class ExtractFromFile(Resource):
 
             logger.debug(
                 f"Input text (preview): {input_text[:500]}{'...' if len(input_text) > 500 else ''}")
-
-            if not input_text:
-                return {"error": "Invalid input. Please provide non-empty text."}, 400
-
+            
             extracted_objectives = {
                 "generative_objective": extractor.extract_generative(input_text)}
 

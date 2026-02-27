@@ -1831,7 +1831,6 @@ class NPSolrClient(SolrClient):
             keyword=keyword,
             searchable_field=searchable_field,
             date_field=self.date_field,
-            display_fields=self.searchable_fields,
             start=start,
             rows=rows
         )
@@ -1848,7 +1847,18 @@ class NPSolrClient(SolrClient):
                 f"-- -- Error executing query Q32. Aborting operation...")
             return
 
-        return results.docs, sc
+        # parse cpv properly
+        new_docs = []
+        for doc_results in results.docs:
+            doc_modified = doc_results.copy()
+            for key in ["cpv", "two_cpv"]:
+                value = doc_modified.get(key)
+                if isinstance(value, str):
+                    doc_modified[key] = [v.strip() for v in value.split(",") if v.strip()]
+                else:
+                    doc_modified[key] = []
+            new_docs.append(doc_modified)
+        return new_docs, sc
 
         
         

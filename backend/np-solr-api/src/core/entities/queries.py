@@ -658,7 +658,7 @@ class Queries(object):
         start: str = '0',
         rows: str = '10',
         date_field: str = 'date',
-        display_fields: str = 'id,title,generated_objective,cpv,cpv_predicted,criterios_adjudicacion,criterios_solvencia,condiciones_especiales'
+        display_fields: str = 'id,link,title,generated_objective,cpv,cpv_predicted,criterios_adjudicacion,criterios_solvencia,condiciones_especiales'
     ) -> dict:
         """
         Build an fq that selects the given calendar year (UTC) on `date_field`.
@@ -706,7 +706,7 @@ class Queries(object):
         keyword: str,
         searchable_field: str,
         date_field: str,
-        display_fields: str,
+        display_fields: str = 'id,link,title,generated_objective,cpv,cpv_predicted,criterios_adjudicacion,criterios_solvencia,condiciones_especiales',
         start: str = '0',
         rows: str = '10',
     ) -> dict:

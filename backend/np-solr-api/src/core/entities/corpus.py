@@ -548,10 +548,10 @@ class Corpus(object):
                     return [x.strip()] if x.strip() else []
                 return []
 
-            array_fields = ['cpv', 'two_cpv']
-            for field in array_fields:
-                if field in partition.columns:
-                    partition[field] = partition[field].apply(_parse_array_field)
+            #array_fields = ['cpv', 'two_cpv']
+            #for field in array_fields:
+            #    if field in partition.columns:
+            #        partition[field] = partition[field].apply(_parse_array_field)
             
             # Create SearcheableField
             def _create_searcheable_field(row):
