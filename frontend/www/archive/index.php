@@ -9,7 +9,7 @@
                             if (array_key_exists('NOOK', $salida)) {
                                 echo '
                                     <div class="alert alert-danger" role="alert">
-                                        <p>Error en servidor: '. $salida['NOOK'] . ' No es posible mostrar resultados</p>' .
+                                        <p>Server error: '. $salida['NOOK'] . ' Unable to display results</p>' .
                                     '</div>
                                 ';
                                 include '../includes/footer.php';
@@ -19,14 +19,14 @@
                             if (array_key_exists('OK', $salida)) {      
                                 echo '
                                     <div class="alert alert-success" role="alert">
-                                        <p>Conexión correcta con el servidor: '. $salida['OK']['service'] . '/'. $salida['OK']['timestamp']  . '</p>' .
+                                        <p>Connected to: '. $salida['OK']['service'] . '/'. $salida['OK']['timestamp']  . '</p>' .
                                     '</div>
                                 ';                                    
       
                             }    
             ?>    
            
-        <h2 class="mb-4">Pre-Enriched Tender Documents<button type="button" class="btn btn-text" data-bs-toggle="modal" data-bs-target="#infoModal"> [+]</button> </h2>
+        <h2 class="mb-4">Pre-Enriched Tender Documents<button type="button" class="btn btn-text" data-bs-toggle="modal" data-bs-target="#infoModal"> [+]</button> </h1>
 
         <div class="row mb-3">
             <div class="col-md-6">
@@ -34,14 +34,14 @@
                 <select id="corpusSelector" disabled class="form-select"></select>
             </div>
             <div class="col-md-6">
-                <label for="yearSelector" class="form-label"><strong>Año:</strong></label>
+                <label for="yearSelector" class="form-label"><strong>Year:</strong></label>
                 <select id="yearSelector" class="form-select"></select>
             </div>
         </div>
         
         <div class="row mb-3">
              <div class="col-md-6">
-                <label for="searchFieldSelector" class="form-label"><strong>Buscar en campo:</strong></label>
+                <label for="searchFieldSelector" class="form-label"><strong>Search in the field:<button type="button" class="btn btn-text" data-bs-toggle="modal" data-bs-target="#infoModalBuscar"> [+]</button> </strong></label>
                 <select id="searchFieldSelector" class="form-select">
                 </select>
             </div>
@@ -49,7 +49,7 @@
 
 
     <div>
-        Columnas a mostrar:<a class="toggle-vis" data-column="0">Id</a> - <a class="toggle-vis" data-column="1">Title</a> - <a class="toggle-vis" data-column="2">CPV</a> - <a class="toggle-vis" data-column="3">Generated objective</a> - <a class="toggle-vis" data-column="4">Award criteria</a> - <a class="toggle-vis" data-column="5">Solvency criteria</a> - <a class="toggle-vis" data-column="6">Special conditions</a>
+        Columnas a mostrar:<a class="toggle-vis" data-column="0">Id</a> - <a class="toggle-vis" data-column="1">Link</a> - <a class="toggle-vis" data-column="2">Title</a> - <a class="toggle-vis" data-column="3">CPV</a> - <a class="toggle-vis" data-column="4">Cpv predicted</a> - <a class="toggle-vis" data-column="5">Generated objective</a> - <a class="toggle-vis" data-column="6">Award criteria</a> - <a class="toggle-vis" data-column="7">Solvency criteria</a> - <a class="toggle-vis" data-column="8">Special conditions</a>
     </div>
 
     
@@ -57,9 +57,11 @@
 
             <thead>
                 <tr>
+		    <th>Id</th>
                     <th>Link</th>                    
                     <th>Title</th>                    
                     <th>CPV</th>
+                    <th>CPV predicted</th>
                     <th >Generated objective</th>
                     <th>Award criteria</th>
                     <th>Solvency criteria</th>
@@ -94,10 +96,30 @@
                     </div>
                     </div>
 
-    <script src="https://code.jquery.com/jquery-3.7.0.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
-    <script src="https://cdn.datatables.net/1.13.7/js/jquery.dataTables.min.js"></script>
-    <script src="https://cdn.datatables.net/1.13.7/js/dataTables.bootstrap5.min.js"></script>
+
+                 <!-- Modal -->
+                    <div class="modal fade modal-lg" id="infoModalBuscar" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
+                    <div class="modal-dialog">
+                        <div class="modal-content">
+                        <div class="modal-header">
+                            <h5 class="modal-title" id="exampleModalLabel">Search engine.</h5>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                        </div>
+                        <div class="modal-body">
+                            <i style="font-size:30px;"class="bi bi-tools"></i><br>
+You can search by any of the fields that appear in the list. There are two ways to perform a search:
+ <ul>
+  <li>You can search for a set of words by placing them in quotation marks, for example: “instalación de señales”</li>
+  <li>You can also use wildcards, * and ? to expand your search terms, for example: java*</li>
+  
+</ul> 
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                        </div>
+                        </div>
+                    </div>
+                    </div>
 
     <script>
         $(document).ready(function() {
@@ -187,10 +209,11 @@
                         }
                     },
                     "columns": [ // MUY IMPORTANTE: el 'name' o 'data' debe coincidir con el de la API
+			{"data":"id"},
                         {"data":"link"},
                         { "data": "title" },
                         { "data": "cpv" },
-			//{ "data": "cpv_predicted"},
+			{ "data": "cpv_predicted"},
                         { "data": "generated_objective" },
                         { "data": "criterios_adjudicacion" },
                         { "data": "criterios_solvencia" },

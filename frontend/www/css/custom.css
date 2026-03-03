@@ -1,4 +1,6 @@
-
+#dt-search-1 {
+	width: 500px;
+}
 .text-muted {
 
   font-family: var(--font-body) !important;
@@ -277,6 +279,35 @@ Cabecera página principal:
       width: 7px; height: 7px; border-radius: 50%;
       background: currentColor;
     }
+
+
+
+.years-pills {
+      display: flex; flex-wrap: wrap; gap: .5rem;
+    }
+    .year-pill {
+      display: inline-flex; align-items: center; gap: .45rem;
+      padding: .35rem .9rem;
+      border-radius: 20px;
+      font-size: .8rem; font-weight: 500;
+      border: 1px solid var(--border);
+      background: transparent;
+      color: var(--text-muted);
+      cursor: pointer;
+      transition: all .2s;
+    }
+    .year-pill:hover { border-color: rgba(255,255,255,.2); color: var(--text); }
+    .year-pill.active {
+      background: rgba(59,130,246,.15);
+      border-color: rgba(59,130,246,.5);
+      color: var(--accent);
+    }
+    .year-pill .pill-dot {
+      width: 7px; height: 7px; border-radius: 50%;
+      background: currentColor;
+    }
+
+
 
      /* ── Grid ───────────────────────────────────────────────────── */
     #panels-grid {

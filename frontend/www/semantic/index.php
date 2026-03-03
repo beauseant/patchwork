@@ -11,7 +11,7 @@
                 if (array_key_exists('NOOK', $salida)) {
                     echo '
                         <div class="alert alert-danger" role="alert">
-                            <p>Error en servidor: '. $salida['NOOK'] . ' No es posible subir archivos</p>' .
+                            <p>Server error: '. $salida['NOOK'] . ' Unable to display results</p>' .
                         '</div></div>
                     ';
                     include '../includes/footer.php';
@@ -20,7 +20,7 @@
                 if (array_key_exists('OK', $salida)) {      
                     echo '
                         <div class="alert alert-success" role="alert">
-                            <p>Conexión correcta con el servidor: '. $salida['OK']['service'] . '/'. $salida['OK']['timestamp']  . '</p>' .
+                            <p>Connected to: '. $salida['OK']['service'] . '/'. $salida['OK']['timestamp']  . '</p>' .
                         '</div>
                     ';                                    
 

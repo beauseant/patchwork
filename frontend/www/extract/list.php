@@ -103,12 +103,12 @@
             <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
           </div>
           <div class="modal-body">
-            <p>¿Estás seguro de que quieres borrar el archivo <strong id="delete-file-name"></strong>?</p>
-            <p class="text-danger small">Esta acción es irreversible y eliminará el archivo físico y todos sus registros asociados de la base de datos.</p>
+            <p>Are you sure you want to delete the file? <strong id="delete-file-name"></strong>?</p>
+            <p class="text-danger small">This action is irreversible and will delete the physical file and all associated records from the database.</p>
           </div>
           <div class="modal-footer">
-            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-            <button type="button" class="btn btn-danger" id="confirmDeleteBtn">Sí, Borrar</button>
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+            <button type="button" class="btn btn-danger" id="confirmDeleteBtn">Yes, delete</button>
           </div>
         </div>
       </div>

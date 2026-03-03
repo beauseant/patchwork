@@ -1,0 +1,101 @@
+.ds-label {
+color:red !important;
+
+}
+/* ── Estilos adicionales para PLACE multi-año ──────────────────────
+   Añadir a tu stylesheet o dentro de un <style> en header.php
+   ─────────────────────────────────────────────────────────────────── */
+
+/* ── Selector de año ───────────────────────────────────────────── */
+.year-selector-wrap {
+  display: flex;
+  align-items: center;
+  gap: .5rem;
+  margin-bottom: 1.5rem;
+}
+.year-selector-label {
+  font-size: .72rem;
+  text-transform: uppercase;
+  letter-spacing: .12em;
+  color: var(--text-muted);
+  white-space: nowrap;
+}
+#year-selector {
+  display: flex;
+  flex-wrap: wrap;
+  gap: .4rem;
+}
+.year-pill {
+  padding: .3rem .85rem;
+  border-radius: 20px;
+  font-size: .82rem;
+  font-weight: 600;
+  border: 1px solid var(--border);
+  background: transparent;
+  color: var(--text-muted);
+  cursor: pointer;
+  transition: all .18s;
+  font-family: var(--font-display);
+}
+.year-pill:hover { border-color: rgba(255,255,255,.25); color: var(--text); }
+.year-pill.active {
+  background: rgba(59,130,246,.18);
+  border-color: rgba(59,130,246,.6);
+  color: var(--accent);
+}
+
+/* ── Badge de año en la cabecera de cada card ──────────────────── */
+.year-badge {
+  display: inline-block;
+  background: rgba(59,130,246,.12);
+  color: var(--accent);
+  border: 1px solid rgba(59,130,246,.3);
+  border-radius: 8px;
+  padding: .05rem .45rem;
+  font-size: .7rem; font-weight: 600;
+  vertical-align: middle;
+  margin-left: .35rem;
+  letter-spacing: .04em;
+}
+
+/* ── Dataset legend ────────────────────────────────────────────── */
+.ds-legend {
+  display: flex; flex-wrap: wrap;
+  align-items: center;
+  gap: .35rem .85rem;
+  margin-bottom: .75rem;
+  font-size: .78rem;
+  color: var(--text-muted);
+}
+.ds-dot {
+  display: inline-block;
+  width: 9px; height: 9px;
+  border-radius: 3px;
+  vertical-align: middle;
+}
+.ds-label { vertical-align: middle; }
+
+/* ── Coverage note ─────────────────────────────────────────────── */
+.coverage-note {
+  font-size: .72rem;
+  color: var(--text-muted);
+  background: rgba(255,255,255,.04);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: .4rem .75rem;
+  margin-bottom: .75rem;
+  line-height: 1.6;
+}
+
+/* ── Decision speed ────────────────────────────────────────────── */
+.decision-stats-row {
+  display: flex; flex-wrap: wrap;
+  gap: .5rem 1.5rem;
+  margin-bottom: .75rem;
+  align-items: center;
+}
+.decision-stat {
+  display: flex; align-items: center;
+  gap: .35rem; font-size: .82rem;
+}
+.ds-obs { color: var(--text-muted); font-size: .72rem; }

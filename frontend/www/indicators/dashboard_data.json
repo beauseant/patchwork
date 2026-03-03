@@ -1,0 +1,517 @@
+{
+  "as_of": "2026-02-25T09:12:48Z",
+  "years": [
+    2024,
+    2025
+  ],
+  "indicators": {
+    "total_procurement": {
+      "id": "total_procurement",
+      "title": "Total public procurement",
+      "subtitle": "Number of tenders and budget without VAT per quarter",
+      "chart_type": "grouped_bar_procurement",
+      "quarters": [
+        "T1 (Jan-Mar)",
+        "T2 (Apr-Jun)",
+        "T3 (Jul-Sep)",
+        "T4 (Oct-Dec)"
+      ],
+      "by_year": {
+        "2024": {
+          "by_count": {
+            "total": [
+              111939.0,
+              190996.0,
+              165852.0,
+              250944.0
+            ],
+            "insiders": [
+              24593.0,
+              42348.0,
+              44217.0,
+              76228.0
+            ],
+            "outsiders": [
+              8667.0,
+              15595.0,
+              14722.0,
+              28475.0
+            ],
+            "minors": [
+              78679.0,
+              133053.0,
+              106913.0,
+              146241.0
+            ]
+          },
+          "by_budget": {
+            "total": [
+              24222687291.0,
+              40491349050.0,
+              44236447917.0,
+              115793444637.0
+            ],
+            "insiders": [
+              16478355189.0,
+              24945343240.0,
+              25919072130.0,
+              78546247806.0
+            ],
+            "outsiders": [
+              7399117566.0,
+              15010745959.0,
+              17836311678.0,
+              36491990209.0
+            ],
+            "minors": [
+              345214537.0,
+              535259851.0,
+              481064109.0,
+              755206621.0
+            ]
+          },
+          "total_licitaciones": 719731,
+          "total_importe": 224743928894.94
+        },
+        "2025": {
+          "by_count": {
+            "total": [
+              132401.0,
+              182726.0,
+              185217.0,
+              274355.0
+            ],
+            "insiders": [
+              27523.0,
+              45976.0,
+              48969.0,
+              84401.0
+            ],
+            "outsiders": [
+              10332.0,
+              15016.0,
+              17704.0,
+              28412.0
+            ],
+            "minors": [
+              94546.0,
+              121734.0,
+              118544.0,
+              161542.0
+            ]
+          },
+          "by_budget": {
+            "total": [
+              26487464919.0,
+              52490557735.0,
+              47523294325.0,
+              147540437300.0
+            ],
+            "insiders": [
+              19187306346.0,
+              37538781009.0,
+              32632958569.0,
+              106904337048.0
+            ],
+            "outsiders": [
+              6824627286.0,
+              14412942097.0,
+              14362059043.0,
+              39782834813.0
+            ],
+            "minors": [
+              475531287.0,
+              538834629.0,
+              528276713.0,
+              853265438.0
+            ]
+          },
+          "total_licitaciones": 774699,
+          "total_importe": 274041754278.9
+        }
+      },
+      "by_count": {
+        "total": [
+          5.0,
+          null,
+          null,
+          null
+        ],
+        "insiders": [
+          null,
+          null,
+          null,
+          null
+        ],
+        "outsiders": [
+          5.0,
+          null,
+          null,
+          null
+        ],
+        "minors": [
+          null,
+          null,
+          null,
+          null
+        ]
+      },
+      "by_budget": {
+        "total": [
+          790670.0,
+          null,
+          null,
+          null
+        ],
+        "insiders": [
+          null,
+          null,
+          null,
+          null
+        ],
+        "outsiders": [
+          790670.0,
+          null,
+          null,
+          null
+        ],
+        "minors": [
+          null,
+          null,
+          null,
+          null
+        ]
+      },
+      "total_licitaciones": 5,
+      "total_importe": 790670.1
+    },
+    "single_bidder": {
+      "id": "single_bidder",
+      "title": "Single Bidder",
+      "subtitle": "Percentage of tenders with a single bidder",
+      "chart_type": "grouped_bar_single_bidder",
+      "quarters": [
+        "T1 (Jan-Mar)",
+        "T2 (Apr-Jun)",
+        "T3 (Jul-Sep)",
+        "T4 (Oct-Dec)"
+      ],
+      "by_year": {
+        "2024": {
+          "cobertura": {
+            "total": 93.47,
+            "insiders": 82.92,
+            "outsiders": 78.78,
+            "minors": 99.85
+          },
+          "by_count": {
+            "total": [
+              73.05,
+              74.5,
+              70.26,
+              69.02
+            ],
+            "insiders": [
+              44.9,
+              42.74,
+              43.07,
+              42.6
+            ],
+            "outsiders": [
+              47.8,
+              50.41,
+              42.74,
+              44.95
+            ],
+            "minors": [
+              83.48,
+              86.1,
+              83.75,
+              82.1
+            ]
+          },
+          "by_budget": {
+            "total": [
+              25.76,
+              32.96,
+              21.69,
+              21.08
+            ],
+            "insiders": [
+              22.3,
+              25.25,
+              25.31,
+              18.43
+            ],
+            "outsiders": [
+              30.47,
+              46.9,
+              15.98,
+              25.06
+            ],
+            "minors": [
+              62.86,
+              66.85,
+              60.44,
+              54.18
+            ]
+          },
+          "pct_count_total": 71.47,
+          "pct_budget_total": 24.29
+        },
+        "2025": {
+          "cobertura": {
+            "total": 93.82,
+            "insiders": 83.69,
+            "outsiders": 81.32,
+            "minors": 99.85
+          },
+          "by_count": {
+            "total": [
+              74.11,
+              71.71,
+              71.51,
+              70.78
+            ],
+            "insiders": [
+              43.71,
+              43.12,
+              44.58,
+              44.95
+            ],
+            "outsiders": [
+              48.09,
+              49.55,
+              47.58,
+              47.02
+            ],
+            "minors": [
+              84.73,
+              84.02,
+              84.8,
+              83.55
+            ]
+          },
+          "by_budget": {
+            "total": [
+              24.3,
+              28.67,
+              25.04,
+              38.94
+            ],
+            "insiders": [
+              19.47,
+              29.69,
+              24.42,
+              43.11
+            ],
+            "outsiders": [
+              32.52,
+              25.46,
+              24.65,
+              25.7
+            ],
+            "minors": [
+              58.86,
+              62.13,
+              63.8,
+              66.44
+            ]
+          },
+          "pct_count_total": 71.77,
+          "pct_budget_total": 32.59
+        }
+      },
+      "pct_count_total": null,
+      "pct_budget_total": null
+    },
+    "ted_publication": {
+      "id": "ted_publication",
+      "title": "TED Publication",
+      "subtitle": "% of tenders and budget with TED identifier",
+      "chart_type": "grouped_bar_ted",
+      "quarters": [
+        "T1 (Jan-Mar)",
+        "T2 (Apr-Jun)",
+        "T3 (Jul-Sep)",
+        "T4 (Oct-Dec)"
+      ],
+      "by_year": {
+        "2024": {
+          "by_count": {
+            "insiders": [
+              9.41,
+              9.34,
+              10.53,
+              15.86
+            ],
+            "outsiders": [
+              3.93,
+              6.93,
+              8.16,
+              11.16
+            ]
+          },
+          "by_budget": {
+            "insiders": [
+              48.48,
+              49.97,
+              47.41,
+              55.32
+            ],
+            "outsiders": [
+              11.53,
+              28.24,
+              20.12,
+              37.55
+            ]
+          },
+          "pct_count_insiders": 12.28,
+          "pct_budget_insiders": 52.23,
+          "pct_count_outsiders": 8.6,
+          "pct_budget_outsiders": 29.17
+        },
+        "2025": {
+          "by_count": {
+            "insiders": [
+              11.36,
+              11.25,
+              11.64,
+              17.24
+            ],
+            "outsiders": [
+              8.59,
+              8.38,
+              9.07,
+              14.45
+            ]
+          },
+          "by_budget": {
+            "insiders": [
+              54.76,
+              52.88,
+              49.91,
+              49.81
+            ],
+            "outsiders": [
+              28.18,
+              39.7,
+              26.29,
+              45.47
+            ]
+          },
+          "pct_count_insiders": 13.8,
+          "pct_budget_insiders": 50.9,
+          "pct_count_outsiders": 10.99,
+          "pct_budget_outsiders": 39.15
+        }
+      },
+      "pct_count_insiders": null,
+      "pct_budget_insiders": null,
+      "pct_count_outsiders": 0.0,
+      "pct_budget_outsiders": 0.0
+    },
+    "decision_speed": {
+      "id": "decision_speed",
+      "title": "Decision Speed",
+      "subtitle": "Average days between submission deadline and agreement date",
+      "chart_type": "grouped_bar_decision",
+      "quarters": [
+        "T1 (Jan-Mar)",
+        "T2 (Apr-Jun)",
+        "T3 (Jul-Sep)",
+        "T4 (Oct-Dec)"
+      ],
+      "by_year": {
+        "2024": {
+          "media_dias": {
+            "total": [
+              32.28,
+              29.54,
+              31.59,
+              34.14
+            ],
+            "insiders": [
+              50.14,
+              46.75,
+              45.4,
+              49.58
+            ],
+            "minors": [
+              7.58,
+              5.57,
+              6.25,
+              6.69
+            ]
+          },
+          "media_total": 32.0,
+          "media_insiders": 47.9,
+          "media_minors": 6.4,
+          "n_obs": {
+            "total": 202648,
+            "insiders": 125168,
+            "minors": 77480
+          }
+        },
+        "2025": {
+          "media_dias": {
+            "total": [
+              30.09,
+              31.2,
+              31.42,
+              32.8
+            ],
+            "insiders": [
+              48.46,
+              47.15,
+              44.63,
+              47.94
+            ],
+            "minors": [
+              6.98,
+              6.45,
+              6.96,
+              6.91
+            ]
+          },
+          "media_total": 31.6,
+          "media_insiders": 46.9,
+          "media_minors": 6.8,
+          "n_obs": {
+            "total": 220757,
+            "insiders": 136451,
+            "minors": 84306
+          }
+        }
+      },
+      "media_dias": {
+        "total": [
+          null,
+          null,
+          null,
+          null
+        ],
+        "insiders": [
+          null,
+          null,
+          null,
+          null
+        ],
+        "minors": [
+          null,
+          null,
+          null,
+          null
+        ]
+      },
+      "media_total": null,
+      "media_insiders": null,
+      "media_minors": null,
+      "n_obs": {
+        "total": 0,
+        "insiders": 0,
+        "minors": 0
+      }
+    }
+  }
+}
