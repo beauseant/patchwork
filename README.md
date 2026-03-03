@@ -17,6 +17,7 @@ PROJECT_PATH_DATA=./ruta/a/tus/datos
 2) Instala las librerias externas:
     cd frontend/www/
     npm run build
-3) Ejecutar el docker:
+3) Crea un fichero .htaccess y otro .httpasswd con los usuarios y contraseñas que quieras crear. Para ello hay que usar los generadores de contraseñas de Apache.
+4) Ejecutar el docker:
     cd frontend/
     docker compose up -d
