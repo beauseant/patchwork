@@ -5,7 +5,7 @@
 <main class="main-content p-4">
     <div class="container-fluid mt-5">
         <div class="d-flex justify-content-between align-items-center mb-4">
-            <h2 class="mb-0">Uploaded Documents (Enriched) <button type="button" class="btn btn-text" data-bs-toggle="modal" data-bs-target="#infoModal"> [+]</button></h2>
+            <h4 class="">Uploaded Documents (Enriched) <button type="button" class="btn btn-text" data-bs-toggle="modal" data-bs-target="#infoModal"> [+]</button></h2>
             <a href="load.php" class="btn btn-success">Upload archive</a>
         </div>
 
@@ -15,7 +15,7 @@
         <div class="accordion-item">
             <h2 class="accordion-header" id="headingOne">
             <button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#collapseOne" aria-expanded="true" aria-controls="collapseOne">
-                <h2 class="mt-2">📑 Administrative Documents (PCAP)</h2>
+                <h2 >📑 Administrative Documents (PCAP)</h2>
             </button>
             </h2>
             <div id="collapseOne" class="accordion-collapse collapse show" aria-labelledby="headingOne" data-bs-parent="#accordionExample">
@@ -38,7 +38,7 @@
             </div>
         </div>
         <div class="accordion-item">
-            <h2 class="accordion-header" id="headingTwo">
+            <h2 id="headingTwo">
             <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseTwo" aria-expanded="false" aria-controls="collapseTwo">
                 <h2 class="mt-2"> 🛠️ Technical Documents (PCPT)</h2>
             </button>
@@ -103,12 +103,12 @@
             <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
           </div>
           <div class="modal-body">
-            <p>¿Estás seguro de que quieres borrar el archivo <strong id="delete-file-name"></strong>?</p>
-            <p class="text-danger small">Esta acción es irreversible y eliminará el archivo físico y todos sus registros asociados de la base de datos.</p>
+            <p>Are you sure you want to delete the file? <strong id="delete-file-name"></strong>?</p>
+            <p class="text-danger small">This action is irreversible and will delete the physical file and all associated records from the database.</p>
           </div>
           <div class="modal-footer">
-            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-            <button type="button" class="btn btn-danger" id="confirmDeleteBtn">Sí, Borrar</button>
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+            <button type="button" class="btn btn-danger" id="confirmDeleteBtn">Yes, delete</button>
           </div>
         </div>
       </div>

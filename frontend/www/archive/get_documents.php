@@ -49,7 +49,7 @@ $data = json_decode($apiResponse, true);
 // Comprobación de seguridad final
 if ($data === null) {
     $jsonError = json_last_error_msg();
-    echo json_encode(["draw" => $draw, "recordsTotal" => 0, "recordsFiltered" => 0, "data" => [], "error" => "FATAL: JSON Decode failed. Error: " . $jsonError]);
+    echo json_encode(["draw" => $draw, "recordsTotal" => 0, "recordsFiltered" => 0, "data" => [], "error" => "FATAL: JSON Decode failed. Error: " . $jsonError,"url"=>$apiUrl]);
     exit;
 }
 
@@ -66,9 +66,12 @@ foreach ($data as $doc) {
     // -----------------------------------------------------------------
     if (isset($doc['title'])) {
         $normalizedData[] = [
-            'id' => $doc['id'], #el id existe siempre, espero
+            'id' => $doc['id'], //el id existe siempre, espero
+	    'link' => '<a target="_blank" href="'. $doc['link'] .'">'. $doc['link'] .'</a>',
             'title' => $doc['title'], // Ya no necesitamos '?? NA' aquí porque sabemos que existe
-            'cpv' => isset($doc['cpv'][0]) ? str_replace(["['", "']", "' '"], ['', '', ', '], $doc['cpv'][0]) : 'NA',
+            //'cpv' => isset($doc['cpv'][0]) ? str_replace(["['", "']", "' '"], ['', '', ', '], $doc['cpv'][0]) : 'NA',
+	    'cpv' =>  isset($doc['cpv'][0]) ? implode(', ',$doc['cpv']):'NA',
+            'cpv_predicted' =>  isset($doc['cpv_predicted']) ? $doc['cpv_predicted']:'NA',
             'generated_objective' => $doc['generated_objective'] ?? 'NA',
             'criterios_adjudicacion' => $doc['criterios_adjudicacion'] ?? 'NA',
             'criterios_solvencia' => $doc['criterios_solvencia'] ?? 'NA',
@@ -77,12 +80,13 @@ foreach ($data as $doc) {
     }
 }
 
-// --- 6. Enviar la respuesta final ---
+// --- 6. Enviar la respuesta final mollete es por debug---
 $response = [
     "draw" => intval($draw),
     "recordsTotal" => intval($totalRecords),
     "recordsFiltered" => intval($totalRecords),
-    "data" => $normalizedData
+    "data" => $normalizedData,
+   "mollete" => $apiUrl
 ];
 
 echo json_encode($response);

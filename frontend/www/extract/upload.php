@@ -1,4 +1,6 @@
 <?php
+
+
 // --- CONFIGURACIÓN ---
 $uploadDir = 'uploads/';
 $dbFile = $uploadDir. 'database.sqlite';
@@ -80,7 +82,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                 $stmtCheck->execute([':stored_name' => $newFileName, ':doc_type' => $docType]);
 
                 if ($stmtCheck->fetch()) {
-                    $response['message'] = 'Error: Este archivo ya fue subido como documento de tipo "' . htmlspecialchars($docType) . '".';
+                    $response['message'] = 'Error: This file has already been uploaded as a document of type "' . htmlspecialchars($docType) . '".';
                 } else {
                     // **CAMBIO 3: Iniciar una transacción**
                     $pdo->beginTransaction();
@@ -140,7 +142,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                         #shell_exec (getcwd() . '/scripts/extractText.sh ' . getcwd() . '/'. $destPath  . ' &');                        
 
                         $response['status'] = 'success';
-                        $response['message'] = '¡Archivo y metadatos registrados con éxito! <a href="list.php">Aquí</a> puede ver el estado';
+                        $response['message'] = 'File received and queued for processing! You can monitor its progress <a href="list.php">here</a>.';
                         #$response['message'] = (getcwd() . '/scripts/extractText.sh ' . $destPath  . ' &');
                         $response['data'] = [
                             'originalName' => htmlspecialchars($originalFileName),
@@ -152,7 +154,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 
                     } else {
                         $pdo->rollBack(); // Revertir si falla el movimiento del archivo
-                        $response['message'] = 'Hubo un error al mover el archivo subido.';
+                        $response['message'] = 'There was an error moving the uploaded file.';
                     }
                 }
             } catch (Exception $e) {
@@ -163,13 +165,13 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                 if (file_exists($destPath)) {
                     unlink($destPath); 
                 }
-                $response['message'] = 'Error crítico: ' . $e->getMessage();
+                $response['message'] = 'Critical error: ' . $e->getMessage();
             }
         } else {
-            $response['message'] = 'Error: El archivo no es un PDF válido.';
+            $response['message'] = 'Error: The file is not a valid PDF.';
         }
     } else {
-        $response['message'] = 'No se recibió ningún archivo o hubo un error en la subida.';
+        $response['message'] = 'No file was received or there was an error during upload.';
     }
 }
 

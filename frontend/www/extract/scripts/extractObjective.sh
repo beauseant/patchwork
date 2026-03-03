@@ -16,13 +16,22 @@ FILE_NAME=$(basename "$1")
 OBJ="$DIR_NAME/obj"
 OBJFILE="$DIR_NAME/obj/obj.txt"
 FICHERO_A_ESPERAR="$DIR_NAME/$FILE_NAME.txt_text.json"
+
+#php $(dirname "$0")"/extractText.php" "${FICHERO_A_ESPERAR}"
+
+#FICHERO_A_ESPERAR="$DIR_NAME/$FILE_NAME.txt_text.json_text.puro"
 SERVIDOR=$(<servidor.cnf)
+#07ce012cf4bc3a7c6da8bab5f82f2ed9.pdf.txt_text.json_text.puro
+#TEXTO=$(<servidor.cnf)
 
-TEXTO=$(<servidor.cnf)
+echo "--------"
+echo "->dir name" $DIR_NAME
+echo "->obj file" $OBJFILE
+echo "obj" $OBJ
+echo "------"
 
-
-echo $FICHERO_A_ESPERAR
-
+#echo "dirname : [$(dirname "$0")]"
+#echo $(dirname "$0")"/extractText.php" "${FICHERO_A_ESPERAR}"
 
 # --- Configuración ---
 TIMEOUT_MINUTOS=20
@@ -37,26 +46,43 @@ TIEMPO_INICIO=$(date +%s)
 echo "⏳ Esperando a que se cree el fichero '${FICHERO_A_ESPERAR}'..."
 echo "   (Timeout: ${TIMEOUT_MINUTOS} minutos)"
 
+echo "esperando a:" $FICHERO_A_ESPERAR
+
 # Bucle infinito que romperemos nosotros desde dentro
 mkdir $OBJ
+
+echo "        curl -X 'POST' \
+            "${SERVIDOR}/objective/extract/fromFile/" \
+            -H 'accept: application/json' \
+            -H 'Content-Type: multipart/form-data' \
+            -F  'file=@${FICHERO_A_ESPERAR};type=text/plain' -o '${OBJFILE}'
+"
+echo "----------------"
+
+
+echo "----"
+
+
+
 while true; do
     # PRIMERA COMPROBACIÓN: ¿Existe el fichero?
+    echo "."
     if [ -f "$FICHERO_A_ESPERAR" ]; then
         echo "" # Salto de línea para un formato limpio
         echo "✅ ¡Fichero encontrado en '${FICHERO_A_ESPERAR}'!"     
         TEXTO=$(<$FICHERO_A_ESPERAR)   
-        curl -X 'POST' \
-            "${SERVIDOR}/objective/extract/" \
-            -H 'accept: application/json' \
-            -H 'Content-Type: application/json' \
-            -d "${TEXTO}" \
-            -o "${OBJFILE}"\
 
+        curl -X 'POST' \
+            "${SERVIDOR}/objective/extract/fromFile/" \
+            -H "accept: application/json" \
+            -H "Content-Type: multipart/form-data" \
+            -F  "file=@${FICHERO_A_ESPERAR};type=text/plain"  \
+            -o "${OBJFILE}"
 
         if [ $? -eq 0 ]; then
             #el curl puede terminar bien, pero contener un mensaje tipo     "error": "Failed to process the text",
             #si es así se borra el fichero:        
-            if jq -e ".error" "$CRITFILE" > /dev/null 2>&1; then
+            if jq -e ".error" "$OBJFILE" > /dev/null 2>&1; then
                 echo "Error encontrado en '$OBJFILE'. Borrando el archivo..."
                 rm "$OBJFILE"
                 echo "Archivo borrado."
@@ -65,7 +91,8 @@ while true; do
             else
                 echo "No se encontró el error en '$OBJFILE'. El archivo no ha sido modificado."
                 touch "${OBJ}/finalizado"                
-                cat   $OBJFILE   | jq -r '.response.generative_objective' > "${OBJFILE}.tmp" && mv "${OBJFILE}.tmp" "$OBJFILE"
+                #cat   $OBJFILE   | jq -er '.response.generative_objective' > ${OBJFILE}'.tmp' && mv ${OBJFILE}.tmp $OBJFILE
+		jq -er '.response.generative_objective' "$OBJFILE" > "${OBJFILE}.tmp" && mv "${OBJFILE}.tmp" "$OBJFILE"
 
             fi
         else

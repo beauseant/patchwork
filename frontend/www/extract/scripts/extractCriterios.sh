@@ -46,28 +46,28 @@ while true; do
     if [ -f "$FICHERO_A_ESPERAR" ]; then
         echo "" # Salto de línea para un formato limpio
         echo "✅ ¡Fichero encontrado en '${FICHERO_A_ESPERAR}'!"     
-        TEXTO=$(<$FICHERO_A_ESPERAR)      
-        curl -X 'POST' \
-            "${SERVIDOR}/metadata/extract/" \
-            -H 'accept: application/json' \
-            -H 'Content-Type: application/json' \
-            -d "${TEXTO}" \
-            -o "${CRITFILE}"\
+        #TEXTO=$(<$FICHERO_A_ESPERAR)      
+        curl -X "POST" \
+            "${SERVIDOR}/metadata/extract/fromFile/" \
+            -H "accept: application/json" \
+            -H "Content-Type: multipart/form-data" \
+            -F  "file=@${FICHERO_A_ESPERAR};type=text/plain" \
+            -o "${CRITFILE}"
 
         if [ $? -eq 0 ]; then
             #el curl puede terminar bien, pero contener un mensaje tipo     "error": "Failed to process the text",
             #si es así se borra el fichero:        
             if grep -qF "error" "$CRITFILE"; then
                 echo "Error encontrado en '$CRITFILE'. Borrando el archivo..."
-                rm "$CRITFILE"
+                #rm "$CRITFILE"
                 echo "Archivo borrado."
                 touch "${CRIT}/error"
                 touch "${CRIT}/error_rest"
             else
                 echo "No se encontró el error en '$CRITFILE'. El archivo no ha sido modificado."
-                cat "$CRITFILE" | jq -r '.criterios_adjudicacion' > "${CRITFILEADJ}"
-                cat "$CRITFILE" | jq -r '.criterios_solvencia' > "${CRITFILESOL}"
-                cat "$CRITFILE" | jq -r '.condiciones_especiales' > "${CRITFILEESP}"
+                cat "$CRITFILE" | jq -r '.response.criterios_adjudicacion' > "${CRITFILEADJ}"
+                cat "$CRITFILE" | jq -r '.response.criterios_solvencia' > "${CRITFILESOL}"
+                cat "$CRITFILE" | jq -r '.response.condiciones_especiales' > "${CRITFILEESP}"
                 touch "${CRIT}/finalizado"
 
             fi

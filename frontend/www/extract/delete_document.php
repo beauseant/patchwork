@@ -18,7 +18,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['stored_name'])) {
 
     // Validar que el nombre del archivo no contenga caracteres maliciosos (ej. '..')
     if (strpos($stored_name, '/') !== false || strpos($stored_name, '\\') !== false) {
-        $response['message'] = 'Nombre de archivo no válido.';
+        $response['message'] = 'Invalid file name.';
         echo json_encode($response);
         exit();
     }
@@ -66,14 +66,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['stored_name'])) {
         
 
         $response['status'] = 'success';
-        $response['message'] = 'Archivo y registros eliminados correctamente.';
+        $response['message'] = 'File and records successfully deleted.';
 
     } catch (Exception $e) {
         // Si algo falla, revertir la transacción
         if (isset($pdo) && $pdo->inTransaction()) {
             $pdo->rollBack();
         }
-        $response['message'] = 'Error en la base de datos: ' . $e->getMessage();
+        $response['message'] = 'Database error: ' . $e->getMessage();
     }
 }
 

@@ -30,6 +30,11 @@
                 <i class="bi bi-intersect icon fs-5"></i>
                 <span class="text">Semantic & thematic similarity search</span>
             </a>        
+             </a>
+                 <a class="nav-link d-flex align-items-center linkcolor" href="/indicators/index.php">
+                 <i class="bi bi-app-indicator icon fs-5"></i>
+                 <span class="text">Procurement indicators</span>
+             </a>   
         </nav>
 
     </aside>
