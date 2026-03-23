@@ -1,4 +1,9 @@
-import json, re, csv
+from matplotlib.lines import Line2D
+from matplotlib.patches import Patch
+import matplotlib as mpl
+import json
+import re
+import csv
 from pathlib import Path
 from collections import Counter, defaultdict
 
@@ -12,33 +17,30 @@ from scipy.stats import friedmanchisquare, spearmanr, kendalltau, binomtest
 from rouge_score import rouge_scorer
 
 
-
 # =============================================================================
-# Este script hace 3 cosas (sin quitar nada de lo existente):
-#   (1) Ranking humano por tarea (generative/extractive) usando TU scoring tal cual.
+# Este script hace 3 cosas:
+#   (1) Ranking humano por tarea (generative/extractive) usando el scoring de liga
 #   (2) Agreement entre anotadores:
-#         - Agreement nominal de 3 clases (A/B/ambos malos): percent agreement + Cohen's kappa
+#         - Agreement nominal de 3 clases (A/B/ambos malos):
+#           percent agreement + Cohen's kappa
 #         - Por task_type y por par de modelos
 #         - Figuras: distribución y matriz de confusión
-#         - NUEVO: agreement "orientado a elección de modelo" (lo que te importa para escoger modelos):
+#         - agreement "orientado a elección de modelo"
+#           (lo que te importa para escoger modelos):
 #             • Top-1 winner agreement por tarea
 #             • Correlación entre rankings (Kendall τ) por tarea
-#             • Pairwise winner agreement (solo en casos A vs B, ignorando "Ambos son malos")
+#             • Pairwise winner agreement (solo en casos A vs B,
+#               ignorando "Ambos son malos")
 #   (3) Relación humanos ↔ métricas automáticas:
-#         - Tests Friedman + Kendall/Spearman entre ranking humano y medianas de métricas
+#         - Tests Friedman + Kendall/Spearman entre ranking humano y medianas
+#           de métricas
 #         - Figuras automáticas por métrica y tarea
-#         - (Opcional) análisis por instancia delta(A-B) vs etiqueta humana + figura
-#
-# Nota de interpretación:
-#   - Cohen’s kappa aquí SÍ aplica: 3 clases nominales (no ordinales).
-#   - Pero para "explicar que el agreement es suficiente para elegir el mejor modelo",
-#     lo más convincente es mostrar que los anotadores coinciden en el ranking/ganador
-#     aunque discrepen en algunas etiquetas individuales.
+#         - (Análisis por instancia delta(A-B) vs etiqueta humana + figura
 # =============================================================================
 
 
 # ----------------------------
-# 0) Helpers IO + labels
+# Helpers IO + labels
 # ----------------------------
 LABELS = ["A es mejor", "B es mejor", "Ambos son malos"]
 MODEL_ALIAS1 = {
@@ -62,6 +64,7 @@ MODEL_ALIAS2 = {
     "deepseek-r1-8b": "DeepSeek-R1-8B",
 }
 
+
 def slugify(value):
     """Lowercase-safe slug for filenames."""
     text = str(value or "").strip().lower()
@@ -81,17 +84,21 @@ def finalize_plot(fig, save_path=None, show=True):
         plt.show()
     plt.close(fig)
 
+
 def load_json_or_jsonl(path):
     """Loads JSON or JSONL file into list of records."""
     with open(path, "r", encoding="utf-8") as f:
         text = f.read().strip()
     try:
         data = json.loads(text)
-        if isinstance(data, dict): return [data]
-        if isinstance(data, list): return data
+        if isinstance(data, dict):
+            return [data]
+        if isinstance(data, list):
+            return data
     except json.JSONDecodeError:
         return [json.loads(line) for line in text.splitlines() if line.strip()]
     return []
+
 
 def get_selected_label(record):
     """Extract label from label_annotations.selected_model (dict or str)."""
@@ -101,6 +108,7 @@ def get_selected_label(record):
     if isinstance(sel, str):
         return sel
     return None
+
 
 def records_to_label_map(records):
     """id/place_id -> label (only LABELS)."""
@@ -114,7 +122,7 @@ def records_to_label_map(records):
 
 
 # ----------------------------
-# 1) Ranking humano por tarea (TU scoring tal cual)
+# Ranking humano por tarea
 # ----------------------------
 def human_ranking_points(csv_path, jsonl_path):
     """
@@ -140,17 +148,17 @@ def human_ranking_points(csv_path, jsonl_path):
             task = (row.get("task_type") or "").strip().lower()
             a = (row.get("item_a_model") or "").strip()
             b = (row.get("item_b_model") or "").strip()
-            
+
             # normalize
             a = MODEL_ALIAS1.get(a, a)
             b = MODEL_ALIAS1.get(b, b)
-            
-            #a = MODEL_ALIAS2.get(a, a)
-            #b = MODEL_ALIAS2.get(b, b)
+
+            # a = MODEL_ALIAS2.get(a, a)
+            # b = MODEL_ALIAS2.get(b, b)
             if not a or not b:
                 continue
 
-            # TU regla (no modificar)
+            # scoring liga
             if lab == "A es mejor":
                 points[task][a] += 3
             elif lab == "B es mejor":
@@ -166,9 +174,11 @@ def human_ranking_points(csv_path, jsonl_path):
     for task, c in points.items():
         for model, pts in c.items():
             rows.append({"task_type": task, "model": model, "points": pts})
-    df_points = pd.DataFrame(rows).sort_values(["task_type","points"], ascending=[True, False])
+    df_points = pd.DataFrame(rows).sort_values(
+        ["task_type", "points"], ascending=[True, False])
 
     return df_points, points, decisions
+
 
 def plot_human_ranking(df_points, output_dir=None, show=True):
     """Barplot por task_type, opcionalmente guardando resultados."""
@@ -189,7 +199,7 @@ def plot_human_ranking(df_points, output_dir=None, show=True):
 
 
 # ----------------------------
-# 2) Agreement entre dos anotadores
+# Agreement entre dos anotadores
 # ----------------------------
 def build_pairs_df(json_path_1, json_path_2, csv_path):
     """Devuelve df con ann1/ann2 + meta (task + modelos) para slicing."""
@@ -212,12 +222,15 @@ def build_pairs_df(json_path_1, json_path_2, csv_path):
     rows = []
     for rid in common:
         row = {"id": rid, "ann1": m1[rid], "ann2": m2[rid]}
-        row.update(meta.get(rid, {"task_type": None, "a_model": None, "b_model": None, "place_id": None}))
+        row.update(meta.get(
+            rid, {"task_type": None, "a_model": None, "b_model": None, "place_id": None}))
         row["pair_ordered"] = f"{row['a_model']} vs {row['b_model']}"
-        row["pair_unordered"] = " vs ".join(sorted([row["a_model"], row["b_model"]]))
+        row["pair_unordered"] = " vs ".join(
+            sorted([row["a_model"], row["b_model"]]))
         rows.append(row)
 
     return pd.DataFrame(rows)
+
 
 def agreement_stats(y1, y2, labels=LABELS):
     """
@@ -225,14 +238,17 @@ def agreement_stats(y1, y2, labels=LABELS):
       - percent agreement: proporción de etiquetas idénticas
       - Cohen's kappa: agreement corrigiendo por azar
     """
-    y1 = np.array(y1); y2 = np.array(y2)
+    y1 = np.array(y1)
+    y2 = np.array(y2)
     acc = (y1 == y2).mean()
     kappa = cohen_kappa_score(y1, y2, labels=labels)
     return acc, kappa, len(y1)
 
+
 def report_agreement(df_pairs, by=None, min_n=10, labels=LABELS):
     """Imprime overall y (opcional) por grupos."""
-    acc, kappa, n = agreement_stats(df_pairs["ann1"], df_pairs["ann2"], labels=labels)
+    acc, kappa, n = agreement_stats(
+        df_pairs["ann1"], df_pairs["ann2"], labels=labels)
     print("\n" + "="*70)
     print("INTER-ANNOTATOR AGREEMENT (3 labels: A/B/ambos malos)")
     print("="*70)
@@ -254,7 +270,9 @@ def report_agreement(df_pairs, by=None, min_n=10, labels=LABELS):
 
     rows.sort(key=lambda x: (-x[1], -x[2]))
     for key, n, a, k in rows:
-        print(f"{str(key)[:80]:80s} | n={n:4d} | agree={a:.3f} | kappa={k:.3f}")
+        print(
+            f"{str(key)[:80]:80s} | n={n:4d} | agree={a:.3f} | kappa={k:.3f}")
+
 
 def plot_confusion(df_pairs, labels=LABELS, title="Confusion matrix", output_dir=None, show=True):
     """Figura: matriz de confusión 3×3 (ann1 vs ann2)."""
@@ -268,6 +286,7 @@ def plot_confusion(df_pairs, labels=LABELS, title="Confusion matrix", output_dir
     if output_dir is not None:
         save_path = Path(output_dir) / f"confusion_matrix_{slugify(title)}.png"
     finalize_plot(fig, save_path=save_path, show=show)
+
 
 def plot_label_distribution(df_pairs, labels=LABELS, name1="ann1", name2="ann2",
                             output_dir=None, show=True):
@@ -288,14 +307,13 @@ def plot_label_distribution(df_pairs, labels=LABELS, name1="ann1", name2="ann2",
     fig.tight_layout()
     save_path = None
     if output_dir is not None:
-        save_path = Path(output_dir) / f"label_distribution_{slugify(name1)}_vs_{slugify(name2)}.png"
+        save_path = Path(
+            output_dir) / f"label_distribution_{slugify(name1)}_vs_{slugify(name2)}.png"
     finalize_plot(fig, save_path=save_path, show=show)
 
 
 # ----------------------------
-# 2B) NUEVO: Agreement “orientado a elección de modelo”
-#      (Esto es lo que te sirve para argumentar que, aunque κ sea medio,
-#       los anotadores coinciden en qué modelo es mejor.)
+# Agreement “orientado a elección de modelo”
 # ----------------------------
 def points_to_rank(points_by_task):
     """
@@ -305,8 +323,9 @@ def points_to_rank(points_by_task):
     rank = {}
     for task, counter in points_by_task.items():
         ranked = sorted(counter.items(), key=lambda kv: (-kv[1], kv[0]))
-        rank[task] = [m for m,_ in ranked]
+        rank[task] = [m for m, _ in ranked]
     return rank
+
 
 def top1_winner(points_by_task):
     """Devuelve ganador top-1 por tarea según puntos."""
@@ -318,6 +337,7 @@ def top1_winner(points_by_task):
         ranked = sorted(counter.items(), key=lambda kv: (-kv[1], kv[0]))
         winners[task] = ranked[0][0]
     return winners
+
 
 def report_choice_agreement(points1, points2):
     """
@@ -355,6 +375,7 @@ def report_choice_agreement(points1, points2):
         tau, p = kendalltau(a, b, method="auto")
         print(f"  {task:10s}: tau={tau:.3f}, p={p:.3g} (tau>0 ⇒ similar ranking)")
 
+
 def pairwise_winner_agreement(df_pairs, labels=LABELS, min_n=20):
     """
     Agreement sobre la *elección de ganador* en comparaciones A vs B:
@@ -363,10 +384,12 @@ def pairwise_winner_agreement(df_pairs, labels=LABELS, min_n=20):
       - Reporta global y por task_type
     """
     df = df_pairs.copy()
-    df = df[df["ann1"].isin(["A es mejor", "B es mejor"]) & df["ann2"].isin(["A es mejor", "B es mejor"])].copy()
+    df = df[df["ann1"].isin(["A es mejor", "B es mejor"]) & df["ann2"].isin(
+        ["A es mejor", "B es mejor"])].copy()
 
     if df.empty:
-        print("\n[Pairwise winner agreement] No items with A/B decisions for both annotators.")
+        print(
+            "\n[Pairwise winner agreement] No items with A/B decisions for both annotators.")
         return
 
     # Mapeo a ganador concreto (nombre de modelo)
@@ -389,7 +412,9 @@ def pairwise_winner_agreement(df_pairs, labels=LABELS, min_n=20):
             if len(g) < min_n:
                 continue
             acct = (g["winner1"] == g["winner2"]).mean()
-            print(f"  task={task:10s} | n={len(g):4d} | same_winner={acct:.3f}")
+            print(
+                f"  task={task:10s} | n={len(g):4d} | same_winner={acct:.3f}")
+
 
 def plot_winner_overlap(points1, points2, title="Top-1 winner agreement",
                         output_dir=None, show=True):
@@ -419,7 +444,7 @@ def plot_winner_overlap(points1, points2, title="Top-1 winner agreement",
 
 
 # ----------------------------
-# 3) Métricas automáticas (ROUGE + longitudes) y merge multi-modelo
+# Métricas automáticas (ROUGE + longitudes) y merge multi-modelo
 # ----------------------------
 def add_rouge_and_lengths(df, keys=("generative", "extractive")):
     rouge_types = ["rouge1", "rouge2", "rougeL"]
@@ -438,7 +463,7 @@ def add_rouge_and_lengths(df, keys=("generative", "extractive")):
         df[f"{k}_len_chars"] = df[obj_col].str.len()
         df[f"{k}_len_words"] = df[obj_col].str.split().str.len().astype("Int64")
 
-    # ROUGE (row-wise) comparando title vs objective (como en tu pipeline)
+    # ROUGE (row-wise) comparando title vs objective
     scorer = rouge_scorer.RougeScorer(rouge_types, use_stemmer=True)
 
     for k in keys:
@@ -456,16 +481,18 @@ def add_rouge_and_lengths(df, keys=("generative", "extractive")):
             try:
                 scores = scorer.score(title, candidate)
             except Exception:
-                scores = {rt: rouge_scorer.Score(precision=0.0, recall=0.0, fmeasure=0.0) for rt in rouge_types}
+                scores = {rt: rouge_scorer.Score(
+                    precision=0.0, recall=0.0, fmeasure=0.0) for rt in rouge_types}
 
             for rt in rouge_types:
                 df.at[idx, f"{k}_{rt}_precision"] = scores[rt].precision
-                df.at[idx, f"{k}_{rt}_recall"]    = scores[rt].recall
-                df.at[idx, f"{k}_{rt}_f1"]        = scores[rt].fmeasure
+                df.at[idx, f"{k}_{rt}_recall"] = scores[rt].recall
+                df.at[idx, f"{k}_{rt}_f1"] = scores[rt].fmeasure
 
     return df
 
-def load_and_merge_parquets(results_dir, keys=("generative","extractive")):
+
+def load_and_merge_parquets(results_dir, keys=("generative", "extractive")):
     """
     Lee todos los parquet de results_dir (uno por modelo),
     calcula ROUGE+len, y devuelve df_final con columnas prefixadas por modelo.
@@ -481,20 +508,22 @@ def load_and_merge_parquets(results_dir, keys=("generative","extractive")):
     cols_keep = []
     for key in keys:
         for typ in ["bert", "token"]:
-            cols_keep.extend([f"{key}_{typ}_precision", f"{key}_{typ}_recall", f"{key}_{typ}_f1"])
+            cols_keep.extend(
+                [f"{key}_{typ}_precision", f"{key}_{typ}_recall", f"{key}_{typ}_f1"])
         cols_keep.append(f"{key}_time_seconds")
 
     # ROUGE cols + lengths
-    rouge_types = ["rouge1","rouge2","rougeL"]
+    rouge_types = ["rouge1", "rouge2", "rougeL"]
     for key in keys:
         for rt in rouge_types:
-            cols_keep.extend([f"{key}_{rt}_precision", f"{key}_{rt}_recall", f"{key}_{rt}_f1"])
+            cols_keep.extend(
+                [f"{key}_{rt}_precision", f"{key}_{rt}_recall", f"{key}_{rt}_f1"])
         cols_keep.extend([f"{key}_len_chars", f"{key}_len_words"])
 
     for p in results_dir.iterdir():
         if p.suffix != ".parquet":
             continue
-            
+
         if p.stem.endswith("_filtrado"):
             continue
 
@@ -506,24 +535,27 @@ def load_and_merge_parquets(results_dir, keys=("generative","extractive")):
 
         # asegurar title
         if "title" not in df.columns:
-            raise ValueError(f"{p.name} no tiene columna 'title' (necesaria para ROUGE).")
+            raise ValueError(
+                f"{p.name} no tiene columna 'title' (necesaria para ROUGE).")
 
         df = add_rouge_and_lengths(df, keys=keys)
 
-        model_name = p.stem.split("parquet_")[-1]  # ajusta si tu naming difiere
+        model_name = p.stem.split("parquet_")[-1]
         base_cols = ["place_id", "title"]
 
         existing = [c for c in cols_keep if c in df.columns]
         df_sel = df[base_cols + existing].copy()
 
         # prefix
-        df_sel.rename(columns={c: f"{model_name}_{c}" for c in existing}, inplace=True)
+        df_sel.rename(
+            columns={c: f"{model_name}_{c}" for c in existing}, inplace=True)
 
         # merge
         if df_final is None:
             df_final = df_sel
         else:
-            df_final = df_final.merge(df_sel, on=["place_id","title"], how="outer")
+            df_final = df_final.merge(
+                df_sel, on=["place_id", "title"], how="outer")
 
     if df_final is None:
         raise ValueError("No se encontraron .parquet en results_dir")
@@ -532,7 +564,7 @@ def load_and_merge_parquets(results_dir, keys=("generative","extractive")):
 
 
 # ----------------------------
-# 4) Comparación humanos ↔ métricas: Friedman + Kendall/Spearman (como tu script)
+# Comparación humanos ↔ métricas: Friedman + Kendall/Spearman
 # ----------------------------
 def build_wide(df, which_key, metric_pattern):
     """
@@ -555,6 +587,7 @@ def build_wide(df, which_key, metric_pattern):
     wide = long_df.pivot(index="place_id", columns="model", values="value")
     return wide.dropna(how="any")
 
+
 def run_tests(df_wide, human_points_by_task, task, metric_name):
     """
     Friedman (paired) + Kendall tau-b / Spearman entre orden humano y medianas de la métrica.
@@ -568,7 +601,8 @@ def run_tests(df_wide, human_points_by_task, task, metric_name):
         print(f"\n[{metric_name}] No data for {task}.")
         return
 
-    ranked = sorted(human_points_by_task[task].items(), key=lambda kv: (-kv[1], kv[0]))
+    ranked = sorted(
+        human_points_by_task[task].items(), key=lambda kv: (-kv[1], kv[0]))
     human_order = [m for m, _ in ranked]
 
     cols = [m for m in human_order if m in df_wide.columns]
@@ -595,10 +629,13 @@ def run_tests(df_wide, human_points_by_task, task, metric_name):
     print(f"Models (human best→worst): {', '.join(cols)}")
     print(f"Paired instances (rows): {W.shape[0]}")
     print(f"Friedman χ²={stat:.3f}, p={p:.3g}")
-    print(f"Kendall tau={tau:.3f}, p={p_tau:.3g} (tau>0 ⇒ métrica alinea con humanos)")
-    print(f"Spearman rho={rho:.3f}, p={p_rho:.3g} (rho>0 ⇒ métrica alinea con humanos)")
+    print(
+        f"Kendall tau={tau:.3f}, p={p_tau:.3g} (tau>0 ⇒ métrica alinea con humanos)")
+    print(
+        f"Spearman rho={rho:.3f}, p={p_rho:.3g} (rho>0 ⇒ métrica alinea con humanos)")
     for m in cols:
         print(f"  {m:20s}: median={med[m]:.4f}")
+
 
 def plot_metric_medians(df_final, human_points_by_task, task, metric_pattern, title=None,
                         output_dir=None, show=True):
@@ -614,8 +651,9 @@ def plot_metric_medians(df_final, human_points_by_task, task, metric_pattern, ti
         print(f"No human ranking available for task '{task}'.")
         return
 
-    ranked = sorted(human_points_by_task[task].items(), key=lambda kv: (-kv[1], kv[0]))
-    models = [m for m,_ in ranked if m in wide.columns]
+    ranked = sorted(
+        human_points_by_task[task].items(), key=lambda kv: (-kv[1], kv[0]))
+    models = [m for m, _ in ranked if m in wide.columns]
     if not models:
         print(f"No overlapping models for plotting medians ({task}).")
         return
@@ -627,12 +665,15 @@ def plot_metric_medians(df_final, human_points_by_task, task, metric_pattern, ti
     ax.set_xticks(x)
     ax.set_xticklabels(models, rotation=30, ha="right")
     ax.set_ylabel(f"Median {metric_pattern}")
-    ax.set_title(title or f"Median {metric_pattern} by model — {task} (ordered by humans)")
+    ax.set_title(
+        title or f"Median {metric_pattern} by model — {task} (ordered by humans)")
     fig.tight_layout()
     save_path = None
     if output_dir is not None:
-        save_path = Path(output_dir) / f"metric_medians_{slugify(task)}_{slugify(metric_pattern)}.png"
+        save_path = Path(
+            output_dir) / f"metric_medians_{slugify(task)}_{slugify(metric_pattern)}.png"
     finalize_plot(fig, save_path=save_path, show=show)
+
 
 def plot_rank_vs_metric(df_final, human_points_by_task, task, metric_pattern, title=None,
                         output_dir=None, show=True):
@@ -652,16 +693,18 @@ def plot_rank_vs_metric(df_final, human_points_by_task, task, metric_pattern, ti
         return
 
     # ranking humano
-    ranked = sorted(human_points_by_task[task].items(), key=lambda kv: (-kv[1], kv[0]))
-    models = [m for m,_ in ranked if m in wide.columns]
+    ranked = sorted(
+        human_points_by_task[task].items(), key=lambda kv: (-kv[1], kv[0]))
+    models = [m for m, _ in ranked if m in wide.columns]
     if len(models) < 3:
         print(f"Not enough models for rank-vs-metric plot ({task}).")
         return
 
     med = wide[models].median()
     # ranks (1=best) para humanos y métrica
-    human_rank = {m: i+1 for i,m in enumerate(models)}
-    metric_rank = {m: i+1 for i,m in enumerate(med.sort_values(ascending=False).index.tolist())}
+    human_rank = {m: i+1 for i, m in enumerate(models)}
+    metric_rank = {
+        m: i+1 for i, m in enumerate(med.sort_values(ascending=False).index.tolist())}
 
     xs = [human_rank[m] for m in models]
     ys = [metric_rank[m] for m in models]
@@ -673,20 +716,23 @@ def plot_rank_vs_metric(df_final, human_points_by_task, task, metric_pattern, ti
 
     ax.set_xlabel("Human rank (1=best)")
     ax.set_ylabel(f"Metric rank by median {metric_pattern} (1=best)")
-    ax.set_title(title or f"Human rank vs metric rank — {task} / {metric_pattern}")
+    ax.set_title(
+        title or f"Human rank vs metric rank — {task} / {metric_pattern}")
     ax.invert_xaxis()  # opcional: mejor a la izquierda
     ax.invert_yaxis()  # opcional: mejor arriba
     fig.tight_layout()
     save_path = None
     if output_dir is not None:
-        save_path = Path(output_dir) / f"rank_vs_metric_{slugify(task)}_{slugify(metric_pattern)}.png"
+        save_path = Path(
+            output_dir) / f"rank_vs_metric_{slugify(task)}_{slugify(metric_pattern)}.png"
     finalize_plot(fig, save_path=save_path, show=show)
 
 
 # ----------------------------
-# 5) (Opcional) Coincidencia a nivel instancia: delta(A-B) vs etiqueta humana
+# Coincidencia a nivel instancia: delta(A-B) vs etiqueta humana
 # ----------------------------
 LABEL_MAP = {"A es mejor": 1, "B es mejor": -1, "Ambos son malos": 0}
+
 
 def per_instance_alignment(df_final, csv_path, jsonl_path, task="generative", metric="rougeL_f1"):
     """
@@ -749,6 +795,7 @@ def per_instance_alignment(df_final, csv_path, jsonl_path, task="generative", me
     d["correct"] = (d["pred"] == d["label"]) & (d["label"] != 0)
     return d
 
+
 def plot_delta_hist(d, title="Delta metric (A - B)", output_dir=None, show=True):
     """Figura: histograma de delta(A-B)."""
     fig, ax = plt.subplots()
@@ -761,10 +808,12 @@ def plot_delta_hist(d, title="Delta metric (A - B)", output_dir=None, show=True)
     if output_dir is not None:
         save_path = Path(output_dir) / f"delta_hist_{slugify(title)}.png"
     finalize_plot(fig, save_path=save_path, show=show)
-    
+
 # ----------------------------
-# 4B) NUEVO: Comparativa ANOT1 vs ANOT2 vs AUTOMÁTICA (resumen + figura)
+# Comparativa ANOT1 vs ANOT2 vs AUTOMÁTICA (resumen + figura)
 # ----------------------------
+
+
 def agreement_for_subset(df_pairs, subset_mask=None, labels=LABELS):
     """
     Devuelve (acc, kappa, n) para un subconjunto de df_pairs.
@@ -833,7 +882,8 @@ def build_comparison_table(df_final, points1, points2, df_pairs, task, metric_pa
                           higher_is_better=True)
 
     # Agreement (3 labels) para subset del task
-    mask_task = (df_pairs["task_type"] == task) if ("task_type" in df_pairs.columns) else None
+    mask_task = (df_pairs["task_type"] == task) if (
+        "task_type" in df_pairs.columns) else None
     acc, kappa, n = agreement_for_subset(df_pairs, subset_mask=mask_task)
 
     rows = []
@@ -853,7 +903,8 @@ def build_comparison_table(df_final, points1, points2, df_pairs, task, metric_pa
     df_cmp = pd.DataFrame(rows)
     # Orden por ranking promedio humano (para que el plot sea legible)
     df_cmp["rank_human_avg"] = df_cmp[["rank_ann1", "rank_ann2"]].mean(axis=1)
-    df_cmp = df_cmp.sort_values(["rank_human_avg", "model"], ascending=[True, True]).reset_index(drop=True)
+    df_cmp = df_cmp.sort_values(["rank_human_avg", "model"], ascending=[
+                                True, True]).reset_index(drop=True)
 
     return df_cmp, (acc, kappa, n)
 
@@ -896,7 +947,8 @@ def plot_annotators_vs_metric_ranks(df_cmp, agreement_tuple, output_dir=None, sh
 
     save_path = None
     if output_dir is not None:
-        save_path = Path(output_dir) / f"compare_ranks_{slugify(task)}_{slugify(metric)}.png"
+        save_path = Path(output_dir) / \
+            f"compare_ranks_{slugify(task)}_{slugify(metric)}.png"
     finalize_plot(fig, save_path=save_path, show=show)
 
 
@@ -952,14 +1004,14 @@ def plot_annotators_vs_metric_bars(df_cmp, agreement_tuple, output_dir=None, sho
 
     save_path = None
     if output_dir is not None:
-        save_path = Path(output_dir) / f"compare_scores_{slugify(task)}_{slugify(metric)}.png"
+        save_path = Path(output_dir) / \
+            f"compare_scores_{slugify(task)}_{slugify(metric)}.png"
     finalize_plot(fig, save_path=save_path, show=show)
 
 
-###### comaparative graphmw
 def _human_points_by_place(csv_path, ann_jsonl_path, task):
     """
-    Construye puntos humanos POR PLACE_ID usando TU regla (3/3/1+1).
+    Construye puntos humanos POR PLACE_ID usando regla liga(3/3/1+1).
     Devuelve: dict place_id -> Counter(model->points)
     """
     records = load_json_or_jsonl(ann_jsonl_path)
@@ -991,7 +1043,7 @@ def _human_points_by_place(csv_path, ann_jsonl_path, task):
                 from collections import Counter
                 points_by_place[pid] = Counter()
 
-            # TU regla (idéntica a tu scoring global, pero por place_id)
+            # scoring liga
             if lab == "A es mejor":
                 points_by_place[pid][a] += 3
             elif lab == "B es mejor":
@@ -1032,7 +1084,8 @@ def _human_rank_distributions(csv_path, ann_jsonl_path, task, models=None):
 
     # Model universe
     if models is None:
-        models_all = sorted({m for pid in points_by_place for m in points_by_place[pid].keys()})
+        models_all = sorted(
+            {m for pid in points_by_place for m in points_by_place[pid].keys()})
     else:
         models_all = list(models)
 
@@ -1071,7 +1124,8 @@ def _auto_rank_distributions(df_final, task, metric_pattern, models=None):
         models_all = list(models)
 
     # map modelo -> columna (solo si existe)
-    col_by_model = {m: f"{m}{suffix}" for m in models_all if f"{m}{suffix}" in dfi.columns}
+    col_by_model = {
+        m: f"{m}{suffix}" for m in models_all if f"{m}{suffix}" in dfi.columns}
 
     dist = {m: [] for m in models_all}
 
@@ -1090,37 +1144,6 @@ def _auto_rank_distributions(df_final, task, metric_pattern, models=None):
     return models_all, dist
 
 
-from pathlib import Path
-import numpy as np
-import pandas as pd
-import matplotlib as mpl
-import matplotlib.pyplot as plt
-from matplotlib.patches import Patch
-from matplotlib.lines import Line2D
-
-from pathlib import Path
-import numpy as np
-import pandas as pd
-import matplotlib as mpl
-import matplotlib.pyplot as plt
-from matplotlib.patches import Patch
-
-from pathlib import Path
-import numpy as np
-import pandas as pd
-import matplotlib as mpl
-import matplotlib.pyplot as plt
-from matplotlib.patches import Patch
-
-
-from pathlib import Path
-import numpy as np
-import pandas as pd
-import matplotlib as mpl
-import matplotlib.pyplot as plt
-from matplotlib.patches import Patch
-
-
 def plot_metric_boxes_by_model(
     df_final,
     csv_path,
@@ -1135,9 +1158,9 @@ def plot_metric_boxes_by_model(
     dpi=600,
     base_fontsize=14,
     lw=2.2,
-    annotate_metric_ranks=True,   # <- NUEVO
-    badge_fontsize=None,          # <- NUEVO (si None usa base+1)
-    badge_pad=0.28,               # <- NUEVO (tamaño del círculo)
+    annotate_metric_ranks=True,
+    badge_fontsize=None,
+    badge_pad=0.28,
 ):
     """
     FIGURA “PAPER-SAFE”:
@@ -1152,9 +1175,6 @@ def plot_metric_boxes_by_model(
     if badge_fontsize is None:
         badge_fontsize = base_fontsize + 1
 
-    # -----------------------------
-    # 0) Estilo global (paper)
-    # -----------------------------
     mpl.rcParams.update({
         "font.size": base_fontsize,
         "axes.titlesize": base_fontsize + 2,
@@ -1169,22 +1189,25 @@ def plot_metric_boxes_by_model(
     })
 
     # -----------------------------
-    # 1) Human distributions
+    # Human distributions
     # -----------------------------
-    models1, dist_h1 = _human_rank_distributions(csv_path, ann1_jsonl, task, models=None)
-    models2, dist_h2 = _human_rank_distributions(csv_path, ann2_jsonl, task, models=None)
+    models1, dist_h1 = _human_rank_distributions(
+        csv_path, ann1_jsonl, task, models=None)
+    models2, dist_h2 = _human_rank_distributions(
+        csv_path, ann2_jsonl, task, models=None)
     models_all = sorted(set(models1) | set(models2))
 
     # -----------------------------
-    # 2) Auto distributions
+    # Auto distributions
     # -----------------------------
     dist_auto_by_metric = {}
     for metric_name, metric_pattern in metrics.items():
-        _, distm = _auto_rank_distributions(df_final, task, metric_pattern, models=models_all)
+        _, distm = _auto_rank_distributions(
+            df_final, task, metric_pattern, models=models_all)
         dist_auto_by_metric[metric_name] = distm
 
     # -----------------------------
-    # 3) Orden de modelos (rank humano medio)
+    # Orden de modelos (rank humano medio)
     # -----------------------------
     def mean_or_nan(x):
         return float(np.mean(x)) if len(x) else np.nan
@@ -1192,8 +1215,10 @@ def plot_metric_boxes_by_model(
     human_mean_rank = {}
     for m in models_all:
         vals = []
-        if len(dist_h1.get(m, [])): vals.append(mean_or_nan(dist_h1[m]))
-        if len(dist_h2.get(m, [])): vals.append(mean_or_nan(dist_h2[m]))
+        if len(dist_h1.get(m, [])):
+            vals.append(mean_or_nan(dist_h1[m]))
+        if len(dist_h2.get(m, [])):
+            vals.append(mean_or_nan(dist_h2[m]))
         human_mean_rank[m] = float(np.mean(vals)) if vals else np.nan
 
     models_ordered = sorted(
@@ -1202,17 +1227,16 @@ def plot_metric_boxes_by_model(
     )
 
     # -----------------------------
-    # 4) Colores métricas (interior)
+    # Colores métricas (interior)
     # -----------------------------
-    #palette = mpl.rcParams["axes.prop_cycle"].by_key()["color"]
-    #metric_colors = {m: palette[i % len(palette)] for i, m in enumerate(metrics.keys())}
-    
+    # palette = mpl.rcParams["axes.prop_cycle"].by_key()["color"]
+    # metric_colors = {m: palette[i % len(palette)] for i, m in enumerate(metrics.keys())}
+
     # set colors by hex
     predefined_colors = ["#d39f9c", "#b5d39c", "#d39cb5", "#d3ba9c", "#9f9cd3"]
-    metric_colors = {m: predefined_colors[i % len(predefined_colors)] for i, m in enumerate(metrics.keys())}
-    # -----------------------------
-    # Helpers
-    # -----------------------------
+    metric_colors = {m: predefined_colors[i % len(
+        predefined_colors)] for i, m in enumerate(metrics.keys())}
+
     def set_box_style(bp, facecolor):
         for b in bp["boxes"]:
             b.set(facecolor=facecolor, edgecolor="black", linewidth=lw)
@@ -1236,7 +1260,7 @@ def plot_metric_boxes_by_model(
         )
 
     # -----------------------------
-    # 5) Plot
+    # Plot
     # -----------------------------
     panel_names = ["Human"] + list(metrics.keys())
     n_panels = len(panel_names)
@@ -1354,13 +1378,15 @@ def plot_metric_boxes_by_model(
         ax.tick_params(width=lw, length=6)
 
     # ---------- Título global + xlabel común ----------
-    #fig.suptitle(f"Per-instance ranking distributions — task={task}", y=0.98)
+    # fig.suptitle(f"Per-instance ranking distributions — task={task}", y=0.98)
     fig.supxlabel("Rank (1=best)", y=0.02)
 
     # ---------- Leyenda global fuera ----------
     legend_handles = [
-        Patch(facecolor="#9cd1d3", edgecolor="black",  linewidth=lw, label="Annotator 1"),
-        Patch(facecolor="#9cd1d3", edgecolor="black", linewidth=lw, hatch="//",label="Annotator 2") #hatch="\\\\", linewidth=lw, label="Annotator 2"),
+        Patch(facecolor="#9cd1d3", edgecolor="black",
+              linewidth=lw, label="Annotator 1"),
+        Patch(facecolor="#9cd1d3", edgecolor="black", linewidth=lw, hatch="//",
+              label="Annotator 2")  # hatch="\\\\", linewidth=lw, label="Annotator 2"),
     ]
     fig.legend(
         handles=legend_handles,
@@ -1373,9 +1399,7 @@ def plot_metric_boxes_by_model(
     # Reservar espacio
     fig.tight_layout(rect=[0.03, 0.06, 0.995, 0.94])
 
-    # -----------------------------
-    # 6) Guardar
-    # -----------------------------
+    # save
     save_path = None
     if output_dir is not None:
         output_dir = Path(output_dir)
@@ -1393,34 +1417,36 @@ def plot_metric_boxes_by_model(
 
 if __name__ == "__main__":
 
-    # ---------------------------------------------------------------------
-    # Paths (ajusta si lo ejecutas desde otro working directory)
-    # ---------------------------------------------------------------------
-    csv_path="experiments/objective_extractor/potato/tasks/phase1/data_files/Selected_Comparisons.csv"
-    ann1_jsonl="experiments/objective_extractor/potato/tasks/phase1/annotation_output/jarenas@ing.uc3m.es/annotated_instances.jsonl"
-    ann2_jsonl="experiments/objective_extractor/potato/tasks/phase1/annotation_output/carlosdi@pa.uc3m.es/annotated_instances.jsonl"
+    csv_path = "experiments/objective_extractor/potato/tasks/phase1/data_files/Selected_Comparisons.csv"
+    ann1_jsonl = "experiments/objective_extractor/potato/tasks/phase1/annotation_output/jarenas@ing.uc3m.es/annotated_instances.jsonl"
+    ann2_jsonl = "experiments/objective_extractor/potato/tasks/phase1/annotation_output/carlosdi@pa.uc3m.es/annotated_instances.jsonl"
     ann1_name = "jarenas"
     ann2_name = "carlosdi"
     plots_dir = Path("experiments/objective_extractor/plots")
     show_plots = True  # cambia a False si solo quieres guardar sin mostrar
 
     # ---------------------------------------------------------------------
-    # (1) Ranking por anotador + figuras automáticas
+    # (Ranking por anotador + figuras automáticas
     # ---------------------------------------------------------------------
-    df_points1, points_dict1, decisions1 = human_ranking_points(csv_path, ann1_jsonl)
-    plot_human_ranking(df_points1, output_dir=plots_dir / f"ranking_{ann1_name}", show=show_plots)
+    df_points1, points_dict1, decisions1 = human_ranking_points(
+        csv_path, ann1_jsonl)
+    plot_human_ranking(df_points1, output_dir=plots_dir /
+                       f"ranking_{ann1_name}", show=show_plots)
 
-    df_points2, points_dict2, decisions2 = human_ranking_points(csv_path, ann2_jsonl)
-    plot_human_ranking(df_points2, output_dir=plots_dir / f"ranking_{ann2_name}", show=show_plots)
+    df_points2, points_dict2, decisions2 = human_ranking_points(
+        csv_path, ann2_jsonl)
+    plot_human_ranking(df_points2, output_dir=plots_dir /
+                       f"ranking_{ann2_name}", show=show_plots)
 
     # ---------------------------------------------------------------------
-    # (2) Agreement nominal de 3 clases (A/B/ambos malos) + figuras automáticas
+    # Agreement nominal de 3 clases (A/B/ambos malos) + figuras automáticas
     # ---------------------------------------------------------------------
     df_pairs = build_pairs_df(ann1_jsonl, ann2_jsonl, csv_path)
 
     report_agreement(df_pairs)  # global (3 clases)
     report_agreement(df_pairs, by="task_type", min_n=20)      # por tarea
-    report_agreement(df_pairs, by="pair_unordered", min_n=20) # por par de modelos (sin orden)
+    # por par de modelos (sin orden)
+    report_agreement(df_pairs, by="pair_unordered", min_n=20)
 
     agreement_dir = plots_dir / "agreement"
     plot_label_distribution(
@@ -1438,8 +1464,7 @@ if __name__ == "__main__":
     )
 
     # ---------------------------------------------------------------------
-    # (2B) NUEVO: Agreement para "elección de modelo"
-    #     Esto soporta el argumento: "aunque κ sea medio, el ranking/ganador coincide".
+    # Agreement para "elección de modelo"
     # ---------------------------------------------------------------------
     report_choice_agreement(points_dict1, points_dict2)
     plot_winner_overlap(
@@ -1454,12 +1479,11 @@ if __name__ == "__main__":
     pairwise_winner_agreement(df_pairs, min_n=20)
 
     # ---------------------------------------------------------------------
-    # (3) Humanos vs métricas automáticas + figuras automáticas
+    # Humanos vs métricas automáticas + figuras automáticas
     # ---------------------------------------------------------------------
 
     results_dir = "/export/data_ml4ds/NextProcurement/pruebas_oct_2025/objective_extractor/results/final/"
 
-    
     df_final = load_and_merge_parquets(results_dir)
     metrics = {
         "ROUGE-L F1": "rougeL_f1",
@@ -1491,18 +1515,17 @@ if __name__ == "__main__":
             )
 
     # ---------------------------------------------------------------------
-    # (4) Opcional: Alineamiento por instancia (A vs B) usando deltas + figura
-    #     NOTA: aquí se usan paths "demo" del ejemplo original; ajusta a tus rutas.
+    # Alineamiento por instancia (A vs B) usando deltas + figura
     # ---------------------------------------------------------------------
     d = per_instance_alignment(
         df_final,
-        csv_path,        # usa tu csv_path real
-        ann1_jsonl,      # usa tu anotador 1 (o cambia al 2)
+        csv_path,
+        ann1_jsonl,
         task="generative",
         metric="rougeL_f1"
     )
     if not d.empty:
-        print(d[["label","pred","correct"]].value_counts(dropna=False))
+        print(d[["label", "pred", "correct"]].value_counts(dropna=False))
         plot_delta_hist(
             d,
             title="generative — rougeL_f1 delta (A-B)",
@@ -1511,7 +1534,7 @@ if __name__ == "__main__":
         )
 
     # ---------------------------------------------------------------------
-    # (3B) NUEVO: Figura comparativa ann1 vs ann2 vs automática (con agreement en el título)
+    # Figura comparativa ann1 vs ann2 vs automática
     # ---------------------------------------------------------------------
     compare_dir = plots_dir / "compare_ann_vs_auto"
 
@@ -1527,22 +1550,23 @@ if __name__ == "__main__":
                 metric_name=metric_name,
             )
 
-            # (Opcional) imprime una tabla resumen (top filas) para debugging/reporting
+            # tabla resumen
             if not df_cmp.empty:
                 print("\n" + "="*70)
                 print(f"SUMMARY TABLE — task={task} — metric={metric_name}")
                 print("="*70)
-                cols_show = ["model", "points_ann1", "points_ann2", "rank_ann1", "rank_ann2", "median_metric", "rank_metric"]
+                cols_show = ["model", "points_ann1", "points_ann2",
+                             "rank_ann1", "rank_ann2", "median_metric", "rank_metric"]
                 print(df_cmp[cols_show].head(30).to_string(index=False))
 
-            # Figura 1: Ranks comparados (la más útil para tu argumento)
+            # Ranks comparados
             plot_annotators_vs_metric_ranks(
                 df_cmp, agr,
                 output_dir=compare_dir / slugify(metric_name),
                 show=show_plots,
             )
 
-            # Figura 2: Barras normalizadas (útil como apoyo visual)
+            # Barras normalizadas
             plot_annotators_vs_metric_bars(
                 df_cmp, agr,
                 output_dir=compare_dir / slugify(metric_name),

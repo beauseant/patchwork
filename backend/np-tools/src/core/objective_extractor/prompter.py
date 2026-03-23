@@ -82,21 +82,38 @@ class Prompter:
                         "OpenAI API key not found. Please set it in the .env file or pass it as an argument.")
 
         elif model_type in self.OLLAMA_MODELS:
-            if ollama_host is None:
-                self._logger.info("Setting OLLAMA host from config file....")
-                ollama_host = self.config.get("ollama", {}).get(
-                    "host", "http://kumo01.tsc.uc3m.es:11434"
-                )
-            os.environ['OLLAMA_HOST'] = ollama_host
-            self.backend = "ollama"
-            # Initialize as class-level variable to be able to use it in the cache function
-            Prompter.ollama_client = Client(
-                host=ollama_host,
-                headers={'x-some-header': 'some-value'}
-            )
-            self._logger.info(
-                f"Using OLLAMA API with host: {ollama_host}"
-            )
+                    load_dotenv(self.config.get("yiyuan", {}).get("path_api_key", ".env"))
+                    yiyuan_key = os.getenv("YIYUAN_API_KEY")
+                    if yiyuan_key is None:
+                        ollama_host = llm_server or self.config.get("ollama", {}).get(
+                            "host", "http://kumo01.tsc.uc3m.es:11434"
+                        )
+                        self._logger.info(f"Using ollama host: {ollama_host}")
+                        os.environ['OLLAMA_HOST'] = ollama_host
+                        self.backend = "ollama"
+                        # Initialize as class-level variable to be able to use it in the cache function
+                        Prompter.ollama_client = Client(
+                            host=ollama_host,
+                            headers={'x-some-header': 'some-value'}
+                        )
+                        self._logger.info(
+                            f"Using OLLAMA API with host: {ollama_host}"
+                        )
+                    else:
+                        yiyuan_host = llm_server or self.config.get("yiyuan", {}).get(
+                            "host", "https://yiyuan.tsc.uc3m.es/api/generate"
+                        )
+                        self.backend = "yiyuan"
+                        self._logger.info(f"Using yiyuan host: {yiyuan_host}")
+                        os.environ['OLLAMA_HOST'] = yiyuan_host
+                        Prompter.ollama_client = Client(
+                            host=yiyuan_host,
+                            timeout=600.0,
+                            headers={'x-some-header': 'some-value', 'X-API-KEY': yiyuan_key}
+                        )
+                        self._logger.info(
+                            f"Using yiyuan API with host: {yiyuan_host}"
+                        )
         elif model_type in self.VLLM_MODELS:
             vllm_host = self.config.get("vllm", {}).get(
                 "host", "http://localhost:6000/v1"
